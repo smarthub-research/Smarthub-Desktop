@@ -1,0 +1,43 @@
+{
+  "name": "smarthub-desktop",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "@abandonware/noble": "^1.9.2-26",
+    "@electron/remote": "^2.1.2",
+    "@testing-library/dom": "^10.4.0",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.2.0",
+    "@testing-library/user-event": "^13.5.0",
+    "concurrently": "^9.1.2",
+    "cross-env": "^7.0.3",
+    "electron": "^34.3.0",
+    "next": "^15.2.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-scripts": "5.0.1",
+    "wait-on": "^8.0.2",
+    "web-vitals": "^2.1.4"
+  },
+  "main": "electron/main.js",
+  "scripts": {
+    "start": "concurrently \"cross-env BROWSER=none next dev\" \"npm run electron:start\"",
+    "build": "next build",
+    "test": "next test",
+    "eject": "next eject",
+    "dev": "next dev",
+    "electron:start": "electron ."
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  }
+}
