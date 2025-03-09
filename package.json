@@ -14,21 +14,22 @@
     "cross-env": "^7.0.3",
     "electron": "^34.3.0",
     "next": "^15.2.1",
+    "postcss": "^8.5.3",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-scripts": "5.0.1",
-    "tailwindcss": "^4.0.10",
+    "sass": "^1.85.1",
     "wait-on": "^8.0.2",
     "web-vitals": "^2.1.4"
   },
   "main": "electron/main.js",
   "scripts": {
-    "start": "concurrently \"cross-env BROWSER=none next dev\" \"npm run electron:start\"",
+    "start": "concurrently \"cross-env BROWSER=none next dev --turbopack\" \"npm run electron:start\"",
     "build": "next build",
     "test": "next test",
     "eject": "next eject",
     "dev": "next dev",
-    "electron:start": "electron ."
+    "electron:start": "wait-on http://localhost:3000 && electron ."
   },
   "browserslist": {
     "production": [
@@ -41,5 +42,8 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "tailwindcss": "^4.0.10"
   }
 }
