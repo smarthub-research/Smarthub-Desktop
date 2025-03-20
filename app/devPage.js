@@ -50,12 +50,15 @@ export default function DevPage() {
                     </button>
                 </div>
             )}
-            <ul className={'border p-4 rounded-xl'}>
-                {data.map((item, index) => (
-                    // Change this to {JSON.stringify(item)} if errors on decode
-                    <li className={'p-2'} key={index}>{item}</li>
-                ))}
-            </ul>
+            {data.length > 0 && (
+                <ul className={'border p-4 rounded-xl'}>
+                    {data.map((item, index) => (
+                        // Change this to {JSON.stringify(item)} if errors on decode
+                        <li className={'p-2'} key={index}>{item}</li>
+                    ))}
+                </ul>
+
+            )}
 
 
         </div>
