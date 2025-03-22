@@ -5,14 +5,10 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 First, run the development server:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm start
 ```
+* npm start runs the dev server on port 3000 and electron listens and waits for the port to run *
+
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
