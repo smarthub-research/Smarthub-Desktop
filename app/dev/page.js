@@ -1,8 +1,8 @@
 'use client'
 import {useEffect, useState} from "react";
-import ConnectionForm from "./RecordingComponents/connectionForm";
+import ConnectionForm from "./connectionForm";
 
-export default function DevPage() {
+export default function Page() {
     const [connected, setConnectedToBle] = useState(false);
     const [data, setBleData] = useState([]);
     const [reading, setReading] = useState(false);

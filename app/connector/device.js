@@ -5,12 +5,12 @@ export default function Device({ device, status, onConnect, onDisconnect }) {
     const [connecting, setConnecting] = useState(false);
 
     const connectToBle = async () => {
-        if (status === "cannotConnect" || !onConnect) return; // Prevent connecting if disabled
+        if (status === "cannotConnect" || !onConnect) return;
         setConnecting(true);
         try {
             if (window.electronAPI) {
                 await window.electronAPI.connectBle(device);
-                onConnect(device); // Notify parent component
+                onConnect(device);
             } else {
                 console.warn("Electron API not available");
             }
@@ -29,10 +29,10 @@ export default function Device({ device, status, onConnect, onDisconnect }) {
     };
 
     return (
-        <div className={`flex flex-row px-2 justify-between items-center`}>
-            <div>
-                <p className="text-lg font-semibold">{device[0]}</p>
-                <p className="text-sm opacity-50">{device[1]}</p>
+        <div className="flex flex-row items-center justify-between gap-3 py-2 transition-colors duration-200 rounded-lg px-3">
+            <div className="flex-grow min-w-0">
+                <p className="text-base sm:text-lg font-semibold text-white truncate">{device[0]}</p>
+                <p className="text-xs sm:text-sm text-gray-400 truncate">{device[1]}</p>
             </div>
             <ConnectionButton
                 clickAction={status === "connected" ? disconnectBle : connectToBle}

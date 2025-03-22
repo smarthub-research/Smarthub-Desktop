@@ -76,7 +76,7 @@ export default function ConnectionForm({connected, setConnectedToBle}) {
 
             <button
                 className={`${(connected !== false) ? (`bg-blue-500`) : (`bg-[#999999]`)} 
-                px-4 py-2 rounded-xl font-semibold cursor-pointer`}
+                px-4 py-2 mt-6 rounded-xl font-semibold cursor-pointer`}
                 type="submit" disabled={connecting}
             >
             {connecting ? "Connecting..." : "Connect"}

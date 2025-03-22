@@ -1,13 +1,15 @@
 const path = require('path');
 const { app, screen} = require('electron');
+const {initializeAllHandlers} = require("./handlers");
 const BrowserWindow = require('electron').BrowserWindow;
-require('./ipcHandlers')
+
+initializeAllHandlers();
 
 function createMainWindow() {
     const { width, height } = screen.getPrimaryDisplay().workAreaSize;
 
     const mainWindow = new BrowserWindow({
-        title: 'Smarthub Recorder',
+        title: 'Smarthub Page',
         // width: width,
         // height: height,
         width: 800,
