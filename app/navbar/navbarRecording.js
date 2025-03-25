@@ -5,6 +5,7 @@ import {redirect, usePathname} from "next/navigation";
 import React, { useEffect, useState } from "react";
 import ControlPanel from "./controlPanel";
 import FlagConsole from "./flagConsole";
+import Link from "next/link";
 
 export default function NavbarRecording() {
     const pathname = usePathname();
@@ -43,61 +44,78 @@ export default function NavbarRecording() {
         redirect('/');
     }
 
-    useEffect(() => {
+    function handleEndRecording() {
         if (window.electronAPI) {
-            // Get initial recording state
-            const initRecordingState = async () => {
+            window.electronAPI.endTest();
+        }
+    }
+
+    // Set up and clean up IPC listeners
+    useEffect(() => {
+        if (!window.electronAPI) return;
+
+        // Define event handlers
+        const handleRestartRecording = (eventData) => {
+            console.log("Restart recording handler triggered", eventData);
+            setRecordingTime(0); // Reset time only on restart
+
+            if (eventData && eventData.startTime) {
+                setRecordingState({
+                    isRecording: true,
+                    startTime: eventData.startTime
+                });
+            }
+        };
+
+        const handleBeginReading = (eventData) => {
+            console.log("Begin reading handler triggered", eventData);
+            if (eventData && eventData.startTime) {
+                setRecordingState({
+                    isRecording: true,
+                    startTime: eventData.startTime
+                });
+            }
+        };
+
+        const handleStopReading = () => {
+            console.log("Stop reading handler triggered");
+            // Calculate the final time before stopping
+            if (recordingState.isRecording && recordingState.startTime) {
+                const finalTime = (Date.now() - recordingState.startTime) / 1000;
+                setRecordingTime(finalTime);
+            }
+
+            setRecordingState({
+                isRecording: false,
+                startTime: null
+            });
+        };
+
+        // Register event listeners and store the returned cleanup functions
+        const restartListener = window.electronAPI.onRestartRecording(handleRestartRecording);
+        const beginListener = window.electronAPI.onBeginReading(handleBeginReading);
+        const stopListener = window.electronAPI.onStopReading(handleStopReading);
+
+        // Get initial recording state
+        const initRecordingState = async () => {
+            if (window.electronAPI.getRecordingState) {
                 const state = await window.electronAPI.getRecordingState();
                 setRecordingState(state);
-            };
-
-            initRecordingState();
-
-            // Listen for restart events
-            window.electronAPI.onRestartRecording((eventData) => {
-                if (eventData && eventData.startTime) {
-                    setRecordingState({
-                        isRecording: true,
-                        startTime: eventData.startTime
-                    });
-                }
-            });
-
-            // Listen for begin-reading events
-            window.electronAPI.onBeginReading((eventData) => {
-                if (eventData && eventData.startTime) {
-                    setRecordingState({
-                        isRecording: true,
-                        startTime: eventData.startTime
-                    });
-                }
-            });
-
-            // Listen for stop-reading events
-            window.electronAPI.onStopReading(() => {
-                setRecordingState({
-                    isRecording: false,
-                    startTime: null
-                });
-            });
-        }
-    }, []);
-
-    // Timer effect
-    useEffect(() => {
-        let interval;
-        if (recordingState.isRecording && recordingState.startTime) {
-            interval = setInterval(() => {
-                setRecordingTime((Date.now() - recordingState.startTime) / 1000);
-            }, 100);
-        } else {
-            setRecordingTime(0);
-        }
-
-        return () => {
-            if (interval) clearInterval(interval);
+            }
         };
-    }, [recordingState]);
+
+        initRecordingState();
+
+        // Clean up function to remove listeners when component unmounts
+        return () => {
+            if (window.electronAPI) {
+                // Use the returned cleanup functions from the listeners
+                restartListener && restartListener();
+                beginListener && beginListener();
+                stopListener && stopListener();
+            }
+        };
+    }, []);
 
     return (
         <>
@@ -110,11 +128,11 @@ export default function NavbarRecording() {
                 </div>
 
                 {recording && (
-                    <div className="flex flex-row grow gap-10 p-4 items-center">
+                    <div className="flex flex-row grow gap-6 justify-center p-4 items-center ">
                         <ConnectionStatus/>
-                        <ControlPanel setFlagging={handleFlagging}/>
+                        <ControlPanel setFlagging={handleFlagging} flagging={flagging}/>
 
-                        <div className="bg-gray-800 rounded-lg px-3 py-2 ml-auto">
+                        <div className="flex bg-[#0a0a0a] items-center justify-center h-full rounded-lg px-6 py-2 ">
                             {recordingState.isRecording ? (
                                 <div className="flex items-center">
                                     <span className="h-2 w-2 rounded-full bg-red-500 animate-pulse mr-2"></span>
@@ -123,16 +141,25 @@ export default function NavbarRecording() {
                                     </span>
                                 </div>
                             ) : (
-                                <span className="text-sm font-medium text-gray-400">
-                                    Not recording
-                                </span>
+                                <div className="flex items-center text-gray-400">
+                                    <span className="h-2 w-2 rounded-full bg-gray-500 mr-2"></span>
+                                    <span className="text-sm font-medium">
+                                        {recordingTime.toFixed(1) > 0 ? ("Not Recording " + recordingTime.toFixed(1) + "s") : ("Not recording")}
+                                    </span>
+                                </div>
                             )}
                         </div>
+
+                        <Link href={"/reviewer/"} onClick={handleEndRecording} className="flex bg-[#0a0a0a] hover:bg-blue-600 text-white items-center justify-center h-full rounded-lg px-6 py-2 transition-colors">
+                            <p className="text-sm font-medium">Finish Test</p>
+                        </Link>
+
                     </div>
                 )}
+
             </div>
             {flagging && (
-                <FlagConsole/>
+                <FlagConsole setFlagging={handleFlagging}/>
             )}
         </>
     );

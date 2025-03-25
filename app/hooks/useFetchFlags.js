@@ -1,7 +1,6 @@
-// app/hooks/useFetchFlags.js
 import { useEffect, useState } from "react";
 
-export default function useFetchFlags() {
+export default function useFetchFlags({graphId = null} = {}) {
     const [flags, setFlags] = useState([]);
 
     useEffect(() => {
@@ -10,7 +9,10 @@ export default function useFetchFlags() {
             const fetchFlags = async () => {
                 const response = await window.electronAPI.getFlags();
                 if (response && response.flags) {
-                    setFlags(response.flags);
+                    const filteredFlags = graphId
+                        ? response.flags.filter(flag => flag.graphId === graphId)
+                        : response.flags;
+                    setFlags(filteredFlags);
                 }
             };
 
@@ -20,6 +22,10 @@ export default function useFetchFlags() {
             const newFlagHandler = (flag) => {
                 setFlags(prev => {
                     // Check if flag already exists to prevent duplicates
+                    if (graphId && flag.graphId !== graphId) {
+                        return prev;
+                    }
+
                     if (!prev.some(f => f.id === flag.id)) {
                         return [...prev, flag];
                     }
@@ -37,7 +43,7 @@ export default function useFetchFlags() {
                 }
             };
         }
-    }, []);
+    }, [graphId]);
 
     return [flags, setFlags];
 }

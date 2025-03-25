@@ -5,7 +5,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
     // Device management functions
     getConnectedDevices: () => ipcRenderer.invoke('get-connected-devices'),
-    onDeviceDiscovery: (callback) => ipcRenderer.on('new-device-found', (event, device) => callback(device)),
+    onDeviceDiscovery: (callback) => {
+        const listener = (event, device) => callback(device);
+        ipcRenderer.on('new-device-found', listener);
+        return () => ipcRenderer.removeListener('new-device-found', listener);
+    },
     searchForDevices: () => ipcRenderer.invoke('search-for-devices'),
 
     // Connection functions
@@ -17,18 +21,51 @@ contextBridge.exposeInMainWorld('electronAPI', {
     beginReadingData: () => ipcRenderer.invoke('begin-reading-data'),
     stopRecordingData: () => ipcRenderer.invoke('stop-reading-data'),
     onBeginReading: (callback) => {
-        ipcRenderer.on('begin-reading', (_, data) => callback(data));
+        const listener = (_, data) => callback(data);
+        ipcRenderer.on('begin-reading', listener);
+        return () => ipcRenderer.removeListener('begin-reading', listener);
     },
     onStopReading: (callback) => {
-        ipcRenderer.on('stop-reading', () => callback());
+        const listener = () => callback();
+        ipcRenderer.on('stop-reading', listener);
+        return () => ipcRenderer.removeListener('stop-reading', listener);
     },
-    onBLEData: (callback) => ipcRenderer.on('new-ble-data', (event, data) => callback(data)),
+    onBLEData: (callback) => {
+        const listener = (event, data) => callback(data);
+        ipcRenderer.on('new-ble-data', listener);
+        return () => ipcRenderer.removeListener('new-ble-data', listener);
+    },
 
     addFlag: (flag) => ipcRenderer.invoke('add-flag', { flag }),
     getFlags: () => ipcRenderer.invoke('get-flags'),
-    onNewFlag: (callback) => ipcRenderer.on('new-flag', (_, flag) => callback(flag)),
+    onNewFlag: (callback) => {
+        const listener = (_, flag) => callback(flag);
+        ipcRenderer.on('new-flag', listener);
+        return () => ipcRenderer.removeListener('new-flag', listener);
+    },
+    clearFlags: () => ipcRenderer.invoke('clear-flags'),
 
     restartRecording: () => ipcRenderer.invoke('restart-recording'),
     getRecordingState: () => ipcRenderer.invoke('get-recording-state'),
-    onRestartRecording: (callback) => {ipcRenderer.on('restart-recording', (_, data) => callback(data));},
+    onRestartRecording: (callback) => {
+        const listener = (_, data) => callback(data);
+        ipcRenderer.on('restart-recording', listener);
+        return () => ipcRenderer.removeListener('restart-recording', listener);
+    },
+
+    endTest: () => ipcRenderer.invoke('end-test'),
+    onTestEnd: (callback) => {
+        const listener = (_, data) => callback(data);
+        ipcRenderer.on('test-ended', listener);
+        return () => ipcRenderer.removeListener('test-ended', listener);
+    },
+    setTestData: (testData) => ipcRenderer.invoke('set-test-data', testData),
+    getTestData: () => ipcRenderer.invoke('get-test-data'),
+
+    // Add a general removeListener method for backward compatibility
+    removeListener: (channel, callback) => {
+        if (callback && typeof callback === 'function') {
+            ipcRenderer.removeListener(channel, callback);
+        }
+    }
 });

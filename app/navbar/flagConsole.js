@@ -1,8 +1,8 @@
 import {useState, useRef, useEffect, use} from "react";
-import { BsFillSendFill, BsGraphUp } from "react-icons/bs";
+import {BsFillSendFill, BsGraphUp, BsX} from "react-icons/bs";
 import useFetchFlags from "../hooks/useFetchFlags";
 
-export default function FlagConsole() {
+export default function FlagConsole({setFlagging}) {
     const [comment, setComment] = useState("");
     const [selectedGraph, setSelectedGraph] = useState(null);
     const [flags, setFlags] = useFetchFlags();
@@ -46,7 +46,7 @@ export default function FlagConsole() {
 
         const newFlag = {
             id: Date.now(),
-            timestamp: new Date().toLocaleTimeString(),
+            dateTime: new Date().toLocaleTimeString(),
             comment,
             graphId: selectedGraph
         };
@@ -117,9 +117,14 @@ export default function FlagConsole() {
                 onMouseDown={handleMouseDown}
             />
 
-            <div className="p-4 border-b border-gray-800">
-                <h2 className="text-xl font-semibold text-white mb-1">Flag Console</h2>
-                <p className="text-gray-400 text-sm">Add notes to specific graphs</p>
+            <div className="flex flex-row p-4 border-b border-gray-800 justify-between">
+                <div className={"flex flex-col"}>
+                    <h2 className="text-xl font-semibold text-white mb-1">Flag Console</h2>
+                    <p className="text-gray-400 text-sm">Add notes to specific graphs</p>
+                </div>
+                <button onClick={setFlagging} className="text-gray-400 hover:text-white self-start scale-200">
+                    <BsX />
+                </button>
             </div>
 
             <div className="p-4 border-b border-gray-800">

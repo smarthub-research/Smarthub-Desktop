@@ -38,7 +38,7 @@ export default function ConnectionButton({ clickAction, status, connecting, disa
             onClick={handleClick}
             disabled={status === "cannotConnect" || disabled}
             className={`${getButtonStyles()} min-w-[6rem] sm:min-w-[7rem] md:min-w-[8rem] px-3 py-2 text-center 
-            rounded-lg transition-all duration-300 text-sm font-medium h-10`}
+            rounded-lg transition-all duration-300 text-sm font-medium h-10 cursor-pointer`}
         >
             {text || (status === "connected" ? "Connected"
                 : status === "notConnected" ? "Connect"
