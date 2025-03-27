@@ -4,15 +4,21 @@ export default function ChartToolbar(props) {
     const { dataPointCount, setDataPointCount, scrollPosition, setScrollPosition, data, graphId } = props;
 
     const handleScrollLeft = () => {
-        if (scrollPosition < data.length - dataPointCount) {
-            setScrollPosition(prev => prev + Math.floor(dataPointCount / 2));
-        }
+        // Calculate how much to scroll left
+        const scrollAmount = Math.floor(dataPointCount / 2);
+
+        // Calculate the maximum scroll position
+        const maxScrollPosition = Math.max(0, data.length - dataPointCount);
+
+        // Ensure we don't scroll beyond the dataset
+        setScrollPosition(prev => Math.min(maxScrollPosition, prev + scrollAmount));
     };
 
     const handleScrollRight = () => {
-        setScrollPosition(prev => Math.max(0, prev - Math.floor(dataPointCount / 2)));
+        // Calculate how much to scroll right
+        const scrollAmount = Math.floor(dataPointCount / 2);
+        setScrollPosition(prev => Math.max(0, prev - scrollAmount));
     };
-
     const resetView = () => {
         setScrollPosition(0);
     };
@@ -33,8 +39,11 @@ export default function ChartToolbar(props) {
                         </svg>
                     </button>
                     <span className="text-xs text-gray-400">
-                        {Math.max(1, data.length - scrollPosition - dataPointCount + 1)}-
-                        {Math.min(data.length, data.length - scrollPosition)}
+                        {/* When scrollPosition is high, we're seeing older data */}
+                        {scrollPosition >= data.length - dataPointCount ?
+                            `1-${Math.min(dataPointCount, data.length)}` :
+                            `${Math.max(1, data.length - scrollPosition - dataPointCount + 1)}-${data.length - scrollPosition}`
+                        }
                     </span>
                     <button
                         onClick={handleScrollRight}

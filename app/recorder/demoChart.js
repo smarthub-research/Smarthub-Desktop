@@ -51,14 +51,19 @@ export default function DemoChart({ data, title, graphId }) {
             visibleData = data;
         } else if (scrollPosition === 0) {
             // Show most recent data points when scroll position is 0
-            visibleData = data.slice(0, dataPointCount);
+            visibleData = data.slice(-dataPointCount);
         } else {
             // Calculate range based on scroll position
-            const endIndex = Math.max(0, data.length - scrollPosition);
-            const startIndex = Math.max(0, endIndex - dataPointCount);
-            visibleData = data.slice(startIndex, endIndex);
-        }
+            const endPosition = Math.min(data.length, data.length - scrollPosition);
+            const startPosition = Math.max(0, endPosition - dataPointCount);
 
+            // Ensure we always show dataPointCount items if available
+            if (endPosition - startPosition < dataPointCount && startPosition === 0 && data.length >= dataPointCount) {
+                visibleData = data.slice(0, dataPointCount);
+            } else {
+                visibleData = data.slice(startPosition, endPosition);
+            }
+        }
         // Get x-axis labels based on the chart title
         let labels = [];
         if (title === 'Trajectory') {
@@ -285,12 +290,12 @@ export default function DemoChart({ data, title, graphId }) {
         },
         elements: {
             point: {
-                radius: 2,
+                radius: 0,
                 hoverRadius: 5,
-                borderWidth: 1
+                borderWidth: 0.5
             },
             line: {
-                borderWidth: 2
+                borderWidth: 1
             }
         }
     };

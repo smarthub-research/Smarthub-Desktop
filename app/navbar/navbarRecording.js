@@ -53,11 +53,6 @@ export default function NavbarRecording() {
         };
     }, [recordingState.isRecording, recordingState.startTime]);
 
-    function handleReturnHome() {
-        window.electronAPI.resetDevices();
-        redirect('/');
-    }
-
     function handleEndRecording() {
         if (window.electronAPI) {
             window.electronAPI.endTest();
@@ -132,7 +127,7 @@ export default function NavbarRecording() {
             <div className={`sticky flex flex-row-reverse top-0 z-5 w-[100%] h-[10vh]
             ${show ? "opacity-100" : "opacity-0"} transition`}>
 
-                <div className={`p-2 text-right ${flagging && ('opacity-0')} transition`} onClick={handleReturnHome}>
+                <div className={`p-2 text-right ${flagging && ('opacity-0')} transition`}>
                     <p className="font-bold text-[3vw] tracking-[0.3rem] leading-tight cursor-pointer">SMARTHUB</p>
                     <p className="text-[2vw] tracking-[0.5rem] leading-[1.2rem] pb-4 cursor-pointer">RECORDER</p>
                 </div>
