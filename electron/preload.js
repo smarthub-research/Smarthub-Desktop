@@ -54,11 +54,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     },
 
     endTest: () => ipcRenderer.invoke('end-test'),
-    onTestEnd: (callback) => {
-        const listener = (_, data) => callback(data);
-        ipcRenderer.on('test-ended', listener);
-        return () => ipcRenderer.removeListener('test-ended', listener);
-    },
+
     setTestData: (testData) => ipcRenderer.invoke('set-test-data', testData),
     getTestData: () => ipcRenderer.invoke('get-test-data'),
 

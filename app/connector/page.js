@@ -1,10 +1,10 @@
 'use client'
-import { useState } from "react";
+import {useEffect, useState} from "react";
 import Device from "./device";
 import useFetchDevices from "./../hooks/useFetchDevices";
 import Link from "next/link";
 
-export default function Page() {
+export default function Connector() {
     const [deviceOne, setDeviceOne] = useState(null);
     const [deviceTwo, setDeviceTwo] = useState(null);
     const { devices } = useFetchDevices();
@@ -20,12 +20,28 @@ export default function Page() {
     }
 
     function handleDisconnect(device) {
-        if (deviceOne && deviceOne[0] === device[0]) {
+        if (deviceOne && deviceOne.name === device.name) {
             setDeviceOne(null);
-        } else if (deviceTwo && deviceTwo[0] === device[0]) {
+        } else if (deviceTwo && deviceTwo.name === device.name) {
             setDeviceTwo(null);
         }
     }
+
+    useEffect(() => {
+        async function fetchConnectedDevices() {
+            if (window.electronAPI) {
+                const connectedDevices = await window.electronAPI.getConnectedDevices();
+                if (connectedDevices[0]) {
+                    setDeviceOne(connectedDevices[0]);
+                }
+
+                if (connectedDevices[1]) {
+                    setDeviceTwo(connectedDevices[1]);
+                }
+            }
+        }
+        fetchConnectedDevices();
+    }, []);
 
     return (
         <div className="flex flex-col w-full max-h-[90vh] px-4 md:px-6 lg:px-8 overflow-hidden">
@@ -72,11 +88,14 @@ export default function Page() {
                             <p className="text-gray-400 text-center py-4">Searching for devices...</p>
                         ) : (
                             devices
-                                .filter(device => device !== deviceOne && device !== deviceTwo)
+                                .filter(device =>
+                                    (!deviceOne || device.name !== deviceOne.name) &&
+                                    (!deviceTwo || device.name !== deviceTwo.name)
+                                )
                                 .map((device) => {
                                     const canConnect = !deviceOne || !deviceTwo;
                                     return (
-                                        <div key={device[0]} className="mb-3 last:mb-0">
+                                        <div key={device.name} className="mb-3 last:mb-0">
                                             <Device
                                                 device={device}
                                                 status={canConnect ? "notConnected" : "cannotConnect"}
@@ -96,8 +115,8 @@ export default function Page() {
             <div className="flex justify-center mt-8 md:mt-10">
                 <Link
                     href="/recorder/"
-                    className={` hover:bg-blue-500 px-6 py-3 rounded-lg font-medium transition-all duration-200 
-                    ${(deviceOne && deviceTwo) ? 'bg-blue-600 opacity-100 cursor-pointer' : 
+                    className={` hover:bg-blue-500 px-6 py-3 rounded-lg font-medium transition-all duration-200
+                    ${(deviceOne && deviceTwo) ? 'bg-blue-600 opacity-100 cursor-pointer' :
                         'bg-gray-600 opacity-50 pointer-events-none'}`}>
                     Continue to Recording
                 </Link>

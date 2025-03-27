@@ -12,14 +12,14 @@ function setupConnectionHandlers() {
         console.log("Received BLE disconnect request:", data);
         const device = data.device;
 
-        if (!device || !device[0] || !device[1]) {
+        if (!device || !device.name || !device.UUID) {
             console.error("Invalid device data:", device);
             return { success: false, message: "Invalid device data" };
         }
 
         try {
             await handleDisconnect(device);
-            console.log('Device disconnected: ', device[0]);
+            console.log('Device disconnected: ', device.name);
             return { success: true, message: 'Device disconnected successfully' };
         } catch (error) {
             console.error('Error disconnecting device:', error);
@@ -45,9 +45,9 @@ function setupConnectionHandlers() {
 
 async function handleConnection(device) {
     try {
-        console.log('device ' + device[0]);
-        const deviceName = device[0];
-        const deviceUUID = device[1];
+        console.log('device ' + device.name);
+        const deviceName = device.name;
+        const deviceUUID = device.UUID;
         let devicePeripheral = null;
 
         const nearbyPeripherals = connectionStore.getNearbyPeripherals();
@@ -62,15 +62,15 @@ async function handleConnection(device) {
 
         await devicePeripheral.connectAsync();
 
-        if (connectionStore.getConnectionOne()) {
+        if (connectionStore.getConnectionTwo()) {
             console.log('connected to device two');
-            connectionStore.setConnectionTwo(devicePeripheral);
+            connectionStore.setConnectionOne(devicePeripheral);
         } else {
             console.log('connected to device one');
-            connectionStore.setConnectionOne(devicePeripheral);
+            connectionStore.setConnectionTwo(devicePeripheral);
         }
 
-        console.log("Device connected: ", device[0]);
+        console.log("Device connected: ", device.name);
         return { success: true };
     } catch (error) {
         console.error("Connection failed:", error);
@@ -82,16 +82,16 @@ async function handleDisconnect(device) {
     const conn1 = connectionStore.getConnectionOne();
     const conn2 = connectionStore.getConnectionTwo();
 
-    if (conn1 && (conn1.advertisement.localName === device[0] || conn1.uuid === device[1])) {
+    if (conn1 && (conn1.advertisement.localName === device.name || conn1.uuid === device.UUID)) {
         console.log('Disconnecting from connectionOne:', conn1.advertisement.localName);
         await conn1.disconnectAsync();
         connectionStore.setConnectionOne(null);
-    } else if (conn2 && (conn2.advertisement.localName === device[0] || conn2.uuid === device[1])) {
+    } else if (conn2 && (conn2.advertisement.localName === device.name || conn2.uuid === device.UUID)) {
         console.log('Disconnecting from connectionTwo:', conn2.advertisement.localName);
         await conn2.disconnectAsync();
         connectionStore.setConnectionTwo(null);
     } else {
-        console.warn('Device not found in active connections:', device[0]);
+        console.warn('Device not found in active connections:', device.name);
         throw new Error('Device not found in active connections');
     }
 }

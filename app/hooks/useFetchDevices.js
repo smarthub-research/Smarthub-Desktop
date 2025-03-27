@@ -10,7 +10,7 @@ export default function useFetchDevices() {
             window.electronAPI.searchForDevices();
             window.electronAPI.onDeviceDiscovery((newDevice) => {
                 setDevices(prevDevices => {
-                    if (!prevDevices.some(dev => dev[0] === newDevice[0])) {
+                    if (!prevDevices.some(dev => dev.name === newDevice.name)) {
                         return [...prevDevices, newDevice]; // Return new array
                     }
                     return prevDevices; // If device exists, return old state

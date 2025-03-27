@@ -5,7 +5,7 @@ import useFetchFlags from '../hooks/useFetchFlags';
 import { FiDownload, FiSave, FiArrowLeft, FiFileText } from 'react-icons/fi';
 import ReviewerChart from "./reviewerChart";
 
-export default function Page() {
+export default function Reviewer() {
     const router = useRouter();
     const [testData, setTestData] = useState(null);
     const [isLoading, setIsLoading] = useState(true);

@@ -31,8 +31,8 @@ export default function Device({ device, status, onConnect, onDisconnect }) {
     return (
         <div className="flex flex-row items-center justify-between gap-3 py-2 transition-colors duration-200 rounded-lg px-3">
             <div className="flex-grow min-w-0">
-                <p className="text-base sm:text-lg font-semibold text-white truncate">{device[0]}</p>
-                <p className="text-xs sm:text-sm text-gray-400 truncate">{device[1]}</p>
+                <p className="text-base sm:text-lg font-semibold text-white truncate">{device.name}</p>
+                <p className="text-xs sm:text-sm text-gray-400 truncate">{device.UUID}</p>
             </div>
             <ConnectionButton
                 clickAction={status === "connected" ? disconnectBle : connectToBle}

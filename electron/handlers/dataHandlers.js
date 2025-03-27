@@ -2,32 +2,30 @@ const { ipcMain } = require('electron');
 const BrowserWindow = require('electron').BrowserWindow;
 const connectionStore = require('../services/connectionStore');
 const { noble } = require('./deviceDiscovery');
-
-let recordingStartTime = null;
-let pausedElapsedTime = 0;
-let isRecording = false;
-let isPaused = false;
-
-let flags = [];
+const timeManager = require('../services/timeManager');
+const flagHandlers = require('./flagHandlers');
 
 let testData = null;
 
 function setupDataHandlers() {
+    // Set up flag handlers with access to timeManager
+    flagHandlers.setupFlagHandlers();
+
     ipcMain.handle('begin-reading-data', async () => {
         noble.stopScanning();
 
         // If resuming from pause
-        if (isPaused) {
-            isPaused = false;
+        if (timeManager.isPaused()) {
+            timeManager.setIsPaused(false);
             // Adjust the start time to account for the pause duration
-            recordingStartTime = Date.now() - pausedElapsedTime;
+            timeManager.setRecordingStartTime(Date.now() - timeManager.getPausedElapsedTime());
         } else {
             // Fresh start
-            recordingStartTime = Date.now();
-            pausedElapsedTime = 0;
+            timeManager.setRecordingStartTime(Date.now());
+            timeManager.setPausedElapsedTime(0);
         }
 
-        isRecording = true;
+        timeManager.setIsRecording(true);
 
         const conn1 = connectionStore.getConnectionOne();
         const conn2 = connectionStore.getConnectionTwo();
@@ -41,19 +39,19 @@ function setupDataHandlers() {
         }
 
         BrowserWindow.getAllWindows().forEach((win) => {
-            win.webContents.send('begin-reading', { startTime: recordingStartTime });
+            win.webContents.send('begin-reading', { startTime: timeManager.getRecordingStartTime() });
         });
 
-        return { success: true, startTime: recordingStartTime };
+        return { success: true, startTime: timeManager.getRecordingStartTime() };
     });
 
     ipcMain.handle('stop-reading-data', async () => {
-        isRecording = false;
-        isPaused = true;
+        timeManager.setIsRecording(false);
+        timeManager.setIsPaused(true);
 
         // Calculate how much time has elapsed up to this pause
-        if (recordingStartTime) {
-            pausedElapsedTime = Date.now() - recordingStartTime;
+        if (timeManager.getRecordingStartTime()) {
+            timeManager.setPausedElapsedTime(Date.now() - timeManager.getRecordingStartTime());
         }
 
         const conn1 = connectionStore.getConnectionOne();
@@ -67,65 +65,34 @@ function setupDataHandlers() {
         }
 
         BrowserWindow.getAllWindows().forEach((win) => {
-            win.webContents.send('stop-reading', { elapsedTime: pausedElapsedTime });
+            win.webContents.send('stop-reading', { elapsedTime: timeManager.getPausedElapsedTime() });
         });
 
-        return { success: true, elapsedTime: pausedElapsedTime };
+        return { success: true, elapsedTime: timeManager.getPausedElapsedTime() };
     });
 
     ipcMain.handle('restart-recording', async () => {
-        recordingStartTime = isRecording ? Date.now() : null;
-        pausedElapsedTime = 0;
-        isPaused = false;
+        timeManager.setRecordingStartTime(timeManager.isRecording() ? Date.now() : null);
+        timeManager.setPausedElapsedTime(0);
+        timeManager.setIsPaused(false);
+        flagHandlers.clearFlags();
 
         // Broadcast restart event to all windows with startTime
         console.log('Restarting recording...');
         BrowserWindow.getAllWindows().forEach((win) => {
-            win.webContents.send('restart-recording', { startTime: recordingStartTime });
+            win.webContents.send('restart-recording', { startTime: timeManager.getRecordingStartTime() });
         });
-        return { success: true, startTime: recordingStartTime };
+        return { success: true, startTime: timeManager.getRecordingStartTime() };
     });
 
     // New handler to get the current recording state
     ipcMain.handle('get-recording-state', () => {
         console.log('Getting recording state...');
         return {
-            isRecording,
-            isPaused,
-            startTime: recordingStartTime,
-            elapsedTime: pausedElapsedTime,
-        };
-    });
-
-    ipcMain.handle('add-flag', (event, { flag }) => {
-        // Prevent duplicate flags
-        if (!flags.some(f => f.id === flag.id)) {
-            flag.timeStamp = recordingStartTime ? Date.now() - recordingStartTime : null;
-            flags.push(flag);
-
-            // Broadcast the new flag to all windows
-            BrowserWindow.getAllWindows().forEach((win) => {
-                win.webContents.send('new-flag', flag);
-            });
-        }
-        return { success: true };
-    });
-
-    ipcMain.handle('clear-flags', () => {
-        flags = [];
-        BrowserWindow.getAllWindows().forEach((win) => {
-            win.webContents.send('clear-flags');
-        });
-        return { success: true };
-    });
-
-    ipcMain.handle('get-flags', () => {
-        return {
-            flags: flags,
-            elapsedTime: pausedElapsedTime,
-            isRecording: isRecording,
-            isPaused: isPaused,
-            startTime: recordingStartTime
+            isRecording: timeManager.isRecording(),
+            isPaused: timeManager.isPaused(),
+            startTime: timeManager.getRecordingStartTime(),
+            elapsedTime: timeManager.getPausedElapsedTime(),
         };
     });
 
@@ -160,7 +127,6 @@ function setupDataHandlers() {
         return testData;
     });
 }
-
 
 function calculateDuration(data) {
     const timeData = data.displacement || data;
@@ -199,10 +165,12 @@ async function findCharacteristics(shouldRecord, peripheral) {
                 }
 
                 characteristics.forEach(characteristic => {
-                    if (shouldRecord) {
-                        subscribeToCharacteristics(characteristic);
-                    } else {
-                        unsubscribeToCharacteristics(characteristic);
+                    if (characteristic.uuid === "2a56") {
+                        if (shouldRecord) {
+                            subscribeToCharacteristics(characteristic, peripheral);
+                        } else {
+                            unsubscribeToCharacteristics(characteristic);
+                        }
                     }
                 });
             });
@@ -211,32 +179,142 @@ async function findCharacteristics(shouldRecord, peripheral) {
 }
 
 
-function subscribeToCharacteristics(characteristic) {
+
+let dataBuffer = [];
+let rawDataBuffer = [];
+
+let leftData = null;
+let rightData = null;
+
+const TARGET_POINTS = 10; // Target number of points to downsample
+const DOWNSAMPLE_TO = 3;   // Target number after downsampling
+
+function subscribeToCharacteristics(characteristic, peripheral) {
     characteristic.subscribe((error) => {
         if (error) {
             console.error('Subscribe error:', error);
-            return;
         }
-        console.log('Subscribed to notifications');
     });
 
     characteristic._dataCallback = (data) => {
         let accelDataLeft = [];
         let gyroDataLeft = [];
-
         let accelDataRight = [];
         let gyroDataRight = [];
+
         decodeSensorData(data, accelDataLeft, gyroDataLeft);
         decodeSensorData(data, accelDataRight, gyroDataRight);
 
         const jsonData = calc(accelDataLeft, accelDataRight, gyroDataLeft, gyroDataRight);
+        dataBuffer.push(jsonData);
+        rawDataBuffer.push(jsonData);
 
-        BrowserWindow.getAllWindows().forEach((win) => {
-            win.webContents.send('new-ble-data', jsonData);
-        });
-    };
+        // When we have enough data points, downsample and send to frontend
+        if (dataBuffer.length >= TARGET_POINTS) {
+            const downSampledData = downsampleData(dataBuffer, DOWNSAMPLE_TO);
+            // Send downsampled data to frontend
+            BrowserWindow.getAllWindows().forEach((win) => {
+                win.webContents.send('new-ble-data', {data: downSampledData});
+            });
+
+            // Reset buffer after sending
+            dataBuffer = [];
+        }
+    }
 
     characteristic.on('data', characteristic._dataCallback);
+}
+
+function downsampleData(data, targetPoints) {
+    if (data.length <= targetPoints) {
+        return data; // Not enough data to downsample
+    }
+
+    // For 10 points to 3 points using LTTB:
+    // 1. Always include first and last points
+    // 2. Select one point from the middle that creates largest triangle
+
+    // When specifically downsampling to 3 points:
+    if (targetPoints === 3) {
+        // First point is always included
+        const result = [data[0]];
+
+        // Find the point in the middle that creates the largest triangle with first and last points
+        const firstPoint = data[0];
+        const lastPoint = data[data.length - 1];
+
+        let maxArea = -1;
+        let maxAreaIndex = 1;
+
+        // Check all points between first and last
+        for (let i = 1; i < data.length - 1; i++) {
+            const currentPoint = data[i];
+
+            // Calculate triangle area using cross product
+            const area = Math.abs(
+                (firstPoint.timeStamp - lastPoint.timeStamp) *
+                (currentPoint.displacement - firstPoint.displacement) -
+                (firstPoint.timeStamp - currentPoint.timeStamp) *
+                (lastPoint.displacement - firstPoint.displacement)
+            );
+
+            if (area > maxArea) {
+                maxArea = area;
+                maxAreaIndex = i;
+            }
+        }
+
+        // Add the point that creates largest triangle
+        result.push(data[maxAreaIndex]);
+
+        // Add the last point
+        result.push(data[data.length - 1]);
+
+        return result;
+    }
+
+    // For other target sizes, use the general LTTB algorithm
+    const sampled = [data[0]];
+    const bucketSize = data.length / (targetPoints - 2);
+
+    for (let i = 0; i < targetPoints - 2; i++) {
+        const startIdx = Math.floor((i) * bucketSize) + 1;
+        const endIdx = Math.floor((i + 1) * bucketSize) + 1;
+        const lastPoint = sampled[sampled.length - 1];
+        const nextBucketIndex = Math.min(Math.floor((i + 2) * bucketSize) + 1, data.length - 1);
+        const nextPoint = data[nextBucketIndex];
+        const maxAreaIndex = getMaxAreaIndex(data, startIdx, endIdx, lastPoint, nextPoint);
+        sampled.push(data[maxAreaIndex]);
+    }
+
+    if (data.length > 1) {
+        sampled.push(data[data.length - 1]);
+    }
+
+    return sampled;
+}
+
+function getMaxAreaIndex(data, startIdx, endIdx, lastPoint, nextPoint) {
+    let maxArea = -1;
+    let maxAreaIndex = startIdx;
+
+    for (let j = startIdx; j < endIdx; j++) {
+        // Calculate triangle area using cross product
+        const currentPoint = data[j];
+        const area = Math.abs(
+            (lastPoint.timeStamp - nextPoint.timeStamp) *
+            (currentPoint.displacement - lastPoint.displacement) -
+            (lastPoint.timeStamp - currentPoint.timeStamp) *
+            (nextPoint.displacement - lastPoint.displacement)
+        );
+
+        if (area > maxArea) {
+            maxArea = area;
+            maxAreaIndex = j;
+        }
+    }
+
+    return maxAreaIndex;
 }
 
 function decodeSensorData(data, accelData, gyroData) {
@@ -254,7 +332,12 @@ function decodeSensorData(data, accelData, gyroData) {
     }
 }
 
-
+const IN_TO_M = 0.0254;
+const WHEEL_DIAM_IN = 24;
+const WHEEL_RADIUS_M = (WHEEL_DIAM_IN / 2) * IN_TO_M; // Convert to meters
+const DIST_WHEELS_IN = 26;
+const DIST_WHEELS_M = DIST_WHEELS_IN * IN_TO_M; // Convert to meters
+const DT = 0.05;
 
 function calc(accelDataLeft, accelDataRight, gyroDataLeft, gyroDataRight) {
     const velocity = getVelocity(gyroDataLeft, gyroDataRight)
@@ -265,17 +348,9 @@ function calc(accelDataLeft, accelDataRight, gyroDataLeft, gyroDataRight) {
         velocity: getVelocity(gyroDataLeft, gyroDataRight),
         heading: getHeading(gyroDataLeft, gyroDataRight),
         trajectory: getTraj(velocity, displacement, gyroDataLeft, gyroDataRight),
-        timeStamp: recordingStartTime ? Date.now() - recordingStartTime : null,
+        timeStamp: timeManager.getRecordingStartTime() ? Date.now() - timeManager.getRecordingStartTime() : null,
     }
 }
-
-const IN_TO_M = 0.0254;
-const WHEEL_DIAM_IN = 24;
-const WHEEL_RADIUS_M = (WHEEL_DIAM_IN / 2) * IN_TO_M; // Convert to meters
-const DIST_WHEELS_IN = 26;
-const DIST_WHEELS_M = DIST_WHEELS_IN * IN_TO_M; // Convert to meters
-
-const DT = 0.05;
 
 function getDisplacement(gyroDataLeft, gyroDataRight) {
     // Calculate displacement from wheel rotation data
@@ -287,19 +362,6 @@ function getDisplacement(gyroDataLeft, gyroDataRight) {
     // Convert rotation rate to linear displacement
     // displacement = rotation rate * wheel radius * time delta
     return avgRotationRate * WHEEL_RADIUS_M * DT;
-}
-
-function getDistance(gyroDataLeft, gyroDataRight) {
-    // Calculate cumulative distance traveled
-    // Here we'll return the instantaneous distance increment
-    // The UI will need to accumulate these values
-
-    // Use absolute values to ensure distance always increases regardless of direction
-    const leftWheelDistance = Math.abs(gyroDataLeft[0]) * WHEEL_RADIUS_M * DT;
-    const rightWheelDistance = Math.abs(gyroDataRight[0]) * WHEEL_RADIUS_M * DT;
-
-    // Average of the two wheels gives us the distance traveled
-    return (leftWheelDistance + rightWheelDistance) / 2;
 }
 
 function getVelocity(gyroDataLeft, gyroDataRight) {
@@ -353,12 +415,12 @@ function getTraj(velocity, displacement, gyroDataLeft, gyroDataRight) {
 }
 
 function unsubscribeToCharacteristics(characteristic) {
+    console.log('Unsubscribed from notifications');
+
     characteristic.unsubscribe((error) => {
         if (error) {
             console.error('Unsubscribe error:', error);
-            return;
         }
-        console.log('Unsubscribed from notifications');
     });
 
     if (characteristic._dataCallback) {
@@ -366,8 +428,6 @@ function unsubscribeToCharacteristics(characteristic) {
         delete characteristic._dataCallback;
     }
 }
-
-
 
 module.exports = {
     setupDataHandlers

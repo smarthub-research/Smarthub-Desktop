@@ -11,7 +11,7 @@ export default function ConnectionStatus() {
             try {
                 const result = await window.electronAPI.getConnectedDevices();
                 setDevices(result);
-                if (result[0] !== null && result[1] !== null) {
+                if (result[0] && result[1]) {
                     setLoading(false);
                 }
             } catch (error) {
@@ -46,7 +46,7 @@ export default function ConnectionStatus() {
                                     <BsExclamationTriangleFill className="text-amber-500" />
                                 )}
                                 <span className="text-white">
-                                    {device || `Device ${index + 1} not found`}
+                                    {device ? device.name : `Device ${index + 1} not found`}
                                 </span>
                             </div>
                             <span className={`text-xs font-medium px-2 py-1 rounded-full ${

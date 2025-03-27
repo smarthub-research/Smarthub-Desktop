@@ -7,16 +7,28 @@ import {
     PointElement,
     Tooltip,
     Legend,
-    Title
+    Title,
 } from "chart.js";
-import React, { useMemo } from "react";
+import React, {useMemo, useState, useRef} from "react";
 import useFetchFlags from "../hooks/useFetchFlags";
+import ChartToolbar from "./chartToolbar";
 
-// Register required components
-ChartJS.register(LineElement, CategoryScale, LinearScale, PointElement, Tooltip, Legend, Title);
+// Register required components and plugins
+ChartJS.register(
+    LineElement,
+    CategoryScale,
+    LinearScale,
+    PointElement,
+    Tooltip,
+    Legend,
+    Title,
+);
 
 export default function DemoChart({ data, title, graphId }) {
     const [flags] = useFetchFlags({ graphId });
+    const [dataPointCount, setDataPointCount] = useState(50);
+    const [scrollPosition, setScrollPosition] = useState(0);
+    const chartRef = useRef(null);
 
     // Convert the sensor data into chart format
     const chartData = useMemo(() => {
@@ -26,19 +38,33 @@ export default function DemoChart({ data, title, graphId }) {
                 datasets: [{
                     label: "",
                     data: [],
-                    borderColor: "rgb(59, 130, 246)", // Updated blue color
+                    borderColor: "rgb(59, 130, 246)",
                     backgroundColor: "rgba(59, 130, 246, 0.5)",
                     tension: 0.3,
                 }]
             };
         }
 
+        let visibleData;
+        if (dataPointCount === 0) {
+            // Show all data
+            visibleData = data;
+        } else if (scrollPosition === 0) {
+            // Show most recent data points when scroll position is 0
+            visibleData = data.slice(0, dataPointCount);
+        } else {
+            // Calculate range based on scroll position
+            const endIndex = Math.max(0, data.length - scrollPosition);
+            const startIndex = Math.max(0, endIndex - dataPointCount);
+            visibleData = data.slice(startIndex, endIndex);
+        }
+
         // Get x-axis labels based on the chart title
         let labels = [];
         if (title === 'Trajectory') {
-            labels = data.map(item => item.trajectoryX);
+            labels = visibleData.map(item => item.trajectoryX.toFixed(2));
         } else {
-            labels = data.map(item => (item.timeStamp / 1000).toFixed(2));
+            labels = visibleData.map(item => (item.timeStamp / 1000).toFixed(2));
         }
 
         // Process data based on the chart title
@@ -46,16 +72,16 @@ export default function DemoChart({ data, title, graphId }) {
         let datasetLabel = "";
 
         if (title === 'Displacement vs Time') {
-            datapoints = data.map(item => item.displacement);
+            datapoints = visibleData.map(item => item.displacement);
             datasetLabel = "Displacement (m)";
         } else if (title === 'Heading vs Time') {
-            datapoints = data.map(item => item.heading);
+            datapoints = visibleData.map(item => item.heading);
             datasetLabel = "Heading (degrees)";
         } else if (title === 'Velocity vs Time') {
-            datapoints = data.map(item => item.velocity);
+            datapoints = visibleData.map(item => item.velocity);
             datasetLabel = "Velocity (m/s)";
         } else if (title === 'Trajectory') {
-            datapoints = data.map(item => item.trajectoryY);
+            datapoints = visibleData.map(item => item.trajectoryY);
             datasetLabel = "Y Trajectory (m)";
         }
 
@@ -79,7 +105,7 @@ export default function DemoChart({ data, title, graphId }) {
                 if (title === 'Trajectory') {
                     // For trajectory chart, find the data point closest to when the flag was created
                     if (flag.timeStamp !== undefined) {
-                        const closestTimeIndex = data.findIndex(item =>
+                        const closestTimeIndex = visibleData.findIndex(item =>
                             item.timeStamp && Math.abs(item.timeStamp - flag.timeStamp) < 100); // 100ms tolerance
 
                         if (closestTimeIndex >= 0) {
@@ -89,7 +115,7 @@ export default function DemoChart({ data, title, graphId }) {
                 } else {
                     // For time-based charts, match by timestamp
                     if (flag.timeStamp !== undefined) {
-                        const closestIndex = data.findIndex(item =>
+                        const closestIndex = visibleData.findIndex(item =>
                             item.timeStamp && Math.abs(item.timeStamp - flag.timeStamp) < 100); // 100ms tolerance
 
                         if (closestIndex >= 0) {
@@ -116,7 +142,7 @@ export default function DemoChart({ data, title, graphId }) {
             labels,
             datasets
         };
-    }, [data, title, flags]);
+    }, [data, title, flags, dataPointCount, scrollPosition]);
 
     function setTitle() {
         if (title === 'Displacement vs Time') {
@@ -183,7 +209,7 @@ export default function DemoChart({ data, title, graphId }) {
                 display: false,
             },
             title: {
-                display: true,
+                display: false,
                 text: title,
                 color: 'rgba(255, 255, 255, 1)',
                 font: {
@@ -271,14 +297,36 @@ export default function DemoChart({ data, title, graphId }) {
 
     return (
         <div className="w-[85vw] h-[38vh] p-6 bg-[#0a0a0a] rounded-xl border border-gray-800 shadow-lg transition-all duration-300 hover:shadow-xl hover:border-gray-700">
+            <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-semibold text-white">{title}</h3>
+                <ChartToolbar
+                    dataPointCount={dataPointCount}
+                    setDataPointCount={setDataPointCount}
+                    scrollPosition={scrollPosition}
+                    setScrollPosition={setScrollPosition}
+                    data={data}
+                    graphId={graphId}
+                />
+            </div>
+
             {data && data.length > 0 ? (
-                <Line data={chartData} options={options}/>
+                <div className="h-[85%]">
+                    <Line
+                        ref={chartRef}
+                        data={chartData}
+                        options={options}
+                    />
+                </div>
             ) : (
                 <div className="h-full flex flex-col justify-center items-center text-gray-500">
                     <p className="text-xl font-medium mb-2">{title}</p>
                     <p className="text-sm">Waiting for data...</p>
                 </div>
             )}
+
+            <div className="text-right text-xs text-gray-500">
+                {data?.length > 0 && `Showing ${dataPointCount === 0 ? 'all' : Math.min(dataPointCount, data.length)} of ${data.length} data points`}
+            </div>
         </div>
     );
 }

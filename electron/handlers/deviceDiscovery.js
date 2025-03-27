@@ -20,7 +20,7 @@ noble.on("discover", (peripheral) => {
 
     if (name) {
         BrowserWindow.getAllWindows().forEach((win) => {
-            win.webContents.send('new-device-found', [name, uuid]);
+            win.webContents.send('new-device-found', {name: name, UUID: uuid});
         });
     }
     connectionStore.addNearbyPeripheral(peripheral);
@@ -37,10 +37,22 @@ function setupDiscoveryHandlers() {
         const conn2 = connectionStore.getConnectionTwo();
 
         const devices = [];
-        if (conn1) devices.push(conn1.advertisement.localName);
-        if (conn2) devices.push(conn2.advertisement.localName);
 
-        console.log('connections', devices);
+        if (conn1) {
+            const nameOne = conn1.advertisement.localName;
+            const uuidOne = conn1.uuid;
+
+            devices.push({name: nameOne, UUID: uuidOne});
+        }
+
+        if (conn2) {
+            const nameTwo = conn2.advertisement.localName;
+            const uuidTwo = conn2.uuid;
+
+            devices.push({name: nameTwo, UUID: uuidTwo});
+        }
+
+        console.log('Devices fetched:', devices);
         return devices;
     });
 }

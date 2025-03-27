@@ -1,16 +1,20 @@
+'use client';
+
 import {useState, useRef, useEffect, use} from "react";
 import {BsFillSendFill, BsGraphUp, BsX} from "react-icons/bs";
 import useFetchFlags from "../hooks/useFetchFlags";
+import { useFlagging } from "../context/flaggingContext";
+
 
 export default function FlagConsole({setFlagging}) {
     const [comment, setComment] = useState("");
     const [selectedGraph, setSelectedGraph] = useState(null);
     const [flags, setFlags] = useFetchFlags();
-    const [width, setWidth] = useState(20);
     const [isDragging, setIsDragging] = useState(false);
     const [isVisible, setIsVisible] = useState(false);
     const dragHandleRef = useRef(null);
     const textareaRef = useRef(null);
+    const { width, setWidth } = useFlagging();
 
     // Animation on mount
     useEffect(() => {

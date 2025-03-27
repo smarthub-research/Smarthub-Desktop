@@ -6,22 +6,19 @@ import React, { useEffect, useState } from "react";
 import ControlPanel from "./controlPanel";
 import FlagConsole from "./flagConsole";
 import Link from "next/link";
+import { useFlagging } from "../context/flaggingContext";
 
 export default function NavbarRecording() {
     const pathname = usePathname();
     const [show, setShow] = useState(true);
     const [lastScrollY, setLastScrollY] = useState(0);
     const [recording, setRecording] = useState(pathname === "/recorder/");
-    const [flagging, setFlagging] = useState(false);
+    const { flagging, handleFlagging } = useFlagging();
     const [recordingState, setRecordingState] = useState({
         isRecording: false,
         startTime: null
     });
     const [recordingTime, setRecordingTime] = useState(0);
-
-    function handleFlagging() {
-        setFlagging(!flagging);
-    }
 
     useEffect(() => {
         setRecording(pathname === "/recorder");
@@ -39,6 +36,23 @@ export default function NavbarRecording() {
         };
     }, [lastScrollY]);
 
+    // Add timer effect for continuous updates
+    useEffect(() => {
+        let timerInterval;
+
+        if (recordingState.isRecording && recordingState.startTime) {
+            // Update the time every 100ms
+            timerInterval = setInterval(() => {
+                const elapsedTime = (Date.now() - recordingState.startTime) / 1000;
+                setRecordingTime(elapsedTime);
+            }, 100);
+        }
+
+        return () => {
+            if (timerInterval) clearInterval(timerInterval);
+        };
+    }, [recordingState.isRecording, recordingState.startTime]);
+
     function handleReturnHome() {
         window.electronAPI.resetDevices();
         redirect('/');
@@ -50,46 +64,42 @@ export default function NavbarRecording() {
         }
     }
 
+    // Define event handlers
+    const handleRestartRecording = (eventData) => {
+        console.log("Restart recording handler triggered", eventData);
+        setRecordingTime(0); // Reset time only on restart
+
+        if (eventData && eventData.startTime) {
+            setRecordingState({
+                isRecording: true,
+                startTime: eventData.startTime
+            });
+        }
+    };
+
+    const handleBeginReading = (eventData) => {
+        console.log("Begin reading handler triggered", eventData);
+        if (eventData && eventData.startTime) {
+            setRecordingState({
+                isRecording: true,
+                startTime: eventData.startTime
+            });
+        }
+    };
+
+    const handleStopReading = () => {
+        console.log("Stop reading handler triggered");
+        // Keep the final time when stopped
+        setRecordingState({
+            isRecording: false,
+            startTime: null
+        });
+        // No need to calculate final time here as it's continuously updated by the timer effect
+    };
+
     // Set up and clean up IPC listeners
     useEffect(() => {
         if (!window.electronAPI) return;
-
-        // Define event handlers
-        const handleRestartRecording = (eventData) => {
-            console.log("Restart recording handler triggered", eventData);
-            setRecordingTime(0); // Reset time only on restart
-
-            if (eventData && eventData.startTime) {
-                setRecordingState({
-                    isRecording: true,
-                    startTime: eventData.startTime
-                });
-            }
-        };
-
-        const handleBeginReading = (eventData) => {
-            console.log("Begin reading handler triggered", eventData);
-            if (eventData && eventData.startTime) {
-                setRecordingState({
-                    isRecording: true,
-                    startTime: eventData.startTime
-                });
-            }
-        };
-
-        const handleStopReading = () => {
-            console.log("Stop reading handler triggered");
-            // Calculate the final time before stopping
-            if (recordingState.isRecording && recordingState.startTime) {
-                const finalTime = (Date.now() - recordingState.startTime) / 1000;
-                setRecordingTime(finalTime);
-            }
-
-            setRecordingState({
-                isRecording: false,
-                startTime: null
-            });
-        };
 
         // Register event listeners and store the returned cleanup functions
         const restartListener = window.electronAPI.onRestartRecording(handleRestartRecording);
@@ -149,10 +159,6 @@ export default function NavbarRecording() {
                                 </div>
                             )}
                         </div>
-
-                        <Link href={"/reviewer/"} onClick={handleEndRecording} className="flex bg-[#0a0a0a] hover:bg-blue-600 text-white items-center justify-center h-full rounded-lg px-6 py-2 transition-colors">
-                            <p className="text-sm font-medium">Finish Test</p>
-                        </Link>
 
                     </div>
                 )}
