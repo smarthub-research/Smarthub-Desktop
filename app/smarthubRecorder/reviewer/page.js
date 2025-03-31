@@ -41,13 +41,7 @@ export default function Reviewer() {
         if (!window.electronAPI) return;
 
         try {
-            await window.electronAPI.downloadCSV({
-                testData,
-                testName,
-                testDistance: `${testDistance}${unitType}`,
-                comments,
-                flags: allFlags
-            });
+            await window.electronAPI.downloadCSV(testName);
         } catch (error) {
             console.error('Error downloading CSV:', error);
         }
@@ -57,8 +51,7 @@ export default function Reviewer() {
         if (!window.electronAPI) return;
 
         try {
-            await window.electronAPI.saveTestData({
-                testData,
+            await window.electronAPI.submitTestData({
                 testName,
                 testDistance: `${testDistance}${unitType}`,
                 comments,
@@ -322,7 +315,7 @@ export default function Reviewer() {
                             <div className="bg-[#252525] p-4 rounded-lg">
                                 <p className="text-gray-400 text-sm">Data Points</p>
                                 <p className="text-xl font-semibold">
-                                    {testData?.sensorData?.length || '--'}
+                                    {testData.displacement.length * 4 || '--'}
                                 </p>
                             </div>
                             <div className="bg-[#252525] p-4 rounded-lg">

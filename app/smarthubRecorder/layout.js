@@ -1,6 +1,7 @@
 import { Inter } from 'next/font/google'
-import './globals.css'
+import NavbarRecording from "./navbar/navbarRecording";
 import React from "react";
+import {FlaggingProvider} from "./context/flaggingContext";
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -11,10 +12,9 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
     return (
-        <html lang="en">
-            <body className={`${inter.className} overflow-x-hidden`}>
-                {children}
-            </body>
-        </html>
+        <FlaggingProvider>
+            <NavbarRecording/>
+            {children}
+        </FlaggingProvider>
     )
 }

@@ -196,12 +196,12 @@ export default function ReviewerChart({ data, title }) {
         },
         elements: {
             point: {
-                radius: 2,
+                radius: 0,
                 hoverRadius: 5,
-                borderWidth: 1
+                borderWidth: 0.5
             },
             line: {
-                borderWidth: 2
+                borderWidth: 1
             }
         }
     };

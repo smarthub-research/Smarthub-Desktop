@@ -4,13 +4,33 @@ const connectionStore = require('../services/connectionStore');
 const { noble } = require('./deviceDiscovery');
 const timeManager = require('../services/timeManager');
 const flagHandlers = require('./flagHandlers');
+const fs = require('fs');
+const { shell } = require('electron');
+const supabaseHandlers = require('./supabaseHandlers');
 
 let testData = null;
+let dataBuffer = [];
+let rawDataBuffer = [];
+
+const TARGET_POINTS = 10; // Target number of points to downsample
+const DOWNSAMPLE_TO = 3;   // Target number after downsampling
+
+// Constants for calculations
+const IN_TO_M = 0.0254;
+const WHEEL_DIAM_IN = 24;
+const WHEEL_RADIUS_M = (WHEEL_DIAM_IN / 2) * IN_TO_M; // Convert to meters
+const DIST_WHEELS_IN = 26;
+const DIST_WHEELS_M = DIST_WHEELS_IN * IN_TO_M; // Convert to meters
+const DT = 0.05;
 
 function setupDataHandlers() {
-    // Set up flag handlers with access to timeManager
     flagHandlers.setupFlagHandlers();
 
+    setupRecordingHandlers();
+    setupTestDataHandlers();
+}
+
+function setupRecordingHandlers() {
     ipcMain.handle('begin-reading-data', async () => {
         noble.stopScanning();
 
@@ -85,7 +105,6 @@ function setupDataHandlers() {
         return { success: true, startTime: timeManager.getRecordingStartTime() };
     });
 
-    // New handler to get the current recording state
     ipcMain.handle('get-recording-state', () => {
         console.log('Getting recording state...');
         return {
@@ -100,9 +119,11 @@ function setupDataHandlers() {
         console.log('Ending test...');
         BrowserWindow.getAllWindows().forEach((win) => {
             win.webContents.send('test-ended');
-        })
-    })
+        });
+    });
+}
 
+function setupTestDataHandlers() {
     ipcMain.handle('set-test-data', (event, data) => {
         // Format test data consistently
         testData = {
@@ -125,6 +146,16 @@ function setupDataHandlers() {
 
         console.log("Returning test data");
         return testData;
+    });
+
+    ipcMain.handle('download-csv', (event, args) => {
+        console.log('Downloading CSV file...');
+        const testName = args.testName || 'test_data';
+        downloadCsv(testName);
+    });
+
+    ipcMain.handle('submit-test-data', (event, metadata) => {
+        return supabaseHandlers.submitTestData(metadata, rawDataBuffer);
     });
 }
 
@@ -177,17 +208,6 @@ async function findCharacteristics(shouldRecord, peripheral) {
         });
     });
 }
-
-
-
-let dataBuffer = [];
-let rawDataBuffer = [];
-
-let leftData = null;
-let rightData = null;
-
-const TARGET_POINTS = 10; // Target number of points to downsample
-const DOWNSAMPLE_TO = 3;   // Target number after downsampling
 
 function subscribeToCharacteristics(characteristic, peripheral) {
     characteristic.subscribe((error) => {
@@ -332,15 +352,8 @@ function decodeSensorData(data, accelData, gyroData) {
     }
 }
 
-const IN_TO_M = 0.0254;
-const WHEEL_DIAM_IN = 24;
-const WHEEL_RADIUS_M = (WHEEL_DIAM_IN / 2) * IN_TO_M; // Convert to meters
-const DIST_WHEELS_IN = 26;
-const DIST_WHEELS_M = DIST_WHEELS_IN * IN_TO_M; // Convert to meters
-const DT = 0.05;
-
 function calc(accelDataLeft, accelDataRight, gyroDataLeft, gyroDataRight) {
-    const velocity = getVelocity(gyroDataLeft, gyroDataRight)
+    const velocity = getVelocity(gyroDataLeft, gyroDataRight);
     const displacement = getDisplacement(accelDataLeft, accelDataRight);
 
     return {
@@ -353,21 +366,14 @@ function calc(accelDataLeft, accelDataRight, gyroDataLeft, gyroDataRight) {
 }
 
 function getDisplacement(gyroDataLeft, gyroDataRight) {
-    // Calculate displacement from wheel rotation data
-    // Gyro data represents rotation rate, so we need to integrate to get displacement
-
     // Average rotation rate between left and right wheels (rad/s)
     const avgRotationRate = (gyroDataLeft[0] + gyroDataRight[0]) / 2;
 
     // Convert rotation rate to linear displacement
-    // displacement = rotation rate * wheel radius * time delta
     return avgRotationRate * WHEEL_RADIUS_M * DT;
 }
 
 function getVelocity(gyroDataLeft, gyroDataRight) {
-    // Calculate velocity directly from rotation rate
-    // velocity = rotation rate * wheel radius
-
     // Average the left and right wheel rotation rates
     const avgRotationRate = (gyroDataLeft[0] + gyroDataRight[0]) / 2;
 
@@ -376,14 +382,10 @@ function getVelocity(gyroDataLeft, gyroDataRight) {
 }
 
 function getHeading(gyroDataLeft, gyroDataRight) {
-    // Calculate heading change from differential wheel rotation
-    // Positive heading indicates turning right, negative indicates turning left
-
     // Calculate difference in wheel rotation rates
     const rotationDifference = gyroDataRight[0] - gyroDataLeft[0];
 
     // Convert rotation difference to angular velocity (rad/s)
-    // Angular velocity = (right wheel rate - left wheel rate) * wheel radius / wheel base width
     const angularVelocity = rotationDifference * WHEEL_RADIUS_M / DIST_WHEELS_M;
 
     // Angular change in this time step (in radians)
@@ -394,9 +396,6 @@ function getHeading(gyroDataLeft, gyroDataRight) {
 }
 
 function getTraj(velocity, displacement, gyroDataLeft, gyroDataRight) {
-    // Calculate trajectory coordinates (x, y) based on velocity and heading
-    // This function should return an object with x and y properties
-
     // Calculate heading change for this time step
     const headingChange = getHeading(gyroDataLeft, gyroDataRight);
 
@@ -404,7 +403,6 @@ function getTraj(velocity, displacement, gyroDataLeft, gyroDataRight) {
     const headingRad = headingChange * (Math.PI / 180);
 
     // Calculate x and y components of motion
-    // For small time steps, we can approximate the trajectory as straight lines
     const x = velocity * Math.cos(headingRad) * DT;
     const y = velocity * Math.sin(headingRad) * DT;
 
@@ -427,6 +425,23 @@ function unsubscribeToCharacteristics(characteristic) {
         characteristic.off('data', characteristic._dataCallback);
         delete characteristic._dataCallback;
     }
+}
+
+function downloadCsv(testName) {
+    console.log('Downloading CSV file...');
+
+    const csvString = 'Time (sec),Displacement (m),Velocity (m/s),Heading,Trajectory X,Trajectory Y\n' + rawDataBuffer.map(row =>
+        `${row.timeStamp / 1000},${row.displacement},${row.velocity},${row.heading},${row.trajectory.x},${row.trajectory.y}`).join('\n');
+
+    const filePath = `${testName}.csv`;
+    fs.writeFile(`${testName}.csv`, csvString, (err) => {
+        if (err) {
+            console.error('Error writing CSV file:', err);
+            return;
+        }
+        console.log('CSV file saved successfully');
+        shell.openPath(filePath);
+    });
 }
 
 module.exports = {

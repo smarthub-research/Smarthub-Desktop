@@ -1,12 +1,12 @@
 'use client'
 
 import ConnectionStatus from "./connectionStatus";
-import {redirect, usePathname} from "next/navigation";
+import {usePathname} from "next/navigation";
 import React, { useEffect, useState } from "react";
 import ControlPanel from "./controlPanel";
 import FlagConsole from "./flagConsole";
-import Link from "next/link";
 import { useFlagging } from "../context/flaggingContext";
+import Link from "next/link";
 
 export default function NavbarRecording() {
     const pathname = usePathname();
@@ -25,7 +25,7 @@ export default function NavbarRecording() {
     }, [pathname]);
 
     useEffect(() => {
-        const handleScroll = () => {
+        const handleScroll = () => {``
             setShow(window.scrollY <= lastScrollY);
             setLastScrollY(window.scrollY);
         };
@@ -124,13 +124,13 @@ export default function NavbarRecording() {
 
     return (
         <>
-            <div className={`sticky flex flex-row-reverse top-0 z-5 w-[100%] h-[10vh]
+            <div className={`sticky flex flex-row-reverse top-0 z-5 w-[100vw] h-[10vh]
             ${show ? "opacity-100" : "opacity-0"} transition`}>
 
-                <div className={`p-2 text-right ${flagging && ('opacity-0')} transition`}>
+                <Link href={"/"} className={`p-2 text-right ${flagging && ('opacity-0')} transition`}>
                     <p className="font-bold text-[3vw] tracking-[0.3rem] leading-tight cursor-pointer">SMARTHUB</p>
                     <p className="text-[2vw] tracking-[0.5rem] leading-[1.2rem] pb-4 cursor-pointer">RECORDER</p>
-                </div>
+                </Link>
 
                 {recording && (
                     <div className="flex flex-row grow gap-6 justify-center p-4 items-center ">

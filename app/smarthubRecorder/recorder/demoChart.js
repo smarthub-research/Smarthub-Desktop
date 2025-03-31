@@ -330,7 +330,7 @@ export default function DemoChart({ data, title, graphId }) {
             )}
 
             <div className="text-right text-xs text-gray-500">
-                {data?.length > 0 && `Showing ${dataPointCount === 0 ? 'all' : Math.min(dataPointCount, data.length)} of ${data.length} data points`}
+                {data?.length > 0 && `Showing ${dataPointCount === 0 ? 'all' : Math.min(dataPointCount, data.length)} of ${title === 'Trajectory' ? data.length / 2 : data.length} data points`}
             </div>
         </div>
     );
