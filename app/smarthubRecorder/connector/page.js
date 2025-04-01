@@ -115,7 +115,7 @@ export default function Connector() {
             {/* Continue Button */}
             <div className="flex justify-center mt-8 md:mt-10">
                 <Link
-                    href="/recorder/"
+                    href="/smarthubRecorder/recorder/"
                     className={` hover:bg-blue-500 px-6 py-3 rounded-lg font-medium transition-all duration-200
                     ${(deviceOne && deviceTwo) ? 'bg-blue-600 opacity-100 cursor-pointer' :
                         'bg-gray-600 opacity-50 pointer-events-none'}`}>

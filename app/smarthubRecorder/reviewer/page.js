@@ -117,7 +117,7 @@ export default function Reviewer() {
             <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center">
                     <button
-                        onClick={() => router.push('/recorder/')}
+                        onClick={() => router.push('/smarthubRecorder/recorder/')}
                         className="mr-4 p-2 rounded-full hover:bg-gray-800 transition-colors"
                     >
                         <FiArrowLeft size={20} />

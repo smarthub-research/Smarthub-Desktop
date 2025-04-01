@@ -101,7 +101,7 @@ export default function Recorder() {
                 <div className="flex grow justify-around">
                     <div className="flex items-center">
                         <Link
-                            href={'/connector/'}
+                            href={'/smarthubRecorder/connector/'}
                             className="mr-4 p-2 rounded-full hover:bg-gray-800 transition-colors"
                         >
                             <FiArrowLeft size={20}/>
@@ -110,7 +110,7 @@ export default function Recorder() {
                     </div>
 
                     <div className="flex gap-3">
-                        <Link href={"/reviewer/"}
+                        <Link href={"/smarthubRecorder/reviewer/"}
                               onClick={handleEndRecording}
                               className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
                         >

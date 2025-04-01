@@ -21,7 +21,7 @@ export default function NavbarRecording() {
     const [recordingTime, setRecordingTime] = useState(0);
 
     useEffect(() => {
-        setRecording(pathname === "/recorder");
+        setRecording(pathname === "/smarthubRecorder/recorder");
     }, [pathname]);
 
     useEffect(() => {
