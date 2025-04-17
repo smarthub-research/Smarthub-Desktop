@@ -9,9 +9,11 @@ const { shell } = require('electron');
 const supabaseHandlers = require('./supabaseHandlers');
 
 let testData = null;
-let dataBuffer = [];
-let rawDataBuffer = [];
+let reviewData = null;
+let dataBuffer = initializeBuffer();
+let rawDataBuffer = initializeBuffer();
 
+// Constants for downsampling
 const TARGET_POINTS = 10; // Target number of points to downsample
 const DOWNSAMPLE_TO = 3;   // Target number after downsampling
 
@@ -21,7 +23,9 @@ const WHEEL_DIAM_IN = 24;
 const WHEEL_RADIUS_M = (WHEEL_DIAM_IN / 2) * IN_TO_M; // Convert to meters
 const DIST_WHEELS_IN = 26;
 const DIST_WHEELS_M = DIST_WHEELS_IN * IN_TO_M; // Convert to meters
-const DT = 0.05;
+const DT = 0.058;
+
+let displacement = 0;
 
 function setupDataHandlers() {
     flagHandlers.setupFlagHandlers();
@@ -93,6 +97,7 @@ function setupRecordingHandlers() {
 
     ipcMain.handle('restart-recording', async () => {
         timeManager.setRecordingStartTime(timeManager.isRecording() ? Date.now() : null);
+        displacement = 0;
         timeManager.setPausedElapsedTime(0);
         timeManager.setIsPaused(false);
         flagHandlers.clearFlags();
@@ -125,16 +130,35 @@ function setupRecordingHandlers() {
 
 function setupTestDataHandlers() {
     ipcMain.handle('set-test-data', (event, data) => {
-        // Format test data consistently
+        let dataValues;
+        if (!data) {
+            dataValues = rawDataBuffer;
+        } else {
+            dataValues = data;
+        }
+        console.log("setting test data");
+
         testData = {
-            displacement: data.displacement || [],
-            velocity: data.velocity || [],
-            heading: data.heading || [],
-            trajectory: data.trajectory || [],
-            duration: calculateDuration(data),
-            maxVelocity: calculateMaxVelocity(data.velocity || []),
-            avgHeading: calculateAvgHeading(data.heading || [])
+            gyro_left: dataValues.gyro_left || [],
+            gyro_right: dataValues.gyro_right || [],
+            accel_left: dataValues.accel_left || [],
+            accel_right: dataValues.accel_right || [],
+            displacement: dataValues.displacement || [],
+            velocity: dataValues.velocity || [],
+            heading: dataValues.heading || [],
+            trajectory_x: dataValues.trajectory_x || [],
+            trajectory_y: dataValues.trajectory_y || [],
+            timeStamp: dataValues.timeStamp || [],
+            duration: calculateDuration(dataValues),
+            maxVelocity: calculateMaxVelocity(dataValues.velocity || []),
+            avgHeading: calculateAvgHeading(dataValues.heading || [])
         };
+
+        console.log(testData)
+
+        // Clear the data buffers
+        dataBuffer = initializeBuffer();
+        rawDataBuffer = initializeBuffer();
         return { success: true };
     });
 
@@ -148,6 +172,20 @@ function setupTestDataHandlers() {
         return testData;
     });
 
+    ipcMain.handle('set-review-data', (event, data) => {
+        reviewData = data;
+    })
+
+    ipcMain.handle('get-review-data', () => {
+        if (!reviewData) {
+            console.log("No review data available");
+            return null;
+        }
+
+        console.log("Returning review data");
+        return reviewData;
+    })
+
     ipcMain.handle('download-csv', (event, args) => {
         console.log('Downloading CSV file...');
         const testName = args.testName || 'test_data';
@@ -157,6 +195,14 @@ function setupTestDataHandlers() {
     ipcMain.handle('submit-test-data', (event, metadata) => {
         return supabaseHandlers.submitTestData(metadata, rawDataBuffer);
     });
+
+    ipcMain.handle('fetch-test-files', async () => {
+        return await supabaseHandlers.fetchTestFiles();
+    })
+
+    ipcMain.handle('update-test-name', async (event, id, testName) => {
+        return await supabaseHandlers.updateTestName(id, testName);
+    })
 }
 
 function calculateDuration(data) {
@@ -226,11 +272,11 @@ function subscribeToCharacteristics(characteristic, peripheral) {
         decodeSensorData(data, accelDataRight, gyroDataRight);
 
         const jsonData = calc(accelDataLeft, accelDataRight, gyroDataLeft, gyroDataRight);
-        dataBuffer.push(jsonData);
-        rawDataBuffer.push(jsonData);
+        appendToBuffer(dataBuffer, jsonData);
+        appendToBuffer(rawDataBuffer, jsonData);
 
         // When we have enough data points, downsample and send to frontend
-        if (dataBuffer.length >= TARGET_POINTS) {
+        if (dataBuffer.timeStamp.length >= TARGET_POINTS) {
             const downSampledData = downsampleData(dataBuffer, DOWNSAMPLE_TO);
             // Send downsampled data to frontend
             BrowserWindow.getAllWindows().forEach((win) => {
@@ -238,44 +284,121 @@ function subscribeToCharacteristics(characteristic, peripheral) {
             });
 
             // Reset buffer after sending
-            dataBuffer = [];
+            dataBuffer = initializeBuffer();
         }
     }
 
     characteristic.on('data', characteristic._dataCallback);
 }
 
-function downsampleData(data, targetPoints) {
-    if (data.length <= targetPoints) {
-        return data; // Not enough data to downsample
-    }
+function initializeBuffer() {
+   return {
+            gyro_left: [],
+            gyro_right: [],
+            accel_left: [],
+            accel_right: [],
+         displacement: [],
+         velocity: [],
+         heading: [],
+         trajectory_x: [],
+         trajectory_y: [],
+         timeStamp: []
+   }
+}
 
-    // For 10 points to 3 points using LTTB:
-    // 1. Always include first and last points
-    // 2. Select one point from the middle that creates largest triangle
+/**
+ * Append data to given buffer that follows the format:
+ * {
+ *     gyro_left: [],
+ *     gyro_right: [],
+ *     displacement: [],
+ *     velocity: [],
+ *     heading: [],
+ *     trajectory_x: [],
+ *     trajectory_y: [],
+ *     timeStamp: []
+ * }
+ */
+function appendToBuffer(buffer, data) {
+    buffer.gyro_left.push(data.gyro_left)
+    buffer.gyro_right.push(data.gyro_right)
+    buffer.accel_left.push(data.accel_left)
+    buffer.accel_right.push(data.accel_right)
+    buffer.displacement.push(data.displacement)
+    buffer.velocity.push(data.velocity)
+    buffer.heading.push(data.heading)
+    buffer.trajectory_x.push(data.trajectory_x)
+    buffer.trajectory_y.push(data.trajectory_y)
+    buffer.timeStamp.push(data.timeStamp)
+}
+
+
+/**
+ * Downsample data using Largest Triangle Three Buckets (LTTB) algorithm.
+ * Works with a buffer object that has arrays of values.
+ *
+ * @param {Object} buffer - Buffer containing arrays of data values
+ * @param {number} targetPoints - Target number of points after downsampling
+ * @returns {Array} - Array of downsampled data points
+ */
+function downsampleData(buffer, targetPoints) {
+    const dataLength = buffer.timeStamp.length;
+    if (dataLength <= targetPoints) {
+        // Not enough data to downsample, return data as is but in proper format
+        const result = [];
+        for (let i = 0; i < dataLength; i++) {
+            result.push({
+                gyro_left: buffer.gyro_left[i],
+                gyro_right: buffer.gyro_right[i],
+                accel_left: buffer.accel_left[i],
+                accel_right: buffer.accel_right[i],
+                displacement: buffer.displacement[i],
+                velocity: buffer.velocity[i],
+                heading: buffer.heading[i],
+                trajectory_x: buffer.trajectory_x[i],
+                trajectory_y: buffer.trajectory_y[i],
+                timeStamp: buffer.timeStamp[i]
+            });
+        }
+        return result;
+    }
 
     // When specifically downsampling to 3 points:
     if (targetPoints === 3) {
         // First point is always included
-        const result = [data[0]];
+        const result = [{
+            gyro_left: buffer.gyro_left[0],
+            gyro_right: buffer.gyro_right[0],
+            accel_left: buffer.accel_left[0],
+            accel_right: buffer.accel_right[0],
+            displacement: buffer.displacement[0],
+            velocity: buffer.velocity[0],
+            heading: buffer.heading[0],
+            trajectory_x: buffer.trajectory_x[0],
+            trajectory_y: buffer.trajectory_y[0],
+            timeStamp: buffer.timeStamp[0]
+        }];
 
         // Find the point in the middle that creates the largest triangle with first and last points
-        const firstPoint = data[0];
-        const lastPoint = data[data.length - 1];
+        const firstTimeStamp = buffer.timeStamp[0];
+        const lastTimeStamp = buffer.timeStamp[dataLength - 1];
+        const firstDisplacement = buffer.displacement[0];
+        const lastDisplacement = buffer.displacement[dataLength - 1];
 
         let maxArea = -1;
         let maxAreaIndex = 1;
 
         // Check all points between first and last
-        for (let i = 1; i < data.length - 1; i++) {
-            const currentPoint = data[i];
+        for (let i = 1; i < dataLength - 1; i++) {
+            const currentTimeStamp = buffer.timeStamp[i];
+            const currentDisplacement = buffer.displacement[i];
 
             // Calculate triangle area using cross product
             const area = Math.abs(
-                (firstPoint.timeStamp - lastPoint.timeStamp) *
-                (currentPoint.displacement - firstPoint.displacement) -
-                (firstPoint.timeStamp - currentPoint.timeStamp) *
-                (lastPoint.displacement - firstPoint.displacement)
+                (firstTimeStamp - lastTimeStamp) *
+                (currentDisplacement - firstDisplacement) -
+                (firstTimeStamp - currentTimeStamp) *
+                (lastDisplacement - firstDisplacement)
             );
 
             if (area > maxArea) {
@@ -285,46 +408,110 @@ function downsampleData(data, targetPoints) {
         }
 
         // Add the point that creates largest triangle
-        result.push(data[maxAreaIndex]);
+        result.push({
+            gyro_left: buffer.gyro_left[maxAreaIndex],
+            gyro_right: buffer.gyro_right[maxAreaIndex],
+            accel_left: buffer.accel_left[maxAreaIndex],
+            accel_right: buffer.accel_right[maxAreaIndex],
+            displacement: buffer.displacement[maxAreaIndex],
+            velocity: buffer.velocity[maxAreaIndex],
+            heading: buffer.heading[maxAreaIndex],
+            trajectory_x: buffer.trajectory_x[maxAreaIndex],
+            trajectory_y: buffer.trajectory_y[maxAreaIndex],
+            timeStamp: buffer.timeStamp[maxAreaIndex]
+        });
 
         // Add the last point
-        result.push(data[data.length - 1]);
+        result.push({
+            gyro_left: buffer.gyro_left[dataLength - 1],
+            gyro_right: buffer.gyro_right[dataLength - 1],
+            accel_left: buffer.accel_left[dataLength - 1],
+            accel_right: buffer.accel_right[dataLength - 1],
+            displacement: buffer.displacement[dataLength - 1],
+            velocity: buffer.velocity[dataLength - 1],
+            heading: buffer.heading[dataLength - 1],
+            trajectory_x: buffer.trajectory_x[dataLength - 1],
+            trajectory_y: buffer.trajectory_y[dataLength - 1],
+            timeStamp: buffer.timeStamp[dataLength - 1]
+        });
 
         return result;
     }
 
     // For other target sizes, use the general LTTB algorithm
-    const sampled = [data[0]];
-    const bucketSize = data.length / (targetPoints - 2);
+    const sampled = [{
+        gyro_left: buffer.gyro_left[0],
+        gyro_right: buffer.gyro_right[0],
+        accel_left: buffer.accel_left[0],
+        accel_right: buffer.accel_right[0],
+        displacement: buffer.displacement[0],
+        velocity: buffer.velocity[0],
+        heading: buffer.heading[0],
+        trajectory_x: buffer.trajectory_x[0],
+        trajectory_y: buffer.trajectory_y[0],
+        timeStamp: buffer.timeStamp[0]
+    }];
+
+    const bucketSize = dataLength / (targetPoints - 2);
 
     for (let i = 0; i < targetPoints - 2; i++) {
         const startIdx = Math.floor((i) * bucketSize) + 1;
         const endIdx = Math.floor((i + 1) * bucketSize) + 1;
         const lastPoint = sampled[sampled.length - 1];
-        const nextBucketIndex = Math.min(Math.floor((i + 2) * bucketSize) + 1, data.length - 1);
-        const nextPoint = data[nextBucketIndex];
-        const maxAreaIndex = getMaxAreaIndex(data, startIdx, endIdx, lastPoint, nextPoint);
-        sampled.push(data[maxAreaIndex]);
+        const nextBucketIndex = Math.min(Math.floor((i + 2) * bucketSize) + 1, dataLength - 1);
+
+        const nextPoint = {
+            displacement: buffer.displacement[nextBucketIndex],
+            timeStamp: buffer.timeStamp[nextBucketIndex]
+        };
+
+        const maxAreaIndex = getMaxAreaIndex(buffer, startIdx, endIdx, lastPoint, nextPoint);
+
+        sampled.push({
+            gyro_left: buffer.gyro_left[maxAreaIndex],
+            gyro_right: buffer.gyro_right[maxAreaIndex],
+            accel_left: buffer.accel_left[maxAreaIndex],
+            accel_right: buffer.accel_right[maxAreaIndex],
+            displacement: buffer.displacement[maxAreaIndex],
+            velocity: buffer.velocity[maxAreaIndex],
+            heading: buffer.heading[maxAreaIndex],
+            trajectory_x: buffer.trajectory_x[maxAreaIndex],
+            trajectory_y: buffer.trajectory_y[maxAreaIndex],
+            timeStamp: buffer.timeStamp[maxAreaIndex]
+        });
     }
 
-    if (data.length > 1) {
-        sampled.push(data[data.length - 1]);
+    if (dataLength > 1) {
+        sampled.push({
+            gyro_left: buffer.gyro_left[dataLength - 1],
+            gyro_right: buffer.gyro_right[dataLength - 1],
+            accel_left: buffer.accel_left[dataLength - 1],
+            accel_right: buffer.accel_right[dataLength - 1],
+            displacement: buffer.displacement[dataLength - 1],
+            velocity: buffer.velocity[dataLength - 1],
+            heading: buffer.heading[dataLength - 1],
+            trajectory_x: buffer.trajectory_x[dataLength - 1],
+            trajectory_y: buffer.trajectory_y[dataLength - 1],
+            timeStamp: buffer.timeStamp[dataLength - 1]
+        });
     }
 
     return sampled;
 }
 
-function getMaxAreaIndex(data, startIdx, endIdx, lastPoint, nextPoint) {
+function getMaxAreaIndex(buffer, startIdx, endIdx, lastPoint, nextPoint) {
     let maxArea = -1;
     let maxAreaIndex = startIdx;
 
     for (let j = startIdx; j < endIdx; j++) {
         // Calculate triangle area using cross product
-        const currentPoint = data[j];
+        const currentTimeStamp = buffer.timeStamp[j];
+        const currentDisplacement = buffer.displacement[j];
+
         const area = Math.abs(
             (lastPoint.timeStamp - nextPoint.timeStamp) *
-            (currentPoint.displacement - lastPoint.displacement) -
-            (lastPoint.timeStamp - currentPoint.timeStamp) *
+            (currentDisplacement - lastPoint.displacement) -
+            (lastPoint.timeStamp - currentTimeStamp) *
             (nextPoint.displacement - lastPoint.displacement)
         );
 
@@ -352,32 +539,34 @@ function decodeSensorData(data, accelData, gyroData) {
     }
 }
 
+
 function calc(accelDataLeft, accelDataRight, gyroDataLeft, gyroDataRight) {
     const velocity = getVelocity(gyroDataLeft, gyroDataRight);
-    const displacement = getDisplacement(accelDataLeft, accelDataRight);
+    displacement = getDisplacement(accelDataLeft, accelDataRight, velocity);
+    const trajectory_y = getTraj(velocity, displacement, gyroDataLeft, gyroDataRight).y;
+    const trajectory_x = getTraj(velocity, displacement, gyroDataLeft, gyroDataRight).x;
 
     return {
-        displacement: getDisplacement(gyroDataLeft, gyroDataRight),
-        velocity: getVelocity(gyroDataLeft, gyroDataRight),
+        gyro_left: gyroDataLeft,
+        gyro_right: gyroDataRight,
+        accel_left: accelDataLeft,
+        accel_right: accelDataRight,
+        displacement: displacement,
+        velocity: velocity,
         heading: getHeading(gyroDataLeft, gyroDataRight),
-        trajectory: getTraj(velocity, displacement, gyroDataLeft, gyroDataRight),
+        trajectory_y: trajectory_y,
+        trajectory_x: trajectory_x,
         timeStamp: timeManager.getRecordingStartTime() ? Date.now() - timeManager.getRecordingStartTime() : null,
     }
 }
 
-function getDisplacement(gyroDataLeft, gyroDataRight) {
-    // Average rotation rate between left and right wheels (rad/s)
-    const avgRotationRate = (gyroDataLeft[0] + gyroDataRight[0]) / 2;
-
-    // Convert rotation rate to linear displacement
-    return avgRotationRate * WHEEL_RADIUS_M * DT;
+function getDisplacement(accelDataLeft, accelDataRight, velocity) {
+    displacement += velocity * DT;
+    return displacement;
 }
 
 function getVelocity(gyroDataLeft, gyroDataRight) {
-    // Average the left and right wheel rotation rates
     const avgRotationRate = (gyroDataLeft[0] + gyroDataRight[0]) / 2;
-
-    // Convert rotation rate to linear velocity
     return avgRotationRate * WHEEL_RADIUS_M;
 }
 
@@ -413,8 +602,6 @@ function getTraj(velocity, displacement, gyroDataLeft, gyroDataRight) {
 }
 
 function unsubscribeToCharacteristics(characteristic) {
-    console.log('Unsubscribed from notifications');
-
     characteristic.unsubscribe((error) => {
         if (error) {
             console.error('Unsubscribe error:', error);
@@ -430,11 +617,48 @@ function unsubscribeToCharacteristics(characteristic) {
 function downloadCsv(testName) {
     console.log('Downloading CSV file...');
 
-    const csvString = 'Time (sec),Displacement (m),Velocity (m/s),Heading,Trajectory X,Trajectory Y\n' + rawDataBuffer.map(row =>
-        `${row.timeStamp / 1000},${row.displacement},${row.velocity},${row.heading},${row.trajectory.x},${row.trajectory.y}`).join('\n');
+    // Create CSV header
+    let csvString = 'Time (sec),Displacement (m),Velocity (m/s),Heading,Trajectory X,Trajectory Y,';
+
+    // Add headers for each component of arrays
+    csvString += 'Gyro_Left_1,Gyro_Left_2,Gyro_Left_3,Gyro_Left_4,';
+    csvString += 'Gyro_Right_1,Gyro_Right_2,Gyro_Right_3,Gyro_Right_4,';
+    csvString += 'Accel_Left_1,Accel_Left_2,Accel_Left_3,Accel_Left_4,';
+    csvString += 'Accel_Right_1,Accel_Right_2,Accel_Right_3,Accel_Right_4\n';
+
+    // Add data rows
+    testData.timeStamp.forEach((time, i) => {
+        let row = `${time / 1000},${testData.displacement[i]?.displacement || testData.displacement[i]},`;
+        row += `${testData.velocity[i]?.velocity || testData.velocity[i]},`;
+        row += `${testData.heading[i]?.heading || testData.heading[i]},`;
+        row += `${testData.trajectory_x[i]},${testData.trajectory_y[i]},`;
+
+        // Add each value from the arrays individually
+        const gyroLeft = testData.gyro_left[i] || [0,0,0,0];
+        for (let j = 0; j < 4; j++) {
+            row += `${gyroLeft[j] || 0},`;
+        }
+
+        const gyroRight = testData.gyro_right[i] || [0,0,0,0];
+        for (let j = 0; j < 4; j++) {
+            row += `${gyroRight[j] || 0},`;
+        }
+
+        const accelLeft = testData.accel_left[i] || [0,0,0,0];
+        for (let j = 0; j < 4; j++) {
+            row += `${accelLeft[j] || 0},`;
+        }
+
+        const accelRight = testData.accel_right[i] || [0,0,0,0];
+        for (let j = 0; j < 4; j++) {
+            row += `${accelRight[j] || 0}${j < 3 ? ',' : ''}`;
+        }
+
+        csvString += row + '\n';
+    });
 
     const filePath = `${testName}.csv`;
-    fs.writeFile(`${testName}.csv`, csvString, (err) => {
+    fs.writeFile(filePath, csvString, (err) => {
         if (err) {
             console.error('Error writing CSV file:', err);
             return;

@@ -61,7 +61,6 @@ async function handleConnection(device) {
         });
 
         await devicePeripheral.connectAsync();
-
         if (connectionStore.getConnectionTwo()) {
             console.log('connected to device two');
             connectionStore.setConnectionOne(devicePeripheral);

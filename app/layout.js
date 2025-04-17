@@ -1,8 +1,11 @@
-import { Inter } from 'next/font/google'
 import './globals.css'
 import React from "react";
+import { Montserrat } from 'next/font/google'
 
-const inter = Inter({ subsets: ['latin'] })
+const montserrat = Montserrat({
+    subsets: ['latin'],
+    weight: ['400', '500', '700']
+})
 
 export const metadata = {
     title: 'SmartHub Recorder',
@@ -12,7 +15,7 @@ export const metadata = {
 export default function RootLayout({ children }) {
     return (
         <html lang="en">
-            <body className={`${inter.className} overflow-x-hidden`}>
+            <body className={`${montserrat.className} overflow-x-hidden font-mono`}>
                 {children}
             </body>
         </html>

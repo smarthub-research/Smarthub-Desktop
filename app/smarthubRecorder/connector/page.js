@@ -51,9 +51,9 @@ export default function Connector() {
 
             <div className="flex flex-col w-full max-w-5xl mx-auto gap-6 md:gap-8 lg:gap-10">
                 {/* Connected Devices Section */}
-                <div className="w-full">
-                    <p className="text-lg md:text-xl font-bold mb-3">Connected Devices</p>
-                    <div className="bg-[#0a0a0a] p-3 md:p-4 rounded-lg w-full drop-shadow-md">
+                <div className="w-full ">
+                    <p className="text-lg md:text-xl font-bold mb-3">Connected</p>
+                    <div className="flex flex-col bg-[#0a0a0a] p-3 md:p-4 rounded-lg w-full drop-shadow-md h-[15vh] grow justify-center">
                         <div>
                             {deviceOne ? (
                                 <Device
@@ -82,7 +82,7 @@ export default function Connector() {
 
                 {/* Nearby Devices Section */}
                 <div className="w-full flex-grow">
-                    <p className="text-lg md:text-xl font-bold mb-3">Nearby Devices</p>
+                    <p className="text-lg md:text-xl font-bold mb-3">Nearby</p>
                     <div className="bg-[#0a0a0a] p-3 md:p-4 rounded-lg w-full h-[35vh] md:h-[40vh] overflow-y-auto
                     drop-shadow-md">
                         {devices.length === 0 ? (

@@ -124,7 +124,7 @@ export default function NavbarRecording() {
 
     return (
         <>
-            <div className={`sticky flex flex-row-reverse top-0 z-5 w-[100vw] h-[10vh]
+            <div className={`sticky flex flex-row-reverse top-0 z-5 w-[100vw] h-[10vh] bg-gradient-to-b from-[#171717] to-transparent from-5% to-75%
             ${show ? "opacity-100" : "opacity-0"} transition`}>
 
                 <Link href={"/"} className={`p-2 text-right ${flagging && ('opacity-0')} transition`}>
@@ -137,7 +137,7 @@ export default function NavbarRecording() {
                         <ConnectionStatus/>
                         <ControlPanel setFlagging={handleFlagging} flagging={flagging}/>
 
-                        <div className="flex bg-[#0a0a0a] items-center justify-center h-full rounded-lg px-6 py-2 ">
+                        <div className="flex  items-center justify-center h-full rounded-lg px-6 py-2 ">
                             {recordingState.isRecording ? (
                                 <div className="flex items-center">
                                     <span className="h-2 w-2 rounded-full bg-red-500 animate-pulse mr-2"></span>

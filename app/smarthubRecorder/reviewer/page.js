@@ -3,7 +3,8 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import useFetchFlags from '../hooks/useFetchFlags';
 import { FiDownload, FiSave, FiArrowLeft, FiFileText } from 'react-icons/fi';
-import ReviewerChart from "./reviewerChart";
+import DemoChart from "../recorder/demoChart";
+import Link from "next/link";
 
 export default function Reviewer() {
     const router = useRouter();
@@ -47,19 +48,32 @@ export default function Reviewer() {
         }
     };
 
+    const [formErrors, setFormErrors] = useState({
+        testName: false
+    });
     const handleSaveTest = async () => {
         if (!window.electronAPI) return;
 
+        setFormErrors({testName: false})
+        // Validate required fields
+        if (!testName.trim()) {
+            setFormErrors(prev => ({...prev, testName: true}));
+            alert('Please enter a test name before saving');
+            return;
+        }
+
         try {
             await window.electronAPI.submitTestData({
-                testName,
-                testDistance: `${testDistance}${unitType}`,
-                comments,
+                data: testData,
+                name: testName,
+                distance: `${testDistance}${unitType}`,
+                comments: comments,
                 flags: allFlags
             });
 
             // Show success notification
             alert('Test saved successfully');
+            router.push('/')
         } catch (error) {
             console.error('Error saving test:', error);
             alert('Failed to save test');
@@ -72,29 +86,33 @@ export default function Reviewer() {
         return (
             <>
                 {activeChartTab === 'displacement' && (
-                    <ReviewerChart
+                    <DemoChart
+                        timeStamps={testData.timeStamp}
                         data={testData.displacement}
                         title="Displacement vs Time"
                         graphId={1}
                     />
                 )}
                 {activeChartTab === 'heading' && (
-                    <ReviewerChart
+                    <DemoChart
+                        timeStamps={testData.timeStamp}
                         data={testData.heading}
                         title="Heading vs Time"
                         graphId={2}
                     />
                 )}
                 {activeChartTab === 'velocity' && (
-                    <ReviewerChart
+                    <DemoChart
+                        timeStamps={testData.timeStamp}
                         data={testData.velocity}
                         title="Velocity vs Time"
                         graphId={3}
                     />
                 )}
                 {activeChartTab === 'trajectory' && (
-                    <ReviewerChart
-                        data={testData.trajectory}
+                    <DemoChart
+                        timeStamps={testData.trajectory_x}
+                        data={testData.trajectory_y}
                         title="Trajectory"
                         graphId={4}
                     />
@@ -235,10 +253,32 @@ export default function Reviewer() {
                                 <input
                                     type="text"
                                     value={testName}
-                                    onChange={(e) => setTestName(e.target.value)}
+                                    onChange={(e) => {
+                                        setTestName(e.target.value);
+                                        // Clear error when user types
+                                        if (formErrors.testName) {
+                                            setFormErrors(prev => ({...prev, testName: false}));
+                                        }
+                                    }}
+                                    onBlur={(() => {
+                                        if (!testName.trim()) {
+                                            setFormErrors(prev => ({...prev, testName: true}));
+                                        }
+                                    })}
                                     placeholder="Enter a name for this test"
-                                    className="w-full bg-[#252525] border border-gray-700 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    className={`w-full bg-[#252525] border ${
+                                        formErrors.testName
+                                            ? 'border-red-500 ring-1 ring-red-500'
+                                            : 'border-gray-700'
+                                    } rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:${
+                                        formErrors.testName ? 'ring-red-500' : 'ring-blue-500'
+                                    }`}
                                 />
+                                {formErrors.testName && (
+                                <p className="text-red-500 text-sm mt-1">
+                                        Test name is required.
+                                    </p>
+                                )}
                             </div>
 
                             <div>

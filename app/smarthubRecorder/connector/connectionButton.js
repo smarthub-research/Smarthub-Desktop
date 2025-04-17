@@ -1,5 +1,5 @@
 'use client'
-import Loader from "../Loader";
+import Loader from "../../loader";
 import { useState } from "react";
 
 export default function ConnectionButton({ clickAction, status, connecting, disabled }) {

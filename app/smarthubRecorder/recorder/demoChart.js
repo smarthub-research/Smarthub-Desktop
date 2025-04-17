@@ -1,15 +1,15 @@
-import { Line } from "react-chartjs-2";
+import {Line} from "react-chartjs-2";
 import {
-    Chart as ChartJS,
-    LineElement,
     CategoryScale,
-    LinearScale,
-    PointElement,
-    Tooltip,
+    Chart as ChartJS,
     Legend,
+    LinearScale,
+    LineElement,
+    PointElement,
     Title,
+    Tooltip,
 } from "chart.js";
-import React, {useMemo, useState, useRef} from "react";
+import React, {useMemo, useRef, useState} from "react";
 import useFetchFlags from "../hooks/useFetchFlags";
 import ChartToolbar from "./chartToolbar";
 
@@ -24,11 +24,56 @@ ChartJS.register(
     Title,
 );
 
-export default function DemoChart({ data, title, graphId }) {
+// Constants for chart configuration
+const CHART_TYPES = {
+    DISPLACEMENT: 'Displacement vs Time',
+    HEADING: 'Heading vs Time',
+    VELOCITY: 'Velocity vs Time',
+    TRAJECTORY: 'Trajectory'
+};
+
+const CHART_COLORS = {
+    red: 'rgb(239, 68, 68)',
+    blue: 'rgb(59, 130, 246)',
+    green: 'rgb(34, 197, 94)',
+    yellow: 'rgb(250, 204, 21)',
+}
+
+export default function DemoChart({ timeStamps, data, title, graphId }) {
     const [flags] = useFetchFlags({ graphId });
     const [dataPointCount, setDataPointCount] = useState(50);
     const [scrollPosition, setScrollPosition] = useState(0);
     const chartRef = useRef(null);
+
+    // Helper functions
+    const getChartTitle = (chartType) => {
+        const titles = {
+            [CHART_TYPES.DISPLACEMENT]: 'Displacement (m)',
+            [CHART_TYPES.HEADING]: 'Heading (degrees)',
+            [CHART_TYPES.VELOCITY]: 'Velocity (m/s)',
+            [CHART_TYPES.TRAJECTORY]: 'Y Trajectory (m)'
+        };
+        return titles[chartType] || '';
+    };
+
+    const getChartColor = (chartType) => {
+        const titles = {
+            [CHART_TYPES.DISPLACEMENT]: CHART_COLORS.blue,
+            [CHART_TYPES.HEADING]: CHART_COLORS.red,
+            [CHART_TYPES.VELOCITY]: CHART_COLORS.green,
+            [CHART_TYPES.TRAJECTORY]: CHART_COLORS.yellow
+        };
+        return titles[chartType] || '';
+    };
+
+    const chartTitle = getChartTitle(title);
+    const chartColor = getChartColor(title);
+
+    const getXAxisTitle = (chartType) => {
+        return chartType === CHART_TYPES.TRAJECTORY ? 'X Trajectory (m)' : 'Time (s)';
+    };
+
+    const isTrajectoryChart = title === CHART_TYPES.TRAJECTORY;
 
     // Convert the sensor data into chart format
     const chartData = useMemo(() => {
@@ -38,290 +83,336 @@ export default function DemoChart({ data, title, graphId }) {
                 datasets: [{
                     label: "",
                     data: [],
-                    borderColor: "rgb(59, 130, 246)",
-                    backgroundColor: "rgba(59, 130, 246, 0.5)",
+                    borderColor: chartColor,
+                    backgroundColor: chartColor,
                     tension: 0.3,
                 }]
             };
         }
 
-        let visibleData;
-        if (dataPointCount === 0) {
-            // Show all data
-            visibleData = data;
-        } else if (scrollPosition === 0) {
-            // Show most recent data points when scroll position is 0
-            visibleData = data.slice(-dataPointCount);
-        } else {
+        // Determine visible data slice based on dataPointCount and scrollPosition
+        const getVisibleDataSlice = () => {
+            if (dataPointCount === 0) {
+                // Show all data
+                return { visibleData: data, visibleTimeStamps: timeStamps };
+            }
+
+            if (scrollPosition === 0) {
+                // Show most recent data points
+                return {
+                    visibleData: data.slice(-dataPointCount),
+                    visibleTimeStamps: timeStamps?.slice(-dataPointCount)
+                };
+            }
+
             // Calculate range based on scroll position
             const endPosition = Math.min(data.length, data.length - scrollPosition);
             const startPosition = Math.max(0, endPosition - dataPointCount);
 
             // Ensure we always show dataPointCount items if available
             if (endPosition - startPosition < dataPointCount && startPosition === 0 && data.length >= dataPointCount) {
-                visibleData = data.slice(0, dataPointCount);
-            } else {
-                visibleData = data.slice(startPosition, endPosition);
+                return {
+                    visibleData: data.slice(0, dataPointCount),
+                    visibleTimeStamps: timeStamps?.slice(0, dataPointCount)
+                };
             }
-        }
-        // Get x-axis labels based on the chart title
-        let labels = [];
-        if (title === 'Trajectory') {
-            labels = visibleData.map(item => item.trajectoryX.toFixed(2));
-        } else {
-            labels = visibleData.map(item => (item.timeStamp / 1000).toFixed(2));
-        }
 
-        // Process data based on the chart title
-        let datapoints = [];
-        let datasetLabel = "";
+            return {
+                visibleData: data.slice(startPosition, endPosition),
+                visibleTimeStamps: timeStamps?.slice(startPosition, endPosition)
+            };
+        };
 
-        if (title === 'Displacement vs Time') {
-            datapoints = visibleData.map(item => item.displacement);
-            datasetLabel = "Displacement (m)";
-        } else if (title === 'Heading vs Time') {
-            datapoints = visibleData.map(item => item.heading);
-            datasetLabel = "Heading (degrees)";
-        } else if (title === 'Velocity vs Time') {
-            datapoints = visibleData.map(item => item.velocity);
-            datasetLabel = "Velocity (m/s)";
-        } else if (title === 'Trajectory') {
-            datapoints = visibleData.map(item => item.trajectoryY);
-            datasetLabel = "Y Trajectory (m)";
-        }
+        const { visibleData, visibleTimeStamps } = getVisibleDataSlice();
 
-        // Create primary dataset
-        const datasets = [{
-            label: datasetLabel,
-            data: datapoints,
-            borderColor: "rgb(59, 130, 246)",
-            backgroundColor: "rgba(59, 130, 246, 0.5)",
-            borderWidth: 2,
-            tension: 0.3,
-            order: 2,
-        }];
+        if (isTrajectoryChart) {
+            // For trajectory charts, trajectory_X is in timeStamps and trajectory_Y is in data
+            const processedData = [];
 
-        // Add flag markers if we have relevant flags
-        if (flags.length > 0) {
-            // Create a sparse array where only flag positions have values
-            const flagData = Array(datapoints.length).fill(null);
-
-            flags.forEach(flag => {
-                if (title === 'Trajectory') {
-                    // For trajectory chart, find the data point closest to when the flag was created
-                    if (flag.timeStamp !== undefined) {
-                        const closestTimeIndex = visibleData.findIndex(item =>
-                            item.timeStamp && Math.abs(item.timeStamp - flag.timeStamp) < 100); // 100ms tolerance
-
-                        if (closestTimeIndex >= 0) {
-                            flagData[closestTimeIndex] = datapoints[closestTimeIndex];
-                        }
-                    }
-                } else {
-                    // For time-based charts, match by timestamp
-                    if (flag.timeStamp !== undefined) {
-                        const closestIndex = visibleData.findIndex(item =>
-                            item.timeStamp && Math.abs(item.timeStamp - flag.timeStamp) < 100); // 100ms tolerance
-
-                        if (closestIndex >= 0) {
-                            flagData[closestIndex] = datapoints[closestIndex];
-                        }
-                    }
+            // Create x/y coordinates where x comes from timeStamps (trajectory_X) and y from data (trajectory_Y)
+            for (let i = 0; i < visibleData.length; i++) {
+                if (visibleTimeStamps && visibleTimeStamps[i] !== undefined && visibleData[i] !== undefined) {
+                    processedData.push({
+                        x: visibleTimeStamps[i],
+                        y: visibleData[i]
+                    });
                 }
-            });
+            }
 
-            // Add the flags dataset
-            datasets.push({
-                label: "Flags",
-                data: flagData,
-                borderColor: "rgb(239, 68, 68)",
-                backgroundColor: "rgba(239, 68, 68, 0.7)",
-                pointRadius: 12,
-                pointStyle: 'star',
-                showLine: false,
-                order: 1,
-            });
+            // Create primary dataset for trajectory
+            const datasets = [{
+                label: chartTitle,
+                data: processedData,
+                borderColor: chartColor,
+                backgroundColor: chartColor,
+                borderWidth: 2,
+                tension: 0.3,
+                order: 2,
+                showLine: true,
+                pointRadius: 2,
+            }];
+
+            return {
+                datasets
+            };
+        } else {
+            // Regular time-series charts
+            const labels = visibleTimeStamps.map(ts => (ts / 1000).toFixed(2));
+            // Create primary dataset
+            const datasets = [{
+                label: chartTitle,
+                data: visibleData,
+                borderColor: chartColor,
+                backgroundColor: chartColor,
+                borderWidth: 2,
+                tension: 0.3,
+                order: 2,
+            }];
+
+            // Add flag markers if applicable
+            if (flags.length > 0 && visibleTimeStamps) {
+                const flagData = createFlagDataset(visibleTimeStamps, visibleData, flags);
+                datasets.push(flagData);
+            }
+
+            return { labels, datasets };
         }
+    }, [data, timeStamps, title, flags, dataPointCount, scrollPosition, isTrajectoryChart]);
+
+    // Create flag markers dataset
+    const createFlagDataset = (timeStamps, processedData, flags) => {
+        // Create a sparse array where only flag positions have values
+        const flagData = Array(processedData.length).fill(null);
+
+        flags.forEach(flag => {
+            if (flag.timeStamp !== undefined) {
+                // Find index of timestamp closest to flag timestamp
+                const closestTimeIndex = timeStamps.findIndex(ts =>
+                    Math.abs(ts - flag.timeStamp) < 100); // 100ms tolerance
+
+                if (closestTimeIndex >= 0) {
+                    flagData[closestTimeIndex] = processedData[closestTimeIndex];
+                }
+            }
+        });
 
         return {
-            labels,
-            datasets
+            label: "Flags",
+            data: flagData,
+            borderColor: "rgb(255, 255, 255)",
+            backgroundColor: "rgba(255, 255, 255, 0.7)",
+            pointRadius: 12,
+            pointStyle: 'star',
+            showLine: false,
+            order: 1,
         };
-    }, [data, title, flags, dataPointCount, scrollPosition]);
-
-    function setTitle() {
-        if (title === 'Displacement vs Time') {
-            return 'Displacement (m)';
-        } else if (title === 'Heading vs Time') {
-            return 'Heading (degrees)';
-        } else if (title === 'Velocity vs Time') {
-            return 'Velocity (m/s)';
-        } else {
-            return 'Y Trajectory (m)';
-        }
-    }
-
-    const options = {
-        responsive: true,
-        maintainAspectRatio: false,
-        scales: {
-            x: {
-                title: {
-                    display: true,
-                    text: `${title === 'Trajectory' ? 'X Trajectory (m)' : 'Time (s)'} `,
-                    color: 'rgba(255, 255, 255, 0.8)',
-                    font: {
-                        size: 14,
-                        weight: 'medium'
-                    }
-                },
-                grid: {
-                    color: 'rgba(255, 255, 255, 0.1)',
-                    borderColor: 'rgba(255, 255, 255, 0.2)',
-                },
-                ticks: {
-                    color: 'rgba(255, 255, 255, 0.8)',
-                    maxRotation: 0,
-                    font: {
-                        size: 12
-                    }
-                }
-            },
-            y: {
-                title: {
-                    display: true,
-                    text: setTitle(),
-                    color: 'rgba(255, 255, 255, 0.8)',
-                    font: {
-                        size: 14,
-                        weight: 'medium'
-                    }
-                },
-                grid: {
-                    color: 'rgba(255, 255, 255, 0.1)',
-                    borderColor: 'rgba(255, 255, 255, 0.2)',
-                },
-                ticks: {
-                    color: 'rgba(255, 255, 255, 0.8)',
-                    font: {
-                        size: 12
-                    }
-                }
-            }
-        },
-        plugins: {
-            legend: {
-                display: false,
-            },
-            title: {
-                display: false,
-                text: title,
-                color: 'rgba(255, 255, 255, 1)',
-                font: {
-                    size: 18,
-                    weight: 'bold'
-                },
-                padding: {
-                    top: 10,
-                    bottom: 20
-                }
-            },
-            tooltip: {
-                backgroundColor: 'rgba(10, 10, 10, 0.9)',
-                titleColor: 'rgba(255, 255, 255, 0.9)',
-                bodyColor: 'rgba(255, 255, 255, 0.9)',
-                borderColor: 'rgba(255, 255, 255, 0.2)',
-                borderWidth: 1,
-                cornerRadius: 8,
-                padding: 12,
-                titleFont: {
-                    weight: 'bold',
-                    size: 14
-                },
-                bodyFont: {
-                    size: 13
-                },
-                callbacks: {
-                    label: function(context) {
-                        // For flag points
-                        if (context.datasetIndex === 1 && context.raw !== null) {
-                            const timeStamp = parseFloat(context.label) * 1000; // Convert seconds to ms
-                            const closestFlag = flags.find(flag =>
-                                Math.abs(flag.timeStamp - timeStamp) < 100);
-
-                            if (closestFlag) {
-                                return `Flag: ${closestFlag.comment}`;
-                            }
-                        }
-
-                        // For regular data points
-                        const value = context.raw.toFixed(2); // Format to 2 decimal places
-
-                        // Different formats based on chart type
-                        if (title === 'Displacement vs Time') {
-                            return `${context.dataset.label}: ${value}`;
-                        } else if (title === 'Velocity vs Time') {
-                            return `${context.dataset.label}: ${value}`;
-                        } else if (title === 'Heading vs Time') {
-                            return `${context.dataset.label}: ${value}°`;
-                        } else if (title === 'Trajectory') {
-                            return `Position: (${context.label}, ${value})`;
-                        }
-
-                        return context.dataset.label + ': ' + value;
-                    },
-
-                    // Optional: Customize tooltip title
-                    title: function(tooltipItems) {
-                        if (title === 'Trajectory') {
-                            return 'Position Data';
-                        }
-                        return tooltipItems[0].label + ' seconds';
-                    },
-                }
-            }
-        },
-        animation: {
-            duration: 0 // Disable animation for performance with large datasets
-        },
-        interaction: {
-            mode: 'nearest',
-            intersect: false
-        },
-        elements: {
-            point: {
-                radius: 0,
-                hoverRadius: 5,
-                borderWidth: 0.5
-            },
-            line: {
-                borderWidth: 1
-            }
-        }
     };
 
-    return (
-        <div className="w-[85vw] h-[38vh] p-6 bg-[#0a0a0a] rounded-xl border border-gray-800 shadow-lg transition-all duration-300 hover:shadow-xl hover:border-gray-700">
-            <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-semibold text-white">{title}</h3>
-                <ChartToolbar
-                    dataPointCount={dataPointCount}
-                    setDataPointCount={setDataPointCount}
-                    scrollPosition={scrollPosition}
-                    setScrollPosition={setScrollPosition}
-                    data={data}
-                    graphId={graphId}
-                />
-            </div>
+    // Chart options configuration
+    // Chart options configuration
+    const options = useMemo(() => {
+        const baseOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: { duration: 0 }, // Disable animation for performance
+            plugins: {
+                legend: { display: false },
+                title: {
+                    display: false,
+                    text: title,
+                    color: 'rgba(255, 255, 255, 1)',
+                    font: { size: 18, weight: 'bold' },
+                    padding: { top: 10, bottom: 20 }
+                },
+                tooltip: createTooltipConfig(title, flags, timeStamps),
+            },
+            interaction: {
+                mode: 'nearest',
+                intersect: false
+            },
+        };
 
+        if (isTrajectoryChart) {
+            return {
+                ...baseOptions,
+                scales: {
+                    x: {
+                        type: 'linear',
+                        position: 'bottom',
+                        title: {
+                            display: true,
+                            text: 'X Trajectory (m)',
+                            color: 'rgba(255, 255, 255, 0.8)',
+                            font: { size: 14, weight: 'medium' }
+                        },
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.1)',
+                            borderColor: 'rgba(255, 255, 255, 0.2)',
+                        },
+                        ticks: {
+                            color: 'rgba(255, 255, 255, 0.8)',
+                            font: { size: 12 }
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Y Trajectory (m)',
+                            color: 'rgba(255, 255, 255, 0.8)',
+                            font: { size: 14, weight: 'medium' }
+                        },
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.1)',
+                            borderColor: 'rgba(255, 255, 255, 0.2)',
+                        },
+                        ticks: {
+                            color: 'rgba(255, 255, 255, 0.8)',
+                            font: { size: 12 }
+                        }
+                    }
+                },
+                elements: {
+                    point: {
+                        radius: 3,
+                        hoverRadius: 5,
+                        borderWidth: 1
+                    },
+                    line: { borderWidth: 2 }
+                }
+            };
+        } else {
+            return {
+                ...baseOptions,
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: getXAxisTitle(title),
+                            color: 'rgba(255, 255, 255, 0.8)',
+                            font: { size: 14, weight: 'medium' },
+                        },
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.1)',
+                            borderColor: 'rgba(255, 255, 255, 0.2)',
+                        },
+                        ticks: {
+                            color: 'rgba(255, 255, 255, 0.8)',
+                            minRotation: 30,
+                            maxRotation: 30,
+                            font: { size: 12 }
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: chartTitle,
+                            color: 'rgba(255, 255, 255, 0.8)',
+                            font: { size: 14, weight: 'medium' }
+                        },
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.1)',
+                            borderColor: 'rgba(255, 255, 255, 0.2)',
+                        },
+                        ticks: {
+                            color: 'rgba(255, 255, 255, 0.8)',
+                            font: { size: 12 },
+
+                        }
+                    }
+                },
+                elements: {
+                    point: {
+                        radius: 0,
+                        hoverRadius: 5,
+                        borderWidth: 0.5
+                    },
+                    line: { borderWidth: 1 }
+                }
+            };
+        }
+    }, [title, isTrajectoryChart, flags, timeStamps]);
+
+    // Create tooltip configuration
+    function createTooltipConfig(chartType, flags, timeStamps) {
+        return {
+            backgroundColor: 'rgba(10, 10, 10, 0.9)',
+            titleColor: 'rgba(255, 255, 255, 0.9)',
+            bodyColor: 'rgba(255, 255, 255, 0.9)',
+            borderColor: 'rgba(255, 255, 255, 0.2)',
+            borderWidth: 1,
+            cornerRadius: 8,
+            padding: 12,
+            titleFont: { weight: 'bold', size: 14 },
+            bodyFont: { size: 13 },
+            callbacks: {
+                label: function(context) {
+                    // Flag points
+                    if (context.datasetIndex === 1 && context.raw !== null) {
+                        const dataIndex = context.dataIndex;
+                        if (!timeStamps || !timeStamps[dataIndex]) return 'Flag';
+
+                        const ts = timeStamps[dataIndex];
+                        const closestFlag = flags.find(flag =>
+                            Math.abs(flag.timeStamp - ts) < 100);
+
+                        if (closestFlag) {
+                            return `Flag: ${closestFlag.comment}`;
+                        }
+                    }
+
+                    // Trajectory chart points
+                    if (chartType === CHART_TYPES.TRAJECTORY) {
+                        const point = context.raw;
+                        return `X: ${point.x.toFixed(2)}m, Y: ${point.y.toFixed(2)}m`;
+                    }
+
+                    // Format regular data points
+                    const value = context.raw !== null ? context.raw.toFixed(2) : '0.00';
+
+                    if (chartType === CHART_TYPES.HEADING) {
+                        return `${context.dataset.label}: ${value}°`;
+                    }
+
+                    return `${context.dataset.label}: ${value}`;
+                },
+                title: function(tooltipItems) {
+                    if (chartType === CHART_TYPES.TRAJECTORY) {
+                        return 'Position Data';
+                    }
+                    return tooltipItems[0].label + ' seconds';
+                }
+            }
+        };
+    }
+
+    return (
+        <div className="grow w-full h-full p-6 bg-[#0a0a0a] rounded-xl shadow-lg transition-all duration-300 ">
             {data && data.length > 0 ? (
-                <div className="h-[85%]">
-                    <Line
-                        ref={chartRef}
-                        data={chartData}
-                        options={options}
-                    />
-                </div>
+                <>
+                    <div className="flex justify-between items-center mb-4">
+                        <h3 className="text-sm text-gray-400">{title}</h3>
+                        <ChartToolbar
+                            dataPointCount={dataPointCount}
+                            setDataPointCount={setDataPointCount}
+                            scrollPosition={scrollPosition}
+                            setScrollPosition={setScrollPosition}
+                            data={data}
+                            graphId={graphId}
+                        />
+                    </div>
+                    <div className="h-[85%]">
+                        <Line
+                            ref={chartRef}
+                            data={chartData}
+                            options={options}
+                        />
+                    </div>
+                    <div className="text-right text-xs text-gray-500">
+                        {data?.length > 0 &&
+                            `Showing ${dataPointCount === 0 ? 'all' : Math.min(dataPointCount, data.length)} of ${data.length} data points`}
+                    </div>
+                </>
+
             ) : (
                 <div className="h-full flex flex-col justify-center items-center text-gray-500">
                     <p className="text-xl font-medium mb-2">{title}</p>
@@ -329,9 +420,7 @@ export default function DemoChart({ data, title, graphId }) {
                 </div>
             )}
 
-            <div className="text-right text-xs text-gray-500">
-                {data?.length > 0 && `Showing ${dataPointCount === 0 ? 'all' : Math.min(dataPointCount, data.length)} of ${title === 'Trajectory' ? data.length / 2 : data.length} data points`}
-            </div>
+
         </div>
     );
 }

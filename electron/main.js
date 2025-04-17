@@ -13,7 +13,7 @@ function createMainWindow() {
         // width: width,
         // height: height,
         width: 800,
-        height: 600,
+        height: 1000,
         backgroundColor: '#000000',
         webPreferences: {
             nodeIntegration: false,

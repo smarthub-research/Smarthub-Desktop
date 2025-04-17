@@ -35,6 +35,20 @@ export default function Page() {
                     </div>
                 </Link>
             </div>
+
+            <div className={"2 gap-8 max-w-6xl w-full mt-10"}>
+                <Link href={'/bugReporter'}>
+                    <div className="bg-black bg-opacity-60 hover:bg-opacity-80 p-8 rounded-xl transition border border-gray-800 hover:border-red-500 h-full transform hover:-translate-y-1 hover:shadow-xl hover:shadow-green-900/20">
+                        <h2 className="text-[2vw] md:text-2xl tracking-[0.5rem] leading-tight mb-4 text-red-400 group-hover:text-red-300">
+                            BUG REPORTER
+                        </h2>
+                        <p className="text-gray-300 group-hover:text-white">
+                            Report bugs and issues encountered while using the Smarthub Recorder or Reviewer. Your feedback helps us
+                            improve the platform and enhance your experience.
+                        </p>
+                    </div>
+                </Link>
+            </div>
         </div>
     );
 }

@@ -74,7 +74,7 @@ export default function ControlPanel({setFlagging, flagging}) {
     return (
         <>
             <div
-                className="p-4 flex flex-row h-full gap-3 bg-[#0a0a0a] px-4 items-center justify-center justify-self-end rounded-xl">
+                className="p-4 flex flex-row h-full gap-3  px-4 items-center justify-center justify-self-end rounded-xl">
                 <button
                     onClick={beginBleReading}
                     disabled={recording}

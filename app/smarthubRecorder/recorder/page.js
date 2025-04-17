@@ -5,54 +5,69 @@ import {FiArrowLeft} from "react-icons/fi";
 import Link from "next/link";
 import FlagConsole from "../navbar/flagConsole";
 import { useFlagging } from "../context/flaggingContext";
+import {BsFillPauseFill, BsGrid, BsGridFill, BsViewStacked} from "react-icons/bs";
 
 export default function Recorder() {
     const [displacement, setDisplacement] = useState([]);
     const [velocity, setVelocity] = useState([]);
     const [heading, setHeading] = useState([]);
-    const [trajectory, setTrajectory] = useState([]);
+    const [trajectory_x, setTrajectoryX] = useState([]);
+    const [trajectory_y, setTrajectoryY] = useState([]);
+    const [timeStamp, setTimeStamp] = useState([]);
+    const [boxView, setBoxView] = useState(false);
 
     const { flagging, handleFlagging, width } = useFlagging();
 
     function handleData(data) {
-        const { displacement, velocity, heading, trajectory, timeStamp } = data;
+        const { displacement, velocity, heading, trajectory_x, trajectory_y, timeStamp } = data;
 
-        const trajectoryY = trajectory.y;
-        const trajectoryX = trajectory.x;
+        console.log(data)
 
         // Check if the timeStamp is unique before adding to prevent duplication
         setDisplacement(prev => {
             // Don't add if we already have a point with this exact timestamp
             if (prev.some(item => item.timeStamp === timeStamp)) return prev;
-            return [...prev, { timeStamp, displacement }];
+            return [...prev, displacement];
         });
 
         setVelocity(prev => {
             if (prev.some(item => item.timeStamp === timeStamp)) return prev;
-            return [...prev, { timeStamp, velocity }];
+            return [...prev, velocity];
         });
 
         setHeading(prev => {
             if (prev.some(item => item.timeStamp === timeStamp)) return prev;
-            return [...prev, { timeStamp, heading }];
+            return [...prev, heading];
         });
 
-        setTrajectory(prev => {
+        setTrajectoryY(prev => {
             if (prev.some(item => item.timeStamp === timeStamp)) return prev;
-            return [...prev, { trajectoryX, trajectoryY }];
+            return [...prev, trajectory_y];
         });
+
+        setTrajectoryX(prev => {
+            if (prev.some(item => item.timeStamp === timeStamp)) return prev;
+            return [...prev, trajectory_x];
+        });
+
+        setTimeStamp(prev => {
+            if (prev.some(item => item === timeStamp)) return prev;
+            return [...prev, timeStamp];
+        })
     }
 
     function clearData() {
         setDisplacement([]);
         setVelocity([]);
         setHeading([]);
-        setTrajectory([]);
+        setTrajectoryX([]);
+        setTrajectoryY([]);
+        setTimeStamp([]);
     }
 
     function handleEndRecording() {
         if (window.electronAPI) {
-            window.electronAPI.setTestData({ displacement, velocity, heading, trajectory });
+            window.electronAPI.setTestData(null);
             handleFlagging(false);
         }
     }
@@ -79,12 +94,13 @@ export default function Recorder() {
         const fetchTestData = async () => {
             if (window.electronAPI) {
                 try {
-                    const response = await window.electronAPI.getTestData();
+                    const response = await window.electronAPI.getReviewData();
                     if (!response) return;
                     setDisplacement(response.displacement);
                     setVelocity(response.velocity);
                     setHeading(response.heading);
-                    setTrajectory(response.trajectory);
+                    setTrajectoryX(response.trajectory_x);
+                    setTrajectoryY(response.trajectory_y);
                 } catch (error) {
                     console.error('Error fetching test data:', error);
                 }
@@ -96,35 +112,53 @@ export default function Recorder() {
 
     return (
         <>
-            <div className="flex flex-col gap-8 py-8 px-4 overflow-x-hidden"
+            <div className="flex flex-col py-8 px-4 overflow-x-hidden"
                    style={{ width: flagging ? `${100 - width}vw` : '100vw' }}>
-                <div className="flex grow justify-around">
-                    <div className="flex items-center">
-                        <Link
-                            href={'/smarthubRecorder/connector/'}
-                            className="mr-4 p-2 rounded-full hover:bg-gray-800 transition-colors"
-                        >
-                            <FiArrowLeft size={20}/>
-                        </Link>
-                        <h1 className="text-3xl font-bold">Test #</h1>
+
+                <div className={"flex flex-col w-full px-12 self-center gap-8 justify-center"}>
+                    <div className="flex grow">
+                        <div className="flex grow items-center">
+                            <Link
+                                href={'/smarthubRecorder/connector/'}
+                                className=" transition-colors pr-4"
+                            >
+                                <FiArrowLeft className={'scale-150 rounded-full hover:bg-gray-800'}/>
+                            </Link>
+                            <h1 className="text-2xl">Test #</h1>
+                        </div>
+
+                        <div className={'flex flex-row gap-4  bg-[#0a0a0a] px-4 py-2 rounded-lg justify-center items-center'}>
+                            {boxView ? (
+                                    <>
+                                        <BsViewStacked onClick={(() => setBoxView(!boxView))}/>
+                                        <BsGridFill className={'scale-110'}/>
+                                    </>
+
+                                ) : (
+                                <>
+                                    <BsFillPauseFill className={'rotate-90 scale-200'}/>
+                                    <BsGrid onClick={(() => setBoxView(!boxView))}  className={'scale-110'}/>
+                                </>
+                            )}
+                        </div>
+
+                        <div className="flex grow items-center justify-end">
+                            <Link href={"/smarthubRecorder/reviewer/"}
+                                  onClick={handleEndRecording}
+                                  className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
+                            >
+                                Finish Test
+                            </Link>
+                        </div>
                     </div>
 
-                    <div className="flex gap-3">
-                        <Link href={"/smarthubRecorder/reviewer/"}
-                              onClick={handleEndRecording}
-                              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
-                        >
-                            Finish Test
-                        </Link>
-                    </div>
-                </div>
-
-                <div className={"flex flex-col self-center gap-8"}>
                     {/* Charts */}
-                    <DemoChart data={displacement} title={'Displacement vs Time'} graphId={1}/>
-                    <DemoChart data={heading} title={'Heading vs Time'} graphId={2}/>
-                    <DemoChart data={velocity} title={'Velocity vs Time'} graphId={3}/>
-                    <DemoChart data={trajectory} title={'Trajectory'} graphId={4}/>
+                    <div className={`${boxView ? 'grid grid-cols-2 gap-8' : 'flex flex-col gap-8'} h-screen`}>
+                        <DemoChart timeStamps={timeStamp} data={displacement} title={'Displacement vs Time'} graphId={1}/>
+                        <DemoChart timeStamps={timeStamp} data={heading} title={'Heading vs Time'} graphId={2}/>
+                        <DemoChart timeStamps={timeStamp} data={velocity} title={'Velocity vs Time'} graphId={3}/>
+                        <DemoChart timeStamps={trajectory_x} data={trajectory_y} title={'Trajectory'} graphId={4}/>
+                    </div>
                 </div>
             </div>
 
