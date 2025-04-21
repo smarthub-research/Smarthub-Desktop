@@ -112,12 +112,12 @@ export default function Recorder() {
 
     return (
         <>
-            <div className="flex flex-col py-8 px-4 overflow-x-hidden"
+            <div className="flex flex-col pt-12 pb-8 px-4 overflow-x-hidden min-h-[90vh]"
                    style={{ width: flagging ? `${100 - width}vw` : '100vw' }}>
 
-                <div className={"flex flex-col w-full px-12 self-center gap-8 justify-center"}>
-                    <div className="flex grow">
-                        <div className="flex grow items-center">
+                <div className={"flex flex-col grow w-full px-12 self-center gap-4 justify-center"}>
+                    <div className="flex justify-between items-center">
+                        <div className="flex items-center">
                             <Link
                                 href={'/smarthubRecorder/connector/'}
                                 className=" transition-colors pr-4"
@@ -142,7 +142,7 @@ export default function Recorder() {
                             )}
                         </div>
 
-                        <div className="flex grow items-center justify-end">
+                        <div className="flex items-center justify-end">
                             <Link href={"/smarthubRecorder/reviewer/"}
                                   onClick={handleEndRecording}
                                   className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
@@ -153,7 +153,7 @@ export default function Recorder() {
                     </div>
 
                     {/* Charts */}
-                    <div className={`${boxView ? 'grid grid-cols-2 gap-8' : 'flex flex-col gap-8'} h-screen`}>
+                    <div className={`${boxView ? 'grid grid-cols-2 gap-8 grow' : 'flex flex-col gap-8 grow'}`}>
                         <DemoChart timeStamps={timeStamp} data={displacement} title={'Displacement vs Time'} graphId={1}/>
                         <DemoChart timeStamps={timeStamp} data={heading} title={'Heading vs Time'} graphId={2}/>
                         <DemoChart timeStamps={timeStamp} data={velocity} title={'Velocity vs Time'} graphId={3}/>

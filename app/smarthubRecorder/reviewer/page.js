@@ -130,7 +130,7 @@ export default function Reviewer() {
     }
 
     return (
-        <div className="h-full w-full flex flex-col text-white p-6 overflow-y-auto">
+        <div className="h-full w-full flex flex-col text-white p-6 pt-8 overflow-y-auto">
             {/* Header with back button */}
             <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center">

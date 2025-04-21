@@ -255,6 +255,10 @@ async function findCharacteristics(shouldRecord, peripheral) {
     });
 }
 
+// Global variables to store incoming data until we have both left and right readings
+let pendingLeftData = null;
+let pendingRightData = null;
+
 function subscribeToCharacteristics(characteristic, peripheral) {
     characteristic.subscribe((error) => {
         if (error) {
@@ -263,28 +267,52 @@ function subscribeToCharacteristics(characteristic, peripheral) {
     });
 
     characteristic._dataCallback = (data) => {
-        let accelDataLeft = [];
-        let gyroDataLeft = [];
-        let accelDataRight = [];
-        let gyroDataRight = [];
+        let accelData = [];
+        let gyroData = [];
 
-        decodeSensorData(data, accelDataLeft, gyroDataLeft);
-        decodeSensorData(data, accelDataRight, gyroDataRight);
+        decodeSensorData(data, accelData, gyroData);
 
-        const jsonData = calc(accelDataLeft, accelDataRight, gyroDataLeft, gyroDataRight);
-        appendToBuffer(dataBuffer, jsonData);
-        appendToBuffer(rawDataBuffer, jsonData);
+        if (peripheral === connectionStore.getConnectionOne()) {
+            // Store data from left device
+            pendingLeftData = {
+                accelData: accelData,
+                gyroData: gyroData
+            };
+        } else if (peripheral === connectionStore.getConnectionTwo()) {
+            // Store data from right device
+            pendingRightData = {
+                accelData: accelData,
+                gyroData: gyroData
+            };
+        }
 
-        // When we have enough data points, downsample and send to frontend
-        if (dataBuffer.timeStamp.length >= TARGET_POINTS) {
-            const downSampledData = downsampleData(dataBuffer, DOWNSAMPLE_TO);
-            // Send downsampled data to frontend
-            BrowserWindow.getAllWindows().forEach((win) => {
-                win.webContents.send('new-ble-data', {data: downSampledData});
-            });
+        // Only process data when we have both left and right readings
+        if (pendingLeftData && pendingRightData) {
+            const jsonData = calc(
+                pendingLeftData.accelData,
+                pendingRightData.accelData,
+                pendingLeftData.gyroData,
+                pendingRightData.gyroData
+            );
 
-            // Reset buffer after sending
-            dataBuffer = initializeBuffer();
+            appendToBuffer(dataBuffer, jsonData);
+            appendToBuffer(rawDataBuffer, jsonData);
+
+            // When we have enough data points, downsample and send to frontend
+            if (dataBuffer.timeStamp.length >= TARGET_POINTS) {
+                const downSampledData = downsampleData(dataBuffer, DOWNSAMPLE_TO);
+                // Send downsampled data to frontend
+                BrowserWindow.getAllWindows().forEach((win) => {
+                    win.webContents.send('new-ble-data', {data: downSampledData});
+                });
+
+                // Reset buffer after sending
+                dataBuffer = initializeBuffer();
+            }
+
+            // Clear the pending data after processing
+            pendingLeftData = null;
+            pendingRightData = null;
         }
     }
 
