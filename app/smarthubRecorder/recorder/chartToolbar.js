@@ -1,8 +1,10 @@
 import React from "react";
 
+// Component to create the toolbar for the chart
 export default function ChartToolbar(props) {
     const { dataPointCount, setDataPointCount, scrollPosition, setScrollPosition, data, graphId } = props;
 
+    // Allows scrolling left through the data points
     const handleScrollLeft = () => {
         // Calculate how much to scroll left
         const scrollAmount = Math.floor(dataPointCount / 2);
@@ -14,11 +16,14 @@ export default function ChartToolbar(props) {
         setScrollPosition(prev => Math.min(maxScrollPosition, prev + scrollAmount));
     };
 
+    // Allows scrolling right through the data points
     const handleScrollRight = () => {
         // Calculate how much to scroll right
         const scrollAmount = Math.floor(dataPointCount / 2);
         setScrollPosition(prev => Math.max(0, prev - scrollAmount));
     };
+
+    // Resets the scroll position to the start
     const resetView = () => {
         setScrollPosition(0);
     };
@@ -64,6 +69,7 @@ export default function ChartToolbar(props) {
                     </button>
                 </div>
             )}
+            {/* Displays the number of data points being shown as a dropdown */}
             <div className="flex items-center">
                 <label htmlFor={`dataPoints-${graphId}`} className="text-gray-400 mr-2 text-sm">
                     Data points:
@@ -77,6 +83,7 @@ export default function ChartToolbar(props) {
                     }}
                     className="bg-gray-900 text-white border border-gray-700 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
                 >
+                    {/* Number of data point options */}
                     <option value="0">All</option>
                     <option value="10">10</option>
                     <option value="25">25</option>

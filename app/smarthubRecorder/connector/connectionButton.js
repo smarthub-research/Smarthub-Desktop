@@ -2,9 +2,11 @@
 import Loader from "../../loader";
 import { useState } from "react";
 
+// Button component for managing and displaying connection states
 export default function ConnectionButton({ clickAction, status, connecting, disabled }) {
     const [text, setText] = useState("");
 
+    // Determine button styles based on connection status
     const getButtonStyles = () => {
         switch (status) {
             case "connected":
@@ -18,11 +20,13 @@ export default function ConnectionButton({ clickAction, status, connecting, disa
         }
     };
 
+    // Handle button click action
     const handleClick = () => {
         if (status === "cannotConnect" || disabled) return;
         clickAction();
     };
 
+    // If connecting, show a loader instead of text
     if (connecting) {
         return (
             <div className="min-w-[6rem] sm:min-w-[7rem] md:min-w-[8rem] bg-gray-800 px-3 py-2 text-center rounded-lg flex items-center justify-center h-10">

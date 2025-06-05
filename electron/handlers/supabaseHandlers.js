@@ -91,7 +91,7 @@ async function insertTestInfo(metadata) {
     }
 }
 
-async function fetchTestFiles() {
+async function fetchTestFiles(numberOfTests = null) {
     try {
         const { data: testFiles, error } = await supabase
             .from('Test Files')
@@ -102,7 +102,7 @@ async function fetchTestFiles() {
             return { success: false, error: error.message };
         }
 
-        const {data: testInfo, error: infoError} = await supabase
+        const { data: testInfo, error: infoError } = await supabase
             .from('Test Info')
             .select('*');
 
@@ -111,22 +111,28 @@ async function fetchTestFiles() {
             return { success: false, error: infoError.message };
         }
 
-        // Combine test files and test info
+        // Combine test files and test info safely
         const combinedData = testFiles.map(file => {
             const info = testInfo.find(info => info.test_file_id === file.id);
             return {
                 ...file,
-                created_at: info.created_at,
+                // Use file's created_at if info is null or doesn't have created_at
+                created_at: (info && info.created_at) ? info.created_at : file.created_at,
                 test_name: info ? info.test_name : null,
                 comments: info ? info.comments : null,
                 flags: info ? info.flags : null
             };
         });
 
-        return { success: true, data: combinedData };
+        // Return all data or limit based on numberOfTests parameter
+        combinedData.length < numberOfTests && (numberOfTests = combinedData.length);
+        return {
+            success: true,
+            data: numberOfTests !== null ? combinedData.slice(0, numberOfTests) : combinedData
+        };
     } catch (error) {
         console.error('Error fetching test files:', error);
-        return {success: false, error: error.message};
+        return { success: false, error: error.message };
     }
 }
 

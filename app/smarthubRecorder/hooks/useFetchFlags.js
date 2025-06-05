@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from "react";
 
+// Custom hook to fetch flags
 export default function useFetchFlags({graphId = null} = {}) {
     const [flags, setFlags] = useState([]);
 

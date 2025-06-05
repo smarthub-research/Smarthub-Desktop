@@ -8,6 +8,7 @@ import FlagConsole from "./flagConsole";
 import { useFlagging } from "../context/flaggingContext";
 import Link from "next/link";
 
+// This component handles the recording navbar for the SmartHub Recorder application.
 export default function NavbarRecording() {
     const pathname = usePathname();
     const [show, setShow] = useState(true);
@@ -20,10 +21,12 @@ export default function NavbarRecording() {
     });
     const [recordingTime, setRecordingTime] = useState(0);
 
+    // Check if the current path is the recorder page
     useEffect(() => {
         setRecording(pathname === "/smarthubRecorder/recorder");
     }, [pathname]);
 
+    // Handle scroll events to show/hide the navbar
     useEffect(() => {
         const handleScroll = () => {``
             setShow(window.scrollY <= lastScrollY);
@@ -53,12 +56,6 @@ export default function NavbarRecording() {
         };
     }, [recordingState.isRecording, recordingState.startTime]);
 
-    function handleEndRecording() {
-        if (window.electronAPI) {
-            window.electronAPI.endTest();
-        }
-    }
-
     // Define event handlers
     const handleRestartRecording = (eventData) => {
         console.log("Restart recording handler triggered", eventData);
@@ -72,6 +69,7 @@ export default function NavbarRecording() {
         }
     };
 
+    // Handle the beginning of a reading session
     const handleBeginReading = (eventData) => {
         console.log("Begin reading handler triggered", eventData);
         if (eventData && eventData.startTime) {
@@ -82,6 +80,7 @@ export default function NavbarRecording() {
         }
     };
 
+    // Handle stopping the reading session
     const handleStopReading = () => {
         console.log("Stop reading handler triggered");
         // Keep the final time when stopped
@@ -127,11 +126,13 @@ export default function NavbarRecording() {
             <div className={`sticky flex flex-row-reverse top-0 z-5 w-[100vw] h-[10vh] bg-gradient-to-b from-[#171717] to-transparent from-5% to-75%
             ${show ? "opacity-100" : "opacity-0"} transition`}>
 
+                {/* Logo and title that can be used to go back home */}
                 <Link href={"/"} className={`p-2 text-right ${flagging && ('opacity-0')} transition`}>
                     <p className="font-bold text-[3vw] tracking-[0.3rem] leading-tight cursor-pointer">SMARTHUB</p>
                     <p className="text-[2vw] tracking-[0.5rem] leading-[1.2rem] pb-4 cursor-pointer">RECORDER</p>
                 </Link>
 
+                {/* Render all components needed for recording */}
                 {recording && (
                     <div className="flex flex-row grow gap-6 justify-center p-4 items-center ">
                         <ConnectionStatus/>
@@ -157,8 +158,8 @@ export default function NavbarRecording() {
 
                     </div>
                 )}
-
             </div>
+            {/* Conditionally render the FlagConsole component based on the flagging state */}
             {flagging && (
                 <FlagConsole setFlagging={handleFlagging}/>
             )}

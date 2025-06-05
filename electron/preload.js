@@ -65,6 +65,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
     submitTestData: (metadata) => ipcRenderer.invoke('submit-test-data', metadata),
     fetchTestFiles: () => ipcRenderer.invoke('fetch-test-files'),
+    fetchTestFilesAmount: (numberOfTests) => ipcRenderer.invoke('fetch-test-files-amount', numberOfTests),
     updateTestName: (id, testName) => ipcRenderer.invoke('update-test-name', id, testName),
 
     submitBugReport: (metadata) => ipcRenderer.invoke('submit-bug-report', metadata),

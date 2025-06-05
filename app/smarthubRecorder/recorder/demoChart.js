@@ -32,6 +32,7 @@ const CHART_TYPES = {
     TRAJECTORY: 'Trajectory'
 };
 
+// Constants for chart colors
 const CHART_COLORS = {
     red: 'rgb(239, 68, 68)',
     blue: 'rgb(59, 130, 246)',
@@ -39,13 +40,14 @@ const CHART_COLORS = {
     yellow: 'rgb(250, 204, 21)',
 }
 
+// Chart component for displaying various sensor data for different chart types
 export default function DemoChart({ timeStamps, data, title, graphId }) {
     const [flags] = useFetchFlags({ graphId });
     const [dataPointCount, setDataPointCount] = useState(50);
     const [scrollPosition, setScrollPosition] = useState(0);
     const chartRef = useRef(null);
 
-    // Helper functions
+    // Helper functions to get chart title
     const getChartTitle = (chartType) => {
         const titles = {
             [CHART_TYPES.DISPLACEMENT]: 'Displacement (m)',
@@ -56,6 +58,7 @@ export default function DemoChart({ timeStamps, data, title, graphId }) {
         return titles[chartType] || '';
     };
 
+    // Helper function to get chart color based on type
     const getChartColor = (chartType) => {
         const titles = {
             [CHART_TYPES.DISPLACEMENT]: CHART_COLORS.blue,
@@ -69,6 +72,7 @@ export default function DemoChart({ timeStamps, data, title, graphId }) {
     const chartTitle = getChartTitle(title);
     const chartColor = getChartColor(title);
 
+    // Function to get axis title because it varies for trajectory charts
     const getXAxisTitle = (chartType) => {
         return chartType === CHART_TYPES.TRAJECTORY ? 'X Trajectory (m)' : 'Time (s)';
     };
@@ -209,7 +213,6 @@ export default function DemoChart({ timeStamps, data, title, graphId }) {
     };
 
     // Chart options configuration
-    // Chart options configuration
     const options = useMemo(() => {
         const baseOptions = {
             responsive: true,
@@ -231,7 +234,7 @@ export default function DemoChart({ timeStamps, data, title, graphId }) {
                 intersect: false
             },
         };
-
+        // When trajectory chart, we need to adjust the scales
         if (isTrajectoryChart) {
             return {
                 ...baseOptions,
@@ -400,6 +403,7 @@ export default function DemoChart({ timeStamps, data, title, graphId }) {
                             graphId={graphId}
                         />
                     </div>
+                    {/* This is the actual graph component */}
                     <div className="h-[85%]">
                         <Line
                             ref={chartRef}
@@ -407,12 +411,12 @@ export default function DemoChart({ timeStamps, data, title, graphId }) {
                             options={options}
                         />
                     </div>
+                    {/* Tells user how many points they are seeing out of the length*/}
                     <div className="text-right text-xs text-gray-500">
                         {data?.length > 0 &&
                             `Showing ${dataPointCount === 0 ? 'all' : Math.min(dataPointCount, data.length)} of ${data.length} data points`}
                     </div>
                 </>
-
             ) : (
                 <div className="h-full flex flex-col justify-center items-center text-gray-500">
                     <p className="text-xl font-medium mb-2">{title}</p>

@@ -1,6 +1,6 @@
 import {useEffect, useState} from "react";
 
-
+// Custom hook to fetch devices
 export default function useFetchDevices() {
     const [devices, setDevices] = useState([]);
 

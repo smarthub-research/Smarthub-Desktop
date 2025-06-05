@@ -4,6 +4,7 @@ import { BsArrowCounterclockwise } from "react-icons/bs";
 import { BsFillFlagFill } from "react-icons/bs";
 import { useState, useEffect } from "react";
 
+// Component for the control panel with buttons to start, stop, and restart recording,
 export default function ControlPanel({setFlagging, flagging}) {
     const [recording, setRecording] = useState(false);
 
@@ -17,6 +18,7 @@ export default function ControlPanel({setFlagging, flagging}) {
             setRecording(true);
         };
 
+        // Stop reading data
         const handleStopReading = () => {
             console.log("Stop reading handler triggered");
             setRecording(false);
@@ -35,6 +37,7 @@ export default function ControlPanel({setFlagging, flagging}) {
         };
     }, []);
 
+    // Lets us receive BLE data from the main process
     async function beginBleReading() {
         try {
             if (window.electronAPI) {
@@ -47,6 +50,7 @@ export default function ControlPanel({setFlagging, flagging}) {
         }
     }
 
+    // Stops the BLE recording and sets the recording state to false
     async function stopRecording() {
         try {
             if (window.electronAPI) {
@@ -59,6 +63,7 @@ export default function ControlPanel({setFlagging, flagging}) {
         }
     }
 
+    // Restarts the recording by stopping and then starting it again
     async function restartRecording() {
         try {
             if (window.electronAPI) {

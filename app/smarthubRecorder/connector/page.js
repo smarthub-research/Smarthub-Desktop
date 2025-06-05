@@ -4,11 +4,13 @@ import Device from "./device";
 import useFetchDevices from "./../hooks/useFetchDevices";
 import Link from "next/link";
 
+// This component allows users to connect two devices for recording purposes.
 export default function Connector() {
     const [deviceOne, setDeviceOne] = useState(null);
     const [deviceTwo, setDeviceTwo] = useState(null);
     const { devices } = useFetchDevices();
 
+    // Function to handle connecting a device
     function handleConnect(device) {
         if (!deviceOne) {
             setDeviceOne(device);
@@ -19,6 +21,7 @@ export default function Connector() {
         }
     }
 
+    // Function to handle disconnecting a device
     function handleDisconnect(device) {
         if (deviceOne && deviceOne.name === device.name) {
             setDeviceOne(null);
@@ -27,6 +30,7 @@ export default function Connector() {
         }
     }
 
+    // Fetch connected devices when the component mounts
     useEffect(() => {
         async function fetchConnectedDevices() {
             if (window.electronAPI) {
@@ -88,6 +92,7 @@ export default function Connector() {
                         {devices.length === 0 ? (
                             <p className="text-gray-400 text-center py-4">Searching for devices...</p>
                         ) : (
+                            // Only display devices that are not already connected
                             devices
                                 .filter(device =>
                                     (!deviceOne || device.name !== deviceOne.name) &&
@@ -114,6 +119,7 @@ export default function Connector() {
 
             {/* Continue Button */}
             <div className="flex justify-center mt-8 md:mt-10">
+                {/* Next button */}
                 <Link
                     href="/smarthubRecorder/recorder/"
                     className={` hover:bg-blue-500 px-6 py-3 rounded-lg font-medium transition-all duration-200

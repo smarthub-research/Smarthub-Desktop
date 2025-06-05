@@ -1,4 +1,5 @@
 
+// Displays more detailed calculated data from the recorder
 export default function CalculatedData({data}) {
     const dataHeaders = [
         "SU Average Stroke Length (sec)",

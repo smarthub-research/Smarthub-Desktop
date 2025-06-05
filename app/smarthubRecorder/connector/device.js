@@ -1,9 +1,11 @@
 import { useState } from "react";
 import ConnectionButton from "./connectionButton";
 
+// Device component to handle BLE device connections
 export default function Device({ device, status, onConnect, onDisconnect }) {
     const [connecting, setConnecting] = useState(false);
 
+    // Determine if the device is connectable and call ipc to connect to it
     const connectToBle = async () => {
         if (status === "cannotConnect" || !onConnect) return;
         setConnecting(true);
@@ -21,6 +23,7 @@ export default function Device({ device, status, onConnect, onDisconnect }) {
         }
     };
 
+    // Disconnect from the BLE device
     const disconnectBle = async () => {
         if (onDisconnect) {
             await window.electronAPI.disconnectBle(device);
@@ -32,7 +35,6 @@ export default function Device({ device, status, onConnect, onDisconnect }) {
         <div className="flex flex-row items-center justify-between gap-3 py-2 transition-colors duration-200 rounded-lg px-3">
             <div className="flex-grow min-w-0">
                 <p className="text-base sm:text-lg truncate">{device.name}</p>
-                {/*<p className="text-xs sm:text-sm text-gray-400 truncate">{device.UUID}</p>*/}
             </div>
             <ConnectionButton
                 clickAction={status === "connected" ? disconnectBle : connectToBle}

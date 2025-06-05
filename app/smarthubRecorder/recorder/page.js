@@ -7,6 +7,7 @@ import FlagConsole from "../navbar/flagConsole";
 import { useFlagging } from "../context/flaggingContext";
 import {BsFillPauseFill, BsGrid, BsGridFill, BsViewStacked} from "react-icons/bs";
 
+// Main Recorder component
 export default function Recorder() {
     const [displacement, setDisplacement] = useState([]);
     const [velocity, setVelocity] = useState([]);
@@ -19,9 +20,8 @@ export default function Recorder() {
     const { flagging, handleFlagging, width } = useFlagging();
 
     function handleData(data) {
+        // Data is expected to be an object with properties: displacement, velocity, heading, trajectory_x, trajectory_y, timeStamp
         const { displacement, velocity, heading, trajectory_x, trajectory_y, timeStamp } = data;
-
-        console.log(data)
 
         // Check if the timeStamp is unique before adding to prevent duplication
         setDisplacement(prev => {
@@ -56,6 +56,7 @@ export default function Recorder() {
         })
     }
 
+    // reset the data arrays
     function clearData() {
         setDisplacement([]);
         setVelocity([]);
@@ -65,6 +66,7 @@ export default function Recorder() {
         setTimeStamp([]);
     }
 
+    // Handle end of recording
     function handleEndRecording() {
         if (window.electronAPI) {
             window.electronAPI.setTestData(null);
@@ -72,6 +74,7 @@ export default function Recorder() {
         }
     }
 
+    // Effect to handle BLE data and initial fetch
     useEffect(() => {
         if (window.electronAPI) {
             // Listen for new BLE data
@@ -91,6 +94,7 @@ export default function Recorder() {
             });
         }
 
+        // Fetch initial test data if we are opening an existing test
         const fetchTestData = async () => {
             if (window.electronAPI) {
                 try {
@@ -112,11 +116,13 @@ export default function Recorder() {
 
     return (
         <>
+            {/* Dynamic styling to ensure it fills the rest of screen with the space based on flagging component */}
             <div className="flex flex-col pt-12 pb-8 px-4 overflow-x-hidden min-h-[90vh]"
                    style={{ width: flagging ? `${100 - width}vw` : '100vw' }}>
 
                 <div className={"flex flex-col grow w-full px-12 self-center gap-4 justify-center"}>
                     <div className="flex justify-between items-center">
+                        {/* Back button */}
                         <div className="flex items-center">
                             <Link
                                 href={'/smarthubRecorder/connector/'}
@@ -127,6 +133,7 @@ export default function Recorder() {
                             <h1 className="text-2xl">Test #</h1>
                         </div>
 
+                        {/* Grid vs box view for graphs */}
                         <div className={'flex flex-row gap-4  bg-[#0a0a0a] px-4 py-2 rounded-lg justify-center items-center'}>
                             {boxView ? (
                                     <>
@@ -142,6 +149,7 @@ export default function Recorder() {
                             )}
                         </div>
 
+                        {/* End recording button */}
                         <div className="flex items-center justify-end">
                             <Link href={"/smarthubRecorder/reviewer/"}
                                   onClick={handleEndRecording}
@@ -162,6 +170,7 @@ export default function Recorder() {
                 </div>
             </div>
 
+            {/* flagging console if we are flagging */}
             {flagging && (
                 <FlagConsole setFlagging={handleFlagging}/>
             )}

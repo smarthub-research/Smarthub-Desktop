@@ -2,10 +2,12 @@
 import { useEffect, useState } from 'react';
 import { BsCheckCircleFill, BsExclamationTriangleFill } from 'react-icons/bs';
 
+// This component displays the connection status of two devices.
 export default function ConnectionStatus() {
     const [devices, setDevices] = useState([null, null]);
     const [loading, setLoading] = useState(true);
 
+    // Fetch connected devices from the main process when the component mounts
     useEffect(() => {
         async function fetchDevices() {
             try {
@@ -23,9 +25,8 @@ export default function ConnectionStatus() {
         fetchDevices();
 
         // Poll for device status updates every 5 seconds
-        // const intervalId = setInterval(fetchDevices, 5000);
-
-        // return () => clearInterval(intervalId);
+        const intervalId = setInterval(fetchDevices, 5000);
+        return () => clearInterval(intervalId);
     }, []);
 
     return (

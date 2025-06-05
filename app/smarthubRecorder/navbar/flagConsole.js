@@ -5,7 +5,7 @@ import {BsFillSendFill, BsGraphUp, BsX} from "react-icons/bs";
 import useFetchFlags from "../hooks/useFetchFlags";
 import { useFlagging } from "../context/flaggingContext";
 
-
+// This component provides a console for users to add flags (annotations) to specific graphs
 export default function FlagConsole({setFlagging}) {
     const [comment, setComment] = useState("");
     const [selectedGraph, setSelectedGraph] = useState(null);
@@ -26,6 +26,7 @@ export default function FlagConsole({setFlagging}) {
         return () => clearTimeout(timer);
     }, []);
 
+    // Graph options for selection
     const graphOptions = [
         { id: 1, name: "D vs T" },
         { id: 2, name: "H vs T" },
@@ -45,22 +46,23 @@ export default function FlagConsole({setFlagging}) {
         }
     }, [comment]);
 
+    // Handle adding a flag
     function handleAddFlag() {
         if (!comment.trim() || !selectedGraph) return;
-
+        // Create a new flag object
         const newFlag = {
             id: Date.now(),
             dateTime: new Date().toLocaleTimeString(),
             comment,
             graphId: selectedGraph
         };
-
         window.electronAPI.addFlag(newFlag);
-
+        // Clear the input fields since flag was added
         setComment("");
         setSelectedGraph(null);
     }
 
+    // Handle Enter key for adding flags
     function handleKeyDown(e) {
         if (e.key === 'Enter' && !e.shiftKey && comment.trim() && selectedGraph) {
             e.preventDefault();
@@ -74,6 +76,7 @@ export default function FlagConsole({setFlagging}) {
         setIsDragging(true);
     };
 
+    // Handle mouse move and up events to resize the console
     useEffect(() => {
         const handleMouseMove = (e) => {
             if (!isDragging) return;
@@ -154,7 +157,6 @@ export default function FlagConsole({setFlagging}) {
                         ))}
                     </div>
                 </div>
-
                 <div className="mb-3">
                     <label htmlFor="comment" className="block text-sm font-medium text-gray-400 mb-1">
                         Comment
