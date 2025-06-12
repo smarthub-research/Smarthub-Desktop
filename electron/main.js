@@ -12,8 +12,8 @@ function createMainWindow() {
         title: 'Smarthub Page',
         // width: width,
         // height: height,
-        width: 800,
-        height: 1000,
+        width: width,
+        height: height,
         backgroundColor: '#000000',
         webPreferences: {
             nodeIntegration: false,

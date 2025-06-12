@@ -6,7 +6,7 @@ function setupBugHandlers() {
     // ipcMain.on('bug-report', (event, arg) => {
     //     console.log('Bug report received:', arg);
     // });
-    console.log('Bug handlers initialized');
+    // console.log('Bug handlers initialized');
 
     ipcMain.handle('submit-bug-report', async (event, metadata) => {
         submitBug(metadata);

@@ -10,7 +10,6 @@ function initializeAllHandlers() {
     setupDataHandlers();
     setupFlagHandlers();
     setupBugHandlers();
-    console.log('All IPC handlers initialized');
 }
 
 module.exports = {

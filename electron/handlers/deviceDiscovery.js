@@ -6,7 +6,6 @@ const connectionStore = require('../services/connectionStore');
 // Ensure only one listener is set for state changes
 noble.on('stateChange', (state) => {
     if (state === 'poweredOn') {
-        console.log('Scanning for BLE devices...\n');
         noble.startScanning([], false);
     } else {
         noble.stopScanning();

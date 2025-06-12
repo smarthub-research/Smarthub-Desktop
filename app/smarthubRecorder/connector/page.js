@@ -48,7 +48,7 @@ export default function Connector() {
     }, []);
 
     return (
-        <div className="flex flex-col w-full max-h-[90vh] px-4 md:px-6 lg:px-8">
+        <div className="flex flex-col justify-around text-black w-full h-screen px-4 md:px-6 lg:px-8">
             <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold tracking-wide text-center">
                 Connect Devices
             </h1>
@@ -57,7 +57,7 @@ export default function Connector() {
                 {/* Connected Devices Section */}
                 <div className="w-full ">
                     <p className="text-lg md:text-xl font-bold mb-3">Connected</p>
-                    <div className="flex flex-col bg-[#0a0a0a] p-3 md:p-4 rounded-lg w-full drop-shadow-md h-[15vh] grow justify-center">
+                    <div className="flex flex-col bg-gray-300 p-3 md:p-4 rounded-lg w-full border border-gray-200 h-[15vh] grow justify-center">
                         <div>
                             {deviceOne ? (
                                 <Device
@@ -66,7 +66,7 @@ export default function Connector() {
                                     onDisconnect={handleDisconnect}
                                 />
                             ) : (
-                                <h2 className="font-bold text-gray-400">No Connected Device</h2>
+                                <h2 className="font-bold">No Connected Device</h2>
                             )}
                         </div>
                         <hr className="border-gray-800 my-2 md:my-3" />
@@ -78,7 +78,7 @@ export default function Connector() {
                                     onDisconnect={handleDisconnect}
                                 />
                             ) : (
-                                <h2 className="font-bold text-gray-400">No Connected Device</h2>
+                                <h2 className="font-bold ">No Connected Device</h2>
                             )}
                         </div>
                     </div>
@@ -87,7 +87,7 @@ export default function Connector() {
                 {/* Nearby Devices Section */}
                 <div className="w-full flex-grow">
                     <p className="text-lg md:text-xl font-bold mb-3">Nearby</p>
-                    <div className="bg-[#0a0a0a] p-3 md:p-4 rounded-lg w-full h-[35vh] md:h-[40vh] overflow-y-auto
+                    <div className="bg-gray-300 p-3 md:p-4 rounded-lg w-full h-[35vh] md:h-[40vh] overflow-y-auto
                     drop-shadow-md">
                         {devices.length === 0 ? (
                             <p className="text-gray-400 text-center py-4">Searching for devices...</p>
