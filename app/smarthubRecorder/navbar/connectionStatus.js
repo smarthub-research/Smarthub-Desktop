@@ -37,7 +37,7 @@ export default function ConnectionStatus() {
                     <p className="text-gray-400">Connecting to devices...</p>
                 </div>
             ) : (
-                <div className="flex flex-row h-full">
+                <div className="flex flex-row h-full bg-surface-300 p-2 rounded-lg">
                     {devices.map((device, index) => (
                         <div key={index} className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg">
                             <div className="flex items-center space-x-3">
@@ -46,12 +46,12 @@ export default function ConnectionStatus() {
                                 ) : (
                                     <BsExclamationTriangleFill className="text-amber-500" />
                                 )}
-                                <span className="text-white">
+                                <span>
                                     {device ? device.name : `Device ${index + 1} not found`}
                                 </span>
                             </div>
-                            <span className={`text-xs font-medium px-2 py-1 rounded-full ${
-                                device ? 'bg-green-900/30 text-green-400' : 'bg-amber-900/30 text-amber-400'
+                            <span className={`text-xs font-medium px-1 rounded ${
+                                device ?  'bg-green-500' : 'bg-amber-900/30 text-amber-400'
                             }`}>
                                 {device ? 'Connected' : 'Disconnected'}
                             </span>

@@ -6,7 +6,7 @@ import BugReporter from "./bugReporter";
 export default function Services() {
     return (
         <div className={'p-4 bg-surface-50 rounded-xl shadow-sm'}>
-            <h2 className="mb-4 font-semibold text-gray-80">Services</h2>
+            <h2 className="mb-4 font-semibold">Services</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <span onClick={(() => setCurrentPage('recorder'))}>
                             <Recorder />

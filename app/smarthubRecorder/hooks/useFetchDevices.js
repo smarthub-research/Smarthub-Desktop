@@ -3,6 +3,8 @@ import {useEffect, useState} from "react";
 // Custom hook to fetch devices
 export default function useFetchDevices() {
     const [devices, setDevices] = useState([]);
+    const [deviceOne, setDeviceOne] = useState(null);
+    const [deviceTwo, setDeviceTwo] = useState(null);
 
     // Fetch nearby devices
     useEffect(() => {
@@ -19,5 +21,22 @@ export default function useFetchDevices() {
         }
     }, []);
 
-    return { devices };
+    // Fetch connected devices when the component mounts
+    useEffect(() => {
+        async function fetchConnectedDevices() {
+            if (window.electronAPI) {
+                const connectedDevices = await window.electronAPI.getConnectedDevices();
+                if (connectedDevices[0]) {
+                    setDeviceOne(connectedDevices[0]);
+                }
+
+                if (connectedDevices[1]) {
+                    setDeviceTwo(connectedDevices[1]);
+                }
+            }
+        }
+        fetchConnectedDevices();
+    }, []);
+
+    return { devices, deviceOne, deviceTwo, setDeviceOne, setDeviceTwo };
 }

@@ -34,8 +34,8 @@ export default function Dashboard() {
     }
 
     return (
-        <div className="flex flex-col h-full p-6 lg:p-10 gap-6 bg-surface-100">
-            <h1 className="font-bold text-2xl">Welcome to Smarthub Desktop</h1>
+        <div className="flex flex-col h-full p-6 lg:p-10 gap-6 bg-surface-200">
+            {/*<h1 className="font-bold text-2xl">Welcome to Smarthub Desktop</h1>*/}
             <div className="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-6 w-full">
                 {/* Left or center part of grid */}
                 <div className="flex flex-col gap-4 lg:col-span-2">

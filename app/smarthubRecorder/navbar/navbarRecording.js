@@ -23,7 +23,7 @@ export default function NavbarRecording() {
 
     // Check if the current path is the recorder page
     useEffect(() => {
-        setRecording(pathname === "/smarthubRecorder/recorder");
+        setRecording(pathname === "/");
     }, [pathname]);
 
     // Handle scroll events to show/hide the navbar
@@ -123,14 +123,8 @@ export default function NavbarRecording() {
 
     return (
         <>
-            <div className={`sticky flex flex-row-reverse top-0 z-5 w-[100vw] h-[10vh] bg-gradient-to-b from-[#171717] to-transparent from-5% to-75%
+            <div className={`sticky flex flex-row-reverse top-0 z-5 w-[100vw] h-[10vh]
             ${show ? "opacity-100" : "opacity-0"} transition`}>
-
-                {/* Logo and title that can be used to go back home */}
-                <Link href={"/"} className={`p-2 text-right ${flagging && ('opacity-0')} transition`}>
-                    <p className="font-bold text-[3vw] tracking-[0.3rem] leading-tight cursor-pointer">SMARTHUB</p>
-                    <p className="text-[2vw] tracking-[0.5rem] leading-[1.2rem] pb-4 cursor-pointer">RECORDER</p>
-                </Link>
 
                 {/* Render all components needed for recording */}
                 {recording && (

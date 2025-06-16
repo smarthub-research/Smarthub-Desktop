@@ -32,7 +32,7 @@ export default function Device({ device, status, onConnect, onDisconnect }) {
     };
 
     return (
-        <div className="flex flex-row items-center justify-between gap-3 py-2 transition-colors duration-200 rounded-lg px-3">
+        <div className="flex flex-row items-center justify-between gap-3 py-2 transition-colors duration-200 px-3">
             <div className="flex-grow min-w-0">
                 <p className="text-base sm:text-lg truncate">{device.name}</p>
             </div>

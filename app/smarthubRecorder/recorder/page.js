@@ -6,6 +6,7 @@ import Link from "next/link";
 import FlagConsole from "../navbar/flagConsole";
 import { useFlagging } from "../context/flaggingContext";
 import {BsFillPauseFill, BsGrid, BsGridFill, BsViewStacked} from "react-icons/bs";
+import NavbarRecording from "../navbar/navbarRecording";
 
 // Main RecorderTab component
 export default function Recorder() {
@@ -116,22 +117,13 @@ export default function Recorder() {
 
     return (
         <>
+            <NavbarRecording/>
             {/* Dynamic styling to ensure it fills the rest of screen with the space based on flagging component */}
             <div className="flex flex-col pt-12 pb-8 px-4 overflow-x-hidden min-h-[90vh]"
                    style={{ width: flagging ? `${100 - width}vw` : '100vw' }}>
 
                 <div className={"flex flex-col grow w-full px-12 self-center gap-4 justify-center"}>
                     <div className="flex justify-between items-center">
-                        {/* Back button */}
-                        <div className="flex items-center">
-                            <Link
-                                href={'/smarthubRecorder/connector/'}
-                                className=" transition-colors pr-4"
-                            >
-                                <FiArrowLeft className={'scale-150 rounded-full hover:bg-gray-800'}/>
-                            </Link>
-                            <h1 className="text-2xl">Test #</h1>
-                        </div>
 
                         {/* Grid vs box view for graphs */}
                         <div className={'flex flex-row gap-4  bg-[#0a0a0a] px-4 py-2 rounded-lg justify-center items-center'}>
