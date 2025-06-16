@@ -67,13 +67,7 @@ export default function BugReporter() {
 
     return (
         <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black text-white overflow-x-hidden">
-            <div className="container mx-auto px-4 py-8">
-                <div className="flex items-center mb-8">
-                    <Link href="/" className="text-gray-300 hover:text-white mr-4">
-                        <span className="text-xl">←</span> Back to Home
-                    </Link>
-                </div>
-
+            <div className="container flex flex-col mx-auto max-h-screen px-4 justify-center">
                 <h1 className="text-3xl md:text-4xl font-bold tracking-wider mb-8 text-center">
                     BUG REPORTER
                 </h1>

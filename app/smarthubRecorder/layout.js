@@ -6,7 +6,7 @@ import {FlaggingProvider} from "./context/flaggingContext";
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata = {
-    title: 'SmartHub Recorder',
+    title: 'SmartHub RecorderTab',
     description: 'Recording application for SmartHub sensors',
 }
 

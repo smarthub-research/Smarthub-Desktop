@@ -1,20 +1,28 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@theme {
+  /* Surface colors (backgrounds, cards) */
+  --color-surface-50: rgb(252, 252, 252);
+  --color-surface-100: rgb(246, 246, 246);
+  --color-surface-200: rgb(238, 238, 238);
+  --color-surface-300: rgb(224, 224, 224);
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #141414;
-    --foreground: #ededed;
-  }
+  /* Secondary colors */
+  --color-secondary-100: rgb(232, 240, 247);
+  --color-secondary-200: rgb(214, 228, 240);
+  --color-secondary-300: rgb(187, 211, 232);
+  --color-secondary-400: rgb(159, 193, 223);
+
+  /* Primary blues */
+  --color-primary-300: rgb(67, 127, 199);
+  --color-primary-400: rgb(48, 106, 178);
+  --color-primary-500: rgb(30, 86, 160);
+  --color-primary-600: rgb(26, 68, 137);
+  --color-primary-700: rgb(22, 49, 114);
+  --color-primary-800: rgb(18, 40, 91);
 }
 
 body {
-  color: var(--foreground);
-  background: var(--background);
   user-select: none;
 }
 

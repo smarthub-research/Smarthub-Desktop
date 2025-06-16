@@ -7,7 +7,7 @@ import FlagConsole from "../navbar/flagConsole";
 import { useFlagging } from "../context/flaggingContext";
 import {BsFillPauseFill, BsGrid, BsGridFill, BsViewStacked} from "react-icons/bs";
 
-// Main Recorder component
+// Main RecorderTab component
 export default function Recorder() {
     const [displacement, setDisplacement] = useState([]);
     const [velocity, setVelocity] = useState([]);

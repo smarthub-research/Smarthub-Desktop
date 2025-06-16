@@ -8,7 +8,7 @@ import FlagConsole from "./flagConsole";
 import { useFlagging } from "../context/flaggingContext";
 import Link from "next/link";
 
-// This component handles the recording navbar for the SmartHub Recorder application.
+// This component handles the recording navbar for the SmartHub RecorderTab application.
 export default function NavbarRecording() {
     const pathname = usePathname();
     const [show, setShow] = useState(true);

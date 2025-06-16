@@ -10,7 +10,7 @@ import ChartReview from "./chartReview";
 import DownloadCSV from "./downloadCSV";
 import SaveTest from "./saveTest";
 
-// Main component for the Reviewer page
+// Main component for the ReviewerTab page
 function ReviewerContent() {
     const router = useRouter();
     const [allFlags] = useFetchFlags();

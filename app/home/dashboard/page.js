@@ -1,29 +1,51 @@
-import Recorder from "./recorder";
-import Reviewer from "./reviewer";
+'use client'
+
 import RecentTests from "./recentTests";
-import Analytics from "./analytics";
+import Analytics from "./analytics/analytics";
+import Services from "./services";
+import {useEffect, useState} from "react";
+import Loader from '../../loader'
 
 // Component to render the home dashboard page
-export default function Dashboard({setCurrentPage}) {
+export default function Dashboard() {
+    const [testFiles, setTestFiles] = useState()
+    const [loading, setLoading] = useState(true)
+
+    useEffect(() => {
+        const fetchTestFiles = async () => {
+            try {
+                const response = await window.electronAPI.fetchTestFiles();
+                const data = response.data;
+                // If the response is nothing, set tests to an empty array
+                setTestFiles(data || []);
+            } catch (error) {
+                console.error('Error fetching recent tests:', error);
+            } finally {
+                setLoading(false);
+            }
+        }
+        fetchTestFiles()
+    }, []);
+
+    if (loading) {
+        return (
+            <Loader/>
+        )
+    }
+
     return (
-        <div className="flex flex-col text-black h-full p-6 lg:p-10 gap-6 bg-slate-100">
-            <h1 className="font-bold text-2xl">Home</h1>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 w-full">
-                {/* Grid for the main services we offer */}
-                <div className="lg:col-span-2">
-                    {/*<Analytics/>*/}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <span onClick={(() => setCurrentPage('recorder'))}>
-                            <Recorder />
-                        </span>
-                        <span onClick={(() => setCurrentPage('reviewer'))}>
-                            <Reviewer />
-                        </span>
-                    </div>
+        <div className="flex flex-col h-full p-6 lg:p-10 gap-6 bg-surface-100">
+            <h1 className="font-bold text-2xl">Welcome to Smarthub Desktop</h1>
+            <div className="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-6 w-full">
+                {/* Left or center part of grid */}
+                <div className="flex flex-col gap-4 lg:col-span-2">
+                    <Analytics testFiles={testFiles}/>
+                    {/* services */}
+                    <Services/>
                 </div>
-                {/* Div for all other info we want to display */}
+                {/* right side of the grid */}
                 <div className="lg:col-span-1">
-                    <RecentTests />
+                    <RecentTests testFiles={testFiles.slice(0, 10)}/>
                 </div>
             </div>
         </div>

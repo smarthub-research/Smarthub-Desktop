@@ -2,31 +2,9 @@ import { useEffect, useState } from "react";
 import {useRouter} from "next/navigation";
 
 // Displays 10 of the most recent tests
-export default function RecentTests() {
+export default function RecentTests({testFiles}) {
     // Router so we can navigate to a specific test's review page
     const router = useRouter();
-
-    const [tests, setTests] = useState([]);
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        // Function to fetch the 10 most recent tests
-        const fetchRecentTests = async () => {
-            try {
-                setLoading(true);
-                const response = await window.electronAPI.fetchTestFilesAmount(10);
-                const data = response.data;
-                // If the response is nothing, set tests to an empty array
-                setTests(data || []);
-            } catch (error) {
-                console.error('Error fetching recent tests:', error);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchRecentTests();
-    }, []);
 
     // Handle viewing a specific test
     const handleView = async (testName, file) => {
@@ -39,21 +17,20 @@ export default function RecentTests() {
     }
 
     return (
-        <div className="w-md">
+        <div className={'p-4 bg-gray-50 rounded-xl shadow-sm'}>
+            {/* Header + Number of tests showing */}
             <div className="flex items-center justify-between mb-4 pr-1">
                 <h2 className="text-xl font-bold text-gray-800">Recent Tests</h2>
-                <span className="text-sm text-gray-500">{tests.length} tests</span>
+                <span className="text-sm text-gray-500">{testFiles.length} tests</span>
             </div>
 
+            {/* List of the test files or an error message */}
             <div className="bg-white shadow-md rounded-lg overflow-hidden border border-gray-100">
-                {loading ? (
-                    <div className="p-6 text-center text-gray-500">Loading tests...</div>
-                ) : tests.length === 0 ? (
+                {testFiles.length === 0 ? (
                     <div className="p-6 text-center text-gray-500">No recent tests found</div>
                 ) : (
-                    // List of recent tests
                     <ul className="divide-y divide-gray-100">
-                        {tests.map((test, index) => (
+                        {testFiles.map((test, index) => (
                             <li key={index} className="hover:bg-gray-50 transition-colors duration-150 ease-in-out">
                                 <div className="flex items-center justify-between p-4">
                                     <div className="flex flex-col">

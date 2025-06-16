@@ -1,18 +1,14 @@
-import Link from "next/link";
-import RecorderSVG from "../../svg/recorderSVG";
+import CalendarSVG from "../../svg/calendarSVG";
 
-// Component to display a card for the RecorderTab feature
-export default function Recorder() {
+export default function Calendar() {
     return (
         <div className="group h-full block transform transition-transform duration-300 hover:-translate-y-1.5 cursor-pointer">
-            <div className="relative flex flex-row justify-between text-sky-700 group-hover:text-sky-600 items-center overflow-hidden bg-white p-6 py-8 rounded-xl shadow-lg group-hover:shadow-xl transition-shadow duration-300">
-                <div className="absolute top-0 left-0 right-0 h-2 bg-sky-500 transition-all duration-300 ease-out group-hover:bg-sky-400 group-hover:h-3"/>
+            <div className="relative overflow-hidden flex flex-row justify-between items-center bg-white text-orange-700 group-hover:text-orange-600 p-6 py-8 rounded-xl shadow-lg group-hover:shadow-xl transition-shadow duration-300">
+                <div className="absolute top-0 left-0 right-0 h-2 bg-orange-500 transition-all duration-300 ease-out group-hover:bg-orange-400 group-hover:h-3"></div>
                 <h2 className="mt-3 text-2xl font-semibold mb-2  transition-colors duration-300">
-                    RECORDER
+                    CALENDAR
                 </h2>
-
-                <RecorderSVG />
-
+                <CalendarSVG/>
                 {/*<p className="text-gray-600 group-hover:text-gray-500 text-sm transition-colors duration-300">*/}
                 {/*    Record data in realtime using your Smarthub Devices. All you have to do is simply pair, record and save.*/}
                 {/*    Perfect for collecting high-quality sensor data for further analysis.*/}
