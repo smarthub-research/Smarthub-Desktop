@@ -1,0 +1,31 @@
+/* In auth.css */
+:root {
+    --x-pos: 0%;
+    --y-pos: 50%;
+    --texture-x: 0%;
+    --texture-y: 0%;
+    --texture-opacity: 0.2; /* Adjust value between 0-1 */
+}
+
+.moving-gradient {
+    position: relative;
+    background: radial-gradient(at 50% 75%, rgb(18, 40, 91), rgb(67, 127, 199), rgb(67, 127, 199));
+    background-size: 400% 400%;
+    background-position: var(--x-pos, 0%) var(--y-pos, 50%);
+    transition: background-position 3s ease;
+}
+
+.moving-gradient::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url('/texture.jpg');
+    background-size: cover;
+    background-position: var(--texture-x, 0%) var(--texture-y, 0%);
+    opacity: var(--texture-opacity);
+    pointer-events: none;
+    mix-blend-mode: overlay;
+}

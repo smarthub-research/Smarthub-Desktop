@@ -3,7 +3,7 @@ import Reviewer from "./reviewer";
 import Calendar from "./calendar";
 import BugReporter from "./bugReporter";
 
-export default function Services() {
+export default function Services({setCurrentPage}) {
     return (
         <div className={'p-4 bg-surface-50 rounded-xl shadow-sm'}>
             <h2 className="mb-4 font-semibold">Services</h2>

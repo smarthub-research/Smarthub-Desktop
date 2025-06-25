@@ -1,5 +1,5 @@
 import ChartTabs from "./chartTabs";
-import DemoChart from "../recorder/demoChart";
+import Chart from "../recorder/chart";
 import {useState} from "react";
 import {useTest} from "../context/testContext";
 
@@ -14,7 +14,7 @@ export default function ChartReview() {
         return (
             <>
                 {activeChartTab === 'displacement' && (
-                    <DemoChart
+                    <Chart
                         timeStamps={testData.timeStamp}
                         data={testData.displacement}
                         title="Displacement vs Time"
@@ -22,7 +22,7 @@ export default function ChartReview() {
                     />
                 )}
                 {activeChartTab === 'heading' && (
-                    <DemoChart
+                    <Chart
                         timeStamps={testData.timeStamp}
                         data={testData.heading}
                         title="Heading vs Time"
@@ -30,7 +30,7 @@ export default function ChartReview() {
                     />
                 )}
                 {activeChartTab === 'velocity' && (
-                    <DemoChart
+                    <Chart
                         timeStamps={testData.timeStamp}
                         data={testData.velocity}
                         title="Velocity vs Time"
@@ -38,7 +38,7 @@ export default function ChartReview() {
                     />
                 )}
                 {activeChartTab === 'trajectory' && (
-                    <DemoChart
+                    <Chart
                         timeStamps={testData.trajectory_x}
                         data={testData.trajectory_y}
                         title="Trajectory"

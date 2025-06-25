@@ -8,14 +8,14 @@ const montserrat = Montserrat({
 })
 
 export const metadata = {
-    title: 'SmartHub RecorderTab',
+    title: 'SmartHub Desktop',
     description: 'Recording application for SmartHub sensors',
 }
 
 export default function RootLayout({ children }) {
     return (
         <html lang="en">
-            <body className={`${montserrat.className} overflow-x-hidden font-mono bg-gray-100`}>
+            <body className={`${montserrat.className} overflow-x-hidden font-mono bg-surface-200`}>
                 {children}
             </body>
         </html>

@@ -9,6 +9,7 @@ function createMainWindow() {
     const { width, height } = screen.getPrimaryDisplay().workAreaSize;
 
     const mainWindow = new BrowserWindow({
+        // titleBarStyle: "hiddenInset",
         title: 'Smarthub Page',
         // width: width,
         // height: height,

@@ -41,7 +41,7 @@ const CHART_COLORS = {
 }
 
 // Chart component for displaying various sensor data for different chart types
-export default function DemoChart({ timeStamps, data, title, graphId }) {
+export default function Chart({ timeStamps, data, title, graphId }) {
     const [flags] = useFetchFlags({ graphId });
     const [dataPointCount, setDataPointCount] = useState(50);
     const [scrollPosition, setScrollPosition] = useState(0);
@@ -389,7 +389,7 @@ export default function DemoChart({ timeStamps, data, title, graphId }) {
     }
 
     return (
-        <div className="grow w-full h-full p-6 bg-[#0a0a0a] rounded-xl shadow-lg transition-all duration-300 ">
+        <div className="grow w-full h-full p-6 bg-surface-50 rounded-xl shadow-lg transition-all duration-300 ">
             {data && data.length > 0 ? (
                 <>
                     <div className="flex justify-between items-center mb-4">

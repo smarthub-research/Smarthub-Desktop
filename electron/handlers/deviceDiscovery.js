@@ -50,8 +50,6 @@ function setupDiscoveryHandlers() {
 
             devices.push({name: nameTwo, UUID: uuidTwo});
         }
-
-        console.log('Devices fetched:', devices);
         return devices;
     });
 }

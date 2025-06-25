@@ -24,7 +24,7 @@ export default function TestName({setTestData, testData, id}) {
     return (
         <div className="flex items-center">
             <Link
-                href="/"
+                href="/home"
                 className="mr-4 p-2 rounded-full hover:bg-gray-800 transition-colors"
             >
                 <FiArrowLeft className={'scale-150'}/>

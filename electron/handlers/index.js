@@ -1,6 +1,6 @@
 const { setupDiscoveryHandlers } = require('./deviceDiscovery');
 const { setupConnectionHandlers } = require('./connectionHandlers');
-const { setupDataHandlers } = require('./dataHandlers');
+const { setupDataHandlers } = require('./data/dataHandler');
 const {setupFlagHandlers} = require("./flagHandlers");
 const {setupBugHandlers} = require("./bugHandlers");
 

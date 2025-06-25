@@ -79,7 +79,7 @@ export default function ControlPanel({setFlagging, flagging}) {
     return (
         <>
             <div
-                className="p-4 flex flex-row h-full gap-3  px-4 items-center justify-center justify-self-end rounded-xl">
+                className="flex flex-row h-full gap-3 px-4 items-center justify-center rounded-xl">
                 <button
                     onClick={beginBleReading}
                     disabled={recording}
@@ -108,8 +108,7 @@ export default function ControlPanel({setFlagging, flagging}) {
                 <button
                     onClick={setFlagging}
                     className={`flex justify-center items-center w-12 h-12 border border-gray-600
-                    hover:bg-gray-800 rounded-full transition-colors text-white text-xl shadow-md
-                    ${flagging ? 'bg-black opacity-50' : 'bg-transparent'}`}>
+                    hover:bg-primary-400 bg-primary-500 rounded-full transition-colors text-white text-xl shadow-md`}>
                     <BsFillFlagFill/>
                 </button>
             </div>

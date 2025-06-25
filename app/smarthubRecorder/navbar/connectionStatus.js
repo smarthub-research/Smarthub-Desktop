@@ -30,7 +30,7 @@ export default function ConnectionStatus() {
     }, []);
 
     return (
-        <div className="p-4 h-full rounded-xl self-start">
+        <div className="my-auto rounded-xl ">
             {loading ? (
                 <div className="flex items-center space-x-2 py-2">
                     <div className="w-4 h-4 rounded-full bg-gray-700 animate-pulse"></div>

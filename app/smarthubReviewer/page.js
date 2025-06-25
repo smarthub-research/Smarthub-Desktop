@@ -1,10 +1,9 @@
 'use client'
 
 import { useState, useEffect } from "react";
-import { FiDownload, FiFilter } from "react-icons/fi";
-import Link from "next/link";
 import {useRouter} from "next/navigation";
 import TestFileCard from "./testFileCard";
+import SearchFilters from "./searchFilters";
 
 export default function ReviewerHomePage() {
     const router = useRouter();
@@ -82,67 +81,12 @@ export default function ReviewerHomePage() {
     }
 
     return (
-        <div className="min-h-screen bg-gray-300 text-black p-6">
-            <Link href={'/'}>
-                <h1 className="text-2xl font-bold mb-8 text-center tracking-wider">
-                    SmartHub Reviewer
-                </h1>
-            </Link>
-
-
+        <div className="min-h-screen p-6">
+            <h1 className={'text-center font-bold text-2xl mb-4'}>Reviewer</h1>
             <div className="flex flex-col md:flex-row gap-6">
 
                 {/* FILTERS SIDEBAR */}
-                <div className="flex flex-col gap-4 md:w-64 bg-white rounded-lg p-4 h-fit">
-                    {/* SEARCH BAR */}
-                    <div>
-                        <input
-                            type="text"
-                            placeholder="Search test files..."
-                            className="w-full bg-white p-2 rounded-lg border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                    </div>
-
-                    <div className="flex items-center gap-2 mb-4 border-b border-gray-700 pb-2">
-                        <FiFilter className="text-blue-500" />
-                        <h2 className="text-xl font-semibold">Filters</h2>
-                    </div>
-
-                    <div className="space-y-3">
-                        <div className="flex items-center">
-                            <input
-                                type="checkbox"
-                                id="testNameFilter"
-                                className="mr-2 h-4 w-4 accent-blue-500"
-                                checked={filters.testName}
-                                onChange={() => handleFilterChange('testName')}
-                            />
-                            <label htmlFor="testNameFilter">Test Name</label>
-                        </div>
-
-                        <div className="flex items-center">
-                            <input
-                                type="checkbox"
-                                id="dateFilter"
-                                className="mr-2 h-4 w-4 accent-blue-500"
-                                checked={filters.date}
-                                onChange={() => handleFilterChange('date')}
-                            />
-                            <label htmlFor="dateFilter">Date</label>
-                        </div>
-
-                        <div className="flex items-center">
-                            <input
-                                type="checkbox"
-                                id="commentsFilter"
-                                className="mr-2 h-4 w-4 accent-blue-500"
-                                checked={filters.comments}
-                                onChange={() => handleFilterChange('comments')}
-                            />
-                            <label htmlFor="commentsFilter">Comments</label>
-                        </div>
-                    </div>
-                </div>
+                <SearchFilters filters={filters} handleFilterChange={handleFilterChange}/>
 
                 {/* FILE LIST */}
                 <div className="flex-1">

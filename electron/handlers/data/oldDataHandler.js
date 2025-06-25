@@ -1,29 +1,17 @@
 const { ipcMain } = require('electron');
 const BrowserWindow = require('electron').BrowserWindow;
-const connectionStore = require('../services/connectionStore');
-const { noble } = require('./deviceDiscovery');
-const timeManager = require('../services/timeManager');
-const flagHandlers = require('./flagHandlers');
+const connectionStore = require('../../services/connectionStore');
+const { noble } = require('../deviceDiscovery');
+const timeManager = require('../../services/timeManager');
+const flagHandlers = require('../flagHandlers');
 const fs = require('fs');
 const { shell } = require('electron');
-const supabaseHandlers = require('./supabaseHandlers');
+const supabaseHandlers = require('./services/supabaseService');
 
 let testData = null;
 let reviewData = null;
 let dataBuffer = initializeBuffer();
 let rawDataBuffer = initializeBuffer();
-
-// Constants for downsampling
-const TARGET_POINTS = 10; // Target number of points to downsample
-const DOWNSAMPLE_TO = 3;   // Target number after downsampling
-
-// Constants for calculations
-const IN_TO_M = 0.0254;
-const WHEEL_DIAM_IN = 24;
-const WHEEL_RADIUS_M = (WHEEL_DIAM_IN / 2) * IN_TO_M; // Convert to meters
-const DIST_WHEELS_IN = 26;
-const DIST_WHEELS_M = DIST_WHEELS_IN * IN_TO_M; // Convert to meters
-const DT = 0.058;
 
 let displacement = 0;
 
@@ -323,48 +311,6 @@ function subscribeToCharacteristics(characteristic, peripheral) {
     characteristic.on('data', characteristic._dataCallback);
 }
 
-function initializeBuffer() {
-   return {
-            gyro_left: [],
-            gyro_right: [],
-            accel_left: [],
-            accel_right: [],
-         displacement: [],
-         velocity: [],
-         heading: [],
-         trajectory_x: [],
-         trajectory_y: [],
-         timeStamp: []
-   }
-}
-
-/**
- * Append data to given buffer that follows the format:
- * {
- *     gyro_left: [],
- *     gyro_right: [],
- *     displacement: [],
- *     velocity: [],
- *     heading: [],
- *     trajectory_x: [],
- *     trajectory_y: [],
- *     timeStamp: []
- * }
- */
-function appendToBuffer(buffer, data) {
-    buffer.gyro_left.push(data.gyro_left)
-    buffer.gyro_right.push(data.gyro_right)
-    buffer.accel_left.push(data.accel_left)
-    buffer.accel_right.push(data.accel_right)
-    buffer.displacement.push(data.displacement)
-    buffer.velocity.push(data.velocity)
-    buffer.heading.push(data.heading)
-    buffer.trajectory_x.push(data.trajectory_x)
-    buffer.trajectory_y.push(data.trajectory_y)
-    buffer.timeStamp.push(data.timeStamp)
-}
-
-
 /**
  * Downsample data using Largest Triangle Three Buckets (LTTB) algorithm.
  * Works with a buffer object that has arrays of values.
@@ -644,60 +590,6 @@ function unsubscribeToCharacteristics(characteristic) {
         characteristic.off('data', characteristic._dataCallback);
         delete characteristic._dataCallback;
     }
-}
-
-function downloadCsv(testName) {
-    console.log('Downloading CSV file...');
-
-    // Create CSV header
-    let csvString = 'Time (sec),Displacement (m),Velocity (m/s),Heading,Trajectory X,Trajectory Y,';
-
-    // Add headers for each component of arrays
-    csvString += 'Gyro_Left_1,Gyro_Left_2,Gyro_Left_3,Gyro_Left_4,';
-    csvString += 'Gyro_Right_1,Gyro_Right_2,Gyro_Right_3,Gyro_Right_4,';
-    csvString += 'Accel_Left_1,Accel_Left_2,Accel_Left_3,Accel_Left_4,';
-    csvString += 'Accel_Right_1,Accel_Right_2,Accel_Right_3,Accel_Right_4\n';
-
-    // Add data rows
-    testData.timeStamp.forEach((time, i) => {
-        let row = `${time / 1000},${testData.displacement[i]?.displacement || testData.displacement[i]},`;
-        row += `${testData.velocity[i]?.velocity || testData.velocity[i]},`;
-        row += `${testData.heading[i]?.heading || testData.heading[i]},`;
-        row += `${testData.trajectory_x[i]},${testData.trajectory_y[i]},`;
-
-        // Add each value from the arrays individually
-        const gyroLeft = testData.gyro_left[i] || [0,0,0,0];
-        for (let j = 0; j < 4; j++) {
-            row += `${gyroLeft[j] || 0},`;
-        }
-
-        const gyroRight = testData.gyro_right[i] || [0,0,0,0];
-        for (let j = 0; j < 4; j++) {
-            row += `${gyroRight[j] || 0},`;
-        }
-
-        const accelLeft = testData.accel_left[i] || [0,0,0,0];
-        for (let j = 0; j < 4; j++) {
-            row += `${accelLeft[j] || 0},`;
-        }
-
-        const accelRight = testData.accel_right[i] || [0,0,0,0];
-        for (let j = 0; j < 4; j++) {
-            row += `${accelRight[j] || 0}${j < 3 ? ',' : ''}`;
-        }
-
-        csvString += row + '\n';
-    });
-
-    const filePath = `${testName}.csv`;
-    fs.writeFile(filePath, csvString, (err) => {
-        if (err) {
-            console.error('Error writing CSV file:', err);
-            return;
-        }
-        console.log('CSV file saved successfully');
-        shell.openPath(filePath);
-    });
 }
 
 module.exports = {

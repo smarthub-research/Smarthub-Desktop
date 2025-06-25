@@ -1,4 +1,4 @@
-const { supabase } = require('../services/client');
+const { supabase } = require('../../../services/client');
 
 async function submitTestData(metadata) {
     try {

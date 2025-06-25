@@ -4,27 +4,20 @@ import ConnectionStatus from "./connectionStatus";
 import {usePathname} from "next/navigation";
 import React, { useEffect, useState } from "react";
 import ControlPanel from "./controlPanel";
-import FlagConsole from "./flagConsole";
 import { useFlagging } from "../context/flaggingContext";
-import Link from "next/link";
+import Timer from "./timer";
 
 // This component handles the recording navbar for the SmartHub RecorderTab application.
 export default function NavbarRecording() {
     const pathname = usePathname();
     const [show, setShow] = useState(true);
     const [lastScrollY, setLastScrollY] = useState(0);
-    const [recording, setRecording] = useState(pathname === "/recorder/");
     const { flagging, handleFlagging } = useFlagging();
     const [recordingState, setRecordingState] = useState({
         isRecording: false,
         startTime: null
     });
     const [recordingTime, setRecordingTime] = useState(0);
-
-    // Check if the current path is the recorder page
-    useEffect(() => {
-        setRecording(pathname === "/");
-    }, [pathname]);
 
     // Handle scroll events to show/hide the navbar
     useEffect(() => {
@@ -122,41 +115,11 @@ export default function NavbarRecording() {
     }, []);
 
     return (
-        <>
-            <div className={`sticky flex flex-row-reverse top-0 z-5 w-[100vw] h-[10vh]
-            ${show ? "opacity-100" : "opacity-0"} transition`}>
-
-                {/* Render all components needed for recording */}
-                {recording && (
-                    <div className="flex flex-row grow gap-6 justify-center p-4 items-center ">
-                        <ConnectionStatus/>
-                        <ControlPanel setFlagging={handleFlagging} flagging={flagging}/>
-
-                        <div className="flex  items-center justify-center h-full rounded-lg px-6 py-2 ">
-                            {recordingState.isRecording ? (
-                                <div className="flex items-center">
-                                    <span className="h-2 w-2 rounded-full bg-red-500 animate-pulse mr-2"></span>
-                                    <span className="text-sm font-medium">
-                                        Recording: {recordingTime.toFixed(1)}s
-                                    </span>
-                                </div>
-                            ) : (
-                                <div className="flex items-center text-gray-400">
-                                    <span className="h-2 w-2 rounded-full bg-gray-500 mr-2"></span>
-                                    <span className="text-sm font-medium">
-                                        {recordingTime.toFixed(1) > 0 ? ("Not Recording " + recordingTime.toFixed(1) + "s") : ("Not recording")}
-                                    </span>
-                                </div>
-                            )}
-                        </div>
-
-                    </div>
-                )}
-            </div>
-            {/* Conditionally render the FlagConsole component based on the flagging state */}
-            {flagging && (
-                <FlagConsole setFlagging={handleFlagging}/>
-            )}
-        </>
+        <div className={`sticky flex flex-row grow justify-center items-center p-4 gap-6 top-0 z-5 w-full h-[10vh]
+        ${show ? "opacity-100" : "opacity-0"} transition`}>
+            <ConnectionStatus/>
+            <ControlPanel setFlagging={handleFlagging} flagging={flagging}/>
+            <Timer recordingTime={recordingTime} recordingState={recordingState} />
+        </div>
     );
 }

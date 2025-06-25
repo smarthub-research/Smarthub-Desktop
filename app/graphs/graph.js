@@ -1,7 +1,6 @@
 'use client';
 
-import {LineChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis, AreaChart, Area} from "recharts";
-import {white} from "next/dist/lib/picocolors";
+import {ResponsiveContainer, Tooltip, XAxis, YAxis, AreaChart, Area} from "recharts";
 
 // Constants for chart colors
 const CHART_COLORS = {
@@ -13,6 +12,8 @@ const CHART_COLORS = {
 }
 
 function Graph({data}) {
+
+
     // Find first non-time key
     const dataKey = data && data.length > 0
         ? Object.keys(data[0]).find(key => key !== "time")
@@ -52,7 +53,7 @@ function Graph({data}) {
     };
 
     return (
-        <div className={'flex flex-col gap-2 h-full grow bg-[#2a2a2a] p-4 rounded-lg'}>
+        <div className={'flex flex-col gap-2 h-full grow bg-white p-4 rounded-lg shadow-md'}>
             <p>{title}</p>
             <ResponsiveContainer height={"100%"} width={"100%"}>
                 <AreaChart

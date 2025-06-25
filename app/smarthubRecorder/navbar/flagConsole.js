@@ -109,7 +109,7 @@ export default function FlagConsole({setFlagging}) {
 
     return (
         <div
-            className="fixed z-5 top-0 right-0 h-[100vh] border-l border-gray-800 flex flex-col bg-[#0a0a0a] shadow-xl
+            className="fixed z-5 top-0 right-0 h-full border-l border-gray-800 flex flex-col bg-[#0a0a0a] shadow-xl
             transition-all duration-500 ease-in-out"
             style={{
                 width: `${width}vw`,

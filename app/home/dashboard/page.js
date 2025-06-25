@@ -5,9 +5,10 @@ import Analytics from "./analytics/analytics";
 import Services from "./services";
 import {useEffect, useState} from "react";
 import Loader from '../../loader'
+import Announcements from "./announcements";
 
 // Component to render the home dashboard page
-export default function Dashboard() {
+export default function Dashboard({ setCurrentPage }) {
     const [testFiles, setTestFiles] = useState()
     const [loading, setLoading] = useState(true)
 
@@ -41,11 +42,12 @@ export default function Dashboard() {
                 <div className="flex flex-col gap-4 lg:col-span-2">
                     <Analytics testFiles={testFiles}/>
                     {/* services */}
-                    <Services/>
+                    <Services setCurrentPage={setCurrentPage}/>
                 </div>
                 {/* right side of the grid */}
-                <div className="lg:col-span-1">
+                <div className="flex flex-col gap-4 lg:col-span-1">
                     <RecentTests testFiles={testFiles.slice(0, 10)}/>
+                    <Announcements />
                 </div>
             </div>
         </div>
