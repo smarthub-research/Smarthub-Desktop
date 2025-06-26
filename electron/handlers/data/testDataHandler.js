@@ -1,9 +1,15 @@
 const { ipcMain } = require('electron');
 const testDataService = require('./services/testDataService');
 
+// options = filter
+
 function setupTestDataHandlers() {
     ipcMain.handle('get-test-data', (event, options) => {
         return testDataService.getTestData(options);
+    });
+
+    ipcMain.handle('set-test-data', (event, data) => {
+        testDataService.setTestData(data)
     });
 
     ipcMain.handle('get-review-data', (event, options) => {

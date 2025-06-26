@@ -1,6 +1,6 @@
 import './globals.css'
-import React from "react";
 import { Montserrat } from 'next/font/google'
+import NavbarHandler from "./components/navbar/navbarHandler";
 
 const montserrat = Montserrat({
     subsets: ['latin'],
@@ -15,7 +15,8 @@ export const metadata = {
 export default function RootLayout({ children }) {
     return (
         <html lang="en">
-            <body className={`${montserrat.className} overflow-x-hidden font-mono bg-surface-200`}>
+            <body className={`${montserrat.className} flex flex-row h-screen max-h-screen w-screen max-w-screen overflow-x-hidden font-mono bg-surface-200`}>
+                <NavbarHandler />
                 {children}
             </body>
         </html>

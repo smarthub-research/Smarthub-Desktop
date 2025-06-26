@@ -3,14 +3,42 @@ const calculationUtils = require('../utils/calculationUtils');
 const downsamplingUtils = require('../utils/downsamplingUtils');
 
 class TestDataService {
-    getTestData(options = {}) {
-        console.log('Getting test data...');
+    getTestData() {
+        if (!this.testData) {
+            console.log("No test data available");
+            return null;
+        }
+        return this.testData
+    }
 
-        // Get raw data from buffer
-        const rawData = dataBuffer.getRawDataBuffer();
+    setTestData(data) {
+        let dataValues;
+        if (!data) {
+            dataValues = dataBuffer.getRawDataBuffer();
+        } else {
+            dataValues = data;
+        }
+        console.log("setting test data");
 
-        // Process the data based on options
-        return this._processData(rawData, options);
+        this.testData = {
+            gyro_left: dataValues.gyro_left || [],
+            gyro_right: dataValues.gyro_right || [],
+            accel_left: dataValues.accel_left || [],
+            accel_right: dataValues.accel_right || [],
+            displacement: dataValues.displacement || [],
+            velocity: dataValues.velocity || [],
+            heading: dataValues.heading || [],
+            trajectory_x: dataValues.trajectory_x || [],
+            trajectory_y: dataValues.trajectory_y || [],
+            timeStamp: dataValues.timeStamp || [],
+            duration: this.calculateDuration(dataValues),
+            maxVelocity: this.calculateMaxVelocity(dataValues.velocity || []),
+            avgHeading: this.calculateAvgHeading(dataValues.heading || [])
+        };
+
+        // Clear the data buffers
+        dataBuffer.initializeBuffer();
+        return { success: true };
     }
 
     setReviewData(data) {
@@ -30,6 +58,29 @@ class TestDataService {
             maxSpeed: calculationUtils.calculateMax(data.speed),
             // Other metrics...
         };
+    }
+
+    calculateMaxVelocity(data) {
+        if (!data.velocity) { return 0 }
+        return data.velocity.max
+    }
+
+    calculateAvgHeading(data) {
+        if (!data.heading) { return 0 }
+        let avg = 0
+        data.heading.map((val) => {
+            avg += val
+        })
+        return avg /= data.heading.length
+    }
+
+    calculateDuration(data) {
+        const timeData = data.displacement || data;
+        if (!timeData || timeData.length === 0) return 0;
+
+        // Find the last timestamp
+        const lastItem = timeData[timeData.length - 1];
+        return lastItem.timeStamp ? (lastItem.timeStamp / 1000).toFixed(1) : 0;
     }
 
     _processData(rawData, options) {
