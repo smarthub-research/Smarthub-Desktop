@@ -1,13 +1,39 @@
+/**
+ * Authentication Login Page
+ *
+ * This file contains the Login component that handles user authentication using Supabase.
+ * The component renders a login form with email and password fields, processes authentication,
+ * displays error/success messages, and redirects users after successful login.
+ */
+
 'use client'
 import { useState } from "react";
 import { supabase } from "../client";
 import { useRouter, useSearchParams } from "next/navigation";
 
+/**
+ * Login Component
+ *
+ * Renders a login form and manages the authentication flow with Supabase.
+ * Features:
+ * - Email/password authentication
+ * - Form validation and error handling
+ * - Loading state management during authentication
+ * - Success/error message display
+ * - URL query parameter support for displaying messages
+ * - Integration with Electron for desktop applications
+ * - Navigation to dashboard upon successful login
+ *
+ * @returns {JSX.Element} The login form interface
+ */
 export default function Login() {
     const router = useRouter();
+
+    // Extract URL query parameters for displaying messages
     const searchParams = useSearchParams();
     const message = searchParams.get('message');
 
+    // State management
     const [error, setError] = useState('');
     const [success, setSuccess] = useState(message || '');
     const [loading, setLoading] = useState(false);
@@ -16,6 +42,11 @@ export default function Login() {
         password: ''
     });
 
+    /**
+     * Changes formData variables on input change.
+     *
+     * @param e
+     */
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData(prev => ({
@@ -24,12 +55,22 @@ export default function Login() {
         }));
     };
 
+    /**
+     * Handles form submission for user authentication
+     *
+     * @param {FormEvent<HTMLFormElement>} e - The form submission event
+     * @returns {Promise<void>}
+     */
     const handleSubmit = async (e) => {
+        // Prevents default form submission behavior
         e.preventDefault();
+
+        // Clears previous errors and sets loading state
         setError('');
         setLoading(true);
 
         try {
+            // Authenticates with Supabase using provided credentials
             const { data, error } = await supabase.auth.signInWithPassword({
                 email: formData.email,
                 password: formData.password,
@@ -37,18 +78,16 @@ export default function Login() {
 
             if (error) throw error;
 
-            // Get the FULL session object including tokens
+            // Retrieves full session with tokens upon successful authentication
             const { data: { session } } = await supabase.auth.getSession();
 
-            // Log what we're sending to help debug
-            console.log('Sending auth session to main process:',
-                session?.access_token ? 'Session with token' : 'No session');
-
+            // Passes session to electron process if in desktop context
             await window.electronAPI.setAuthSession(session)
 
             // Successful login - redirect to dashboard
             router.push('/');
         } catch (err) {
+            // Displays error message if authentication fails
             setError(err.message || 'Failed to sign in. Please check your credentials.');
             setLoading(false);
         }
@@ -57,10 +96,13 @@ export default function Login() {
     return (
         <>
             <div className={'flex flex-col gap-6'}>
+                {/* Conditional messages for the user*/}
                 {error && <p className="text-red-500 mb-4">{error}</p>}
                 {success && <p className="text-green-500 mb-4">{success}</p>}
 
+                {/* Login form */}
                 <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
+                    {/* Email input */}
                     <input
                         name="email"
                         type="email"
@@ -70,6 +112,7 @@ export default function Login() {
                         className="p-2 border rounded"
                         required
                     />
+                    {/* Password input */}
                     <input
                         name="password"
                         type="password"
@@ -79,11 +122,13 @@ export default function Login() {
                         className="p-2 border rounded"
                         required
                     />
+                    {/* Forgot password */}
                     <div className="flex justify-between items-center mb-2">
                         <span className="text-sm text-primary-400 cursor-pointer hover:underline">
                             Forgot password?
                         </span>
                     </div>
+                    {/* Submit button */}
                     <button
                         type="submit"
                         disabled={loading}
@@ -93,6 +138,7 @@ export default function Login() {
                     </button>
                 </form>
             </div>
+            {/* Sign up router */}
             <p className="text-sm text-gray-600 mt-6">
                 Don't have an account?{' '}
                 <span className="underline cursor-pointer text-primary-400 hover:text-primary-500"
