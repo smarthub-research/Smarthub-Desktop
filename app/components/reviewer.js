@@ -1,5 +1,5 @@
 import Link from "next/link";
-import ReviewerSVG from "../components/svg/reviewerSVG";
+import ReviewerSVG from "./svg/reviewerSVG";
 
 // Component to display a card for the ReviewerTab feature
 export default function Reviewer() {

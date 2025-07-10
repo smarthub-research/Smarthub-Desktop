@@ -25,19 +25,9 @@ function ReviewerContent() {
     }
 
     return (
-        <div className="h-full w-full grow flex flex-col text-white p-6 pt-8 overflow-y-auto">
-            <div className="flex items-center justify-between mb-6">
-                {/* Back button */}
-                <div className="flex items-center">
-                    <button
-                        onClick={() => router.push('/home')}
-                        className="mr-4 p-2 rounded-full hover:bg-gray-800 transition-colors"
-                    >
-                        <FiArrowLeft size={20} />
-                    </button>
-                    <h1 className="text-3xl font-bold">Review Test</h1>
-                </div>
-
+        <div className="h-full w-full grow flex flex-col gap-4 p-6 pt-8 overflow-y-auto mt-8">
+            <div className="flex items-center justify-between">
+                <h1 className="text-3xl font-bold">Review Test</h1>
                 <div className="flex gap-3">
                     <DownloadCSV />
                     <SaveTest allFlags={allFlags} />

@@ -51,7 +51,6 @@ export default function NavbarRecording() {
 
     // Define event handlers
     const handleRestartRecording = (eventData) => {
-        console.log("Restart recording handler triggered", eventData);
         setRecordingTime(0); // Reset time only on restart
 
         if (eventData && eventData.startTime) {
@@ -64,7 +63,6 @@ export default function NavbarRecording() {
 
     // Handle the beginning of a reading session
     const handleBeginReading = (eventData) => {
-        console.log("Begin reading handler triggered", eventData);
         if (eventData && eventData.startTime) {
             setRecordingState({
                 isRecording: true,
@@ -75,7 +73,6 @@ export default function NavbarRecording() {
 
     // Handle stopping the reading session
     const handleStopReading = () => {
-        console.log("Stop reading handler triggered");
         // Keep the final time when stopped
         setRecordingState({
             isRecording: false,

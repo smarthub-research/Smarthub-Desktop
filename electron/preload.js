@@ -16,6 +16,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
     connectBle: (device) => ipcRenderer.invoke('connect-ble', { device }),
     disconnectBle: (device) => ipcRenderer.invoke('disconnect-ble', { device }),
     resetDevices: () => ipcRenderer.invoke('reset-devices'),
+    checkConnectionStatus: () => ipcRenderer.invoke('check-connection-status'),
+    setupDisconnectionListeners: () => ipcRenderer.invoke('setup-disconnection-listeners'),
+    onDeviceDisconnected: (callback) => {
+        const listener = (_, data) => callback(data);
+        ipcRenderer.on('device-disconnected', listener);
+        return () => ipcRenderer.removeListener('device-disconnected', listener);
+    },
 
     // Data functions
     beginReadingData: () => ipcRenderer.invoke('begin-reading-data'),
@@ -60,6 +67,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
     setReviewData: (reviewData) => ipcRenderer.invoke('set-review-data', reviewData),
     getReviewData: () => ipcRenderer.invoke('get-review-data'),
+    clearReviewData: () => ipcRenderer.invoke('clear-review-data'),
 
     downloadCSV: (testName) => ipcRenderer.invoke('download-csv', testName),
 
@@ -67,6 +75,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
     fetchTestFiles: () => ipcRenderer.invoke('fetch-test-files'),
     fetchTestFilesAmount: (numberOfTests) => ipcRenderer.invoke('fetch-test-files-amount', numberOfTests),
     updateTestName: (id, testName) => ipcRenderer.invoke('update-test-name', id, testName),
+
+    fetchAnnouncements: () => ipcRenderer.invoke('fetch-announcements'),
+    setAuthSession: (session) => ipcRenderer.invoke('set-auth-session', session),
 
     submitBugReport: (metadata) => ipcRenderer.invoke('submit-bug-report', metadata),
 

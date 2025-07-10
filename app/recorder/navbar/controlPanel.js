@@ -14,13 +14,11 @@ export default function ControlPanel({setFlagging, flagging}) {
 
         // Define event handlers
         const handleBeginReading = () => {
-            console.log("Begin reading handler triggered");
             setRecording(true);
         };
 
         // Stop reading data
         const handleStopReading = () => {
-            console.log("Stop reading handler triggered");
             setRecording(false);
         };
 
@@ -41,7 +39,6 @@ export default function ControlPanel({setFlagging, flagging}) {
     async function beginBleReading() {
         try {
             if (window.electronAPI) {
-                console.log("Starting BLE reading");
                 await window.electronAPI.beginReadingData();
                 // Setting recording state is now handled by the IPC listener
             }
@@ -54,7 +51,6 @@ export default function ControlPanel({setFlagging, flagging}) {
     async function stopRecording() {
         try {
             if (window.electronAPI) {
-                console.log("Stopping BLE recording");
                 await window.electronAPI.stopRecordingData();
                 // Setting recording state is now handled by the IPC listener
             }
@@ -67,7 +63,6 @@ export default function ControlPanel({setFlagging, flagging}) {
     async function restartRecording() {
         try {
             if (window.electronAPI) {
-                console.log("Restarting recording");
                 await window.electronAPI.restartRecording();
                 await window.electronAPI.clearFlags();
             }

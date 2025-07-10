@@ -7,7 +7,7 @@ import CommentSection from "./commentSection";
 // Displays all test Information components
 export default function TestInformation() {
     return (
-        <div className="bg-[#1a1a1a] rounded-lg shadow-lg p-6">
+        <div className="bg-surface-50 rounded-lg shadow-lg p-6">
             <h2 className="text-xl font-semibold mb-4 flex items-center">
                 <FiFileText className="mr-2" /> Test Information
             </h2>

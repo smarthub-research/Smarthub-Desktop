@@ -5,7 +5,6 @@ const exportUtils = require('../utils/exportUtils');
 
 class ExportService {
     async exportToCsv(options) {
-        console.log('Exporting data to CSV...');
 
         // Get data from buffer
         const data = options.raw ? dataBuffer.getRawDataBuffer() : dataBuffer.getDataBuffer();

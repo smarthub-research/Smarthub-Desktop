@@ -3,7 +3,6 @@ const calculationUtils = require('../utils/calculationUtils');
 
 class CalculationService {
     calculateMetrics(data) {
-        console.log('Calculating metrics...');
 
         // Use the calculation utils to process data
         return {
@@ -17,7 +16,6 @@ class CalculationService {
     }
 
     recalculateDerivedData() {
-        console.log('Recalculating derived data...');
         const rawData = bufferService.getRawDataBuffer();
 
         // Process and update derived values
@@ -30,7 +28,6 @@ class CalculationService {
     }
 
     runAnalysis(dataSet, options = {}) {
-        console.log('Running analysis with options:', options);
 
         // Perform specialized analysis based on options
         const results = calculationUtils.performAnalysis(dataSet, options);

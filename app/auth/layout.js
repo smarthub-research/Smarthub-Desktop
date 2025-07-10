@@ -1,10 +1,8 @@
 'use client';
 import { useState } from 'react';
-import Login from "./login";
-import Signup from "./signup";
 import VideoMask from "./videoMask";
 
-export default function Auth() {
+export default function Auth({ children }) {
     const [isSigningUp, setIsSigningUp] = useState(false);
 
     return (
@@ -24,25 +22,7 @@ export default function Auth() {
                 {/* Form container with fixed position */}
                 <div className="w-full max-w-md row-span-2 self-center text-center">
                     <div className={`transition-opacity duration-300 ${!isSigningUp ? 'opacity-100' : 'opacity-0 hidden'}`}>
-                        <Login />
-                        <p className="text-sm  text-gray-600 mt-4">
-                            Don't have an account?{' '}
-                            <span className="underline cursor-pointer text-primary-400 hover:text-primary-500"
-                                  onClick={() => setIsSigningUp(true)}>
-                                Sign Up
-                            </span>
-                        </p>
-                    </div>
-
-                    <div className={`transition-opacity duration-300 ${isSigningUp ? 'opacity-100' : 'opacity-0 hidden'}`}>
-                        <Signup />
-                        <p className="text-sm text-gray-600 mt-4">
-                            Already have an account?{' '}
-                            <span className="underline cursor-pointer text-primary-400 hover:text-primary-500"
-                                  onClick={() => setIsSigningUp(false)}>
-                                Sign In
-                            </span>
-                        </p>
+                        {children}
                     </div>
                 </div>
             </div>

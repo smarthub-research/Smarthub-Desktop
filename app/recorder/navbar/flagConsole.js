@@ -109,7 +109,7 @@ export default function FlagConsole({setFlagging}) {
 
     return (
         <div
-            className="fixed z-5 top-0 right-0 h-full border-l border-gray-800 flex flex-col bg-[#0a0a0a] shadow-xl
+            className="h-full border-l border-surface-200 flex flex-col bg-white text-black shadow-xl
             transition-all duration-500 ease-in-out"
             style={{
                 width: `${width}vw`,
@@ -126,10 +126,10 @@ export default function FlagConsole({setFlagging}) {
 
             <div className="flex flex-row p-4 border-b border-gray-800 justify-between">
                 <div className={"flex flex-col"}>
-                    <h2 className="text-xl font-semibold text-white mb-1">Flag Console</h2>
-                    <p className="text-gray-400 text-sm">Add notes to specific graphs</p>
+                    <h2 className="text-xl font-semibold mb-1">Flag Console</h2>
+                    <p className="opacity-50 text-sm">Add notes to specific graphs</p>
                 </div>
-                <button onClick={setFlagging} className="text-gray-400 hover:text-white self-start scale-200">
+                <button onClick={setFlagging} className="opacity-50 hover:text-white self-start scale-200">
                     <BsX />
                 </button>
             </div>

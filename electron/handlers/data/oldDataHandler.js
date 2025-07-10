@@ -91,7 +91,6 @@ function setupRecordingHandlers() {
         flagHandlers.clearFlags();
 
         // Broadcast restart event to all windows with startTime
-        console.log('Restarting recording...');
         BrowserWindow.getAllWindows().forEach((win) => {
             win.webContents.send('restart-recording', { startTime: timeManager.getRecordingStartTime() });
         });
@@ -99,7 +98,6 @@ function setupRecordingHandlers() {
     });
 
     ipcMain.handle('get-recording-state', () => {
-        console.log('Getting recording state...');
         return {
             isRecording: timeManager.isRecording(),
             isPaused: timeManager.isPaused(),
@@ -109,7 +107,6 @@ function setupRecordingHandlers() {
     });
 
     ipcMain.handle('end-test', () => {
-        console.log('Ending test...');
         BrowserWindow.getAllWindows().forEach((win) => {
             win.webContents.send('test-ended');
         });
@@ -124,7 +121,6 @@ function setupTestDataHandlers() {
         } else {
             dataValues = data;
         }
-        console.log("setting test data");
 
         testData = {
             gyro_left: dataValues.gyro_left || [],
@@ -142,8 +138,6 @@ function setupTestDataHandlers() {
             avgHeading: calculateAvgHeading(dataValues.heading || [])
         };
 
-        console.log(testData)
-
         // Clear the data buffers
         dataBuffer = initializeBuffer();
         rawDataBuffer = initializeBuffer();
@@ -156,7 +150,6 @@ function setupTestDataHandlers() {
             return null;
         }
 
-        console.log("Returning test data");
         return testData;
     });
 
@@ -170,12 +163,10 @@ function setupTestDataHandlers() {
             return null;
         }
 
-        console.log("Returning review data");
         return reviewData;
     })
 
     ipcMain.handle('download-csv', (event, args) => {
-        console.log('Downloading CSV file...');
         const testName = args.testName || 'test_data';
         downloadCsv(testName);
     });

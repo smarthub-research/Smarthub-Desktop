@@ -20,6 +20,10 @@ function setupTestDataHandlers() {
         testDataService.setReviewData(data);
     })
 
+    ipcMain.handle('clear-review-data', async () => {
+        testDataService.clearReviewData();
+    })
+
     ipcMain.handle('calculate-metrics', (event, data) => {
         return testDataService.calculateMetrics(data);
     });

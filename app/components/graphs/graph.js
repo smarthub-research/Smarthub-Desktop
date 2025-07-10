@@ -63,13 +63,13 @@ function Graph({data}) {
                     margin={{
                         top: 24,
                         right: 24,
-                        left: 0,
+                        left: 30, // Increased from 0
                         bottom: 12,
                     }}
                 >
-                    <Area type={"monotone"} dataKey={dataKey} stroke={chartColor} fill={chartColor}/>
+                    <Area type={"monotone"} dataKey={dataKey} stroke={chartColor} fill={chartColor} fillOpacity={0.6} />
                     {dataKey2 &&
-                        <Area type={"monotone"} dataKey={dataKey2} stroke={CHART_COLORS.purple} fill={CHART_COLORS.purple}/>
+                        <Area type={"monotone"} dataKey={dataKey2} stroke={CHART_COLORS.purple} fill={CHART_COLORS.purple} fillOpacity={0.6} />
                     }
                     <Tooltip content={<CustomTooltip/>} />
                     <XAxis
@@ -79,9 +79,7 @@ function Graph({data}) {
                     />
                     <YAxis
                         dataKey={dataKey}
-                        label={{ value: title, angle: -90, position: 'left', offset: -20 }}
-                        // Format to 2 decimal places and increase the floor and ceiling
-                        domain={[(dataMin) => dataMin * 0.9, (dataMax) => dataMax * 1.1]}
+                        label={{ value: title, angle: -90, position: 'insideLeft', offset: 10 }}
                         tickFormatter={(value) => value.toFixed(2)}
                     />
                 </AreaChart>

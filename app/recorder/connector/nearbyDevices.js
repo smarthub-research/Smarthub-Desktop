@@ -12,8 +12,6 @@ export default function NearbyDevices({devices, deviceOne, deviceTwo, setDeviceO
             setDeviceOne(device);
         } else if (!deviceTwo) {
             setDeviceTwo(device);
-        } else {
-            console.warn("Cannot connect more than two devices.");
         }
     }
 

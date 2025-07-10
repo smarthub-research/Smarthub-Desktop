@@ -13,12 +13,16 @@ class TestDataService {
 
     setTestData(data) {
         let dataValues;
-        if (!data) {
+        if (data === null) {
+            // Return without changing anything if explicitly set to null
+            return { success: false };
+        } else if (data === true) {
+            // Save current buffer without clearing it
             dataValues = dataBuffer.getRawDataBuffer();
         } else {
             dataValues = data;
         }
-        console.log("setting test data");
+
 
         this.testData = {
             gyro_left: dataValues.gyro_left || [],
@@ -37,7 +41,10 @@ class TestDataService {
         };
 
         // Clear the data buffers
-        dataBuffer.initializeBuffer();
+        if (data && data.clearBuffer) {
+            dataBuffer.initializeBuffer();
+        }
+
         return { success: true };
     }
 
@@ -46,9 +53,12 @@ class TestDataService {
     }
 
     getReviewData(options = {}) {
-        console.log('Getting review data...');
         // Apply any additional processing needed for review
         return this._prepareForReview(this.reviewData);
+    }
+
+    clearReviewData() {
+        this.reviewData = null;
     }
 
     calculateMetrics(data) {

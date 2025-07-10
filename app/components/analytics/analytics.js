@@ -23,10 +23,10 @@ export default function Analytics({testFiles}) {
                     </div>
                 </div>
 
-                {/* Upcoming events card */}
-                <div className="border border-surface-200 bg-white rounded-lg shadow-sm">
-                    <Upcoming />
-                </div>
+                {/*/!* Upcoming events card *!/*/}
+                {/*<div className="border border-surface-200 bg-white rounded-lg shadow-sm">*/}
+                {/*    <Upcoming />*/}
+                {/*</div>*/}
             </div>
         </div>
 

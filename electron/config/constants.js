@@ -1,5 +1,5 @@
 // Constants for downsampling
-const TARGET_POINTS = 10; // Target number of points to downsample
+const TARGET_POINTS = 5; // Target number of points to downsample
 const DOWNSAMPLE_TO = 3;  // Target number after downsampling
 
 // Constants for calculations

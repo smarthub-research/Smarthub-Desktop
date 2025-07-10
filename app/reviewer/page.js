@@ -23,7 +23,6 @@ export default function ReviewerHomePage() {
                     throw new Error("Electron API is not available");
                 }
                 const response = await window.electronAPI.fetchTestFiles();
-                console.log(response.data)
                 setFiles(response.data || []);
             } catch (err) {
                 console.error("Error fetching files:", err);
@@ -55,7 +54,7 @@ export default function ReviewerHomePage() {
     const handleView = async (testName, file) => {
         try {
             await window.electronAPI.setReviewData(file)
-            router.push('/smarthubReviewer/' + file.id);
+            router.push('/reviewer/' + file.id);
         } catch (err) {
             console.error("Error viewing file:", err);
         }
@@ -63,7 +62,7 @@ export default function ReviewerHomePage() {
 
     if (loading) {
         return (
-            <div className="flex grow justify-center items-center min-h-screen">
+            <div className="flex grow w-full justify-center items-center min-h-screen">
                 <div className="text-black text-xl">Loading test files...</div>
             </div>
         );

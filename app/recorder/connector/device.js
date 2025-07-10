@@ -14,8 +14,6 @@ export default function Device({ device, status, onConnect, onDisconnect }) {
             if (window.electronAPI) {
                 await window.electronAPI.connectBle(device);
                 onConnect(device);
-            } else {
-                console.warn("Electron API not available");
             }
         } catch (error) {
             console.error("Error connecting:", error);

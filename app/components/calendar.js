@@ -1,4 +1,4 @@
-import CalendarSVG from "../components/svg/calendarSVG";
+import CalendarSVG from "./svg/calendarSVG";
 
 export default function Calendar() {
     return (

@@ -6,7 +6,7 @@ export default function TestDistanceInput() {
 
     return (
         <div>
-            <label className="block mb-2 text-sm font-medium text-gray-300">
+            <label className="block mb-2 text-sm font-medium opacity-50">
                 Test Distance
             </label>
             <div className="flex">
@@ -16,13 +16,13 @@ export default function TestDistanceInput() {
                     value={testDistance}
                     onChange={(e) => setTestDistance(e.target.value)}
                     placeholder="Distance"
-                    className="flex-1 bg-[#252525] border border-gray-700 rounded-l-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="flex-1 border bg-white border-gray-500 rounded-l-lg p-3 text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
                 {/* Set unit type */}
                 <select
                     value={unitType}
                     onChange={(e) => setUnitType(e.target.value)}
-                    className="bg-[#333333] border border-gray-700 rounded-r-lg px-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="border border-l-0 bg-white border-gray-500 rounded-r-lg px-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                     <option value="m">m</option>
                     <option value="ft">ft</option>

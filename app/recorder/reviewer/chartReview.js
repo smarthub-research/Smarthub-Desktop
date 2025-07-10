@@ -50,7 +50,7 @@ export default function ChartReview() {
     };
 
     return (
-        <div className="bg-[#1a1a1a] rounded-lg shadow-lg overflow-hidden">
+        <div className="bg-surface-50 rounded-lg shadow-lg overflow-hidden">
             {/* Set the tab then render the correct chart */}
             <ChartTabs activeChartTab={activeChartTab} setActiveChartTab={setActiveChartTab}/>
             <div className="h-[400px] p-4">

@@ -17,7 +17,7 @@ noble.on("discover", (peripheral) => {
     const name = peripheral.advertisement.localName;
     const uuid = peripheral.uuid;
 
-    if (name) {
+    if (name && name.toLowerCase().includes("smarthub")) {
         BrowserWindow.getAllWindows().forEach((win) => {
             win.webContents.send('new-device-found', {name: name, UUID: uuid});
         });

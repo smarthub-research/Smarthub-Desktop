@@ -1,7 +1,6 @@
 const BrowserWindow = require('electron').BrowserWindow;
 const connectionStore = require('../../../services/connectionStore');
 const { noble } = require('../../deviceDiscovery');
-const timeManager = require('../../../services/timeManager');
 const dataBuffer = require('./dataBufferService');
 const constants = require('../../../config/constants');
 const downsamplingUtils = require('../utils/downsamplingUtils')
@@ -13,66 +12,6 @@ let pendingRightData = null;
 let displacement = 0;
 
 const { TARGET_POINTS, DOWNSAMPLE_TO } = constants;
-
-async function startBleReading() {
-    noble.stopScanning();
-
-    // If resuming from pause
-    if (timeManager.isPaused()) {
-        timeManager.setIsPaused(false);
-        // Adjust the start time to account for the pause duration
-        timeManager.setRecordingStartTime(Date.now() - timeManager.getPausedElapsedTime());
-    } else {
-        // Fresh start
-        timeManager.setRecordingStartTime(Date.now());
-        timeManager.setPausedElapsedTime(0);
-    }
-
-    timeManager.setIsRecording(true);
-
-    const conn1 = connectionStore.getConnectionOne();
-    const conn2 = connectionStore.getConnectionTwo();
-
-    if (conn1 !== null) {
-        await findCharacteristics(true, conn1);
-    }
-
-    if (conn2 !== null) {
-        await findCharacteristics(true, conn2);
-    }
-
-    BrowserWindow.getAllWindows().forEach((win) => {
-        win.webContents.send('begin-reading', { startTime: timeManager.getRecordingStartTime() });
-    });
-
-    return { success: true, startTime: timeManager.getRecordingStartTime() };
-}
-
-async function stopBleReading() {
-    timeManager.setIsRecording(false);
-    timeManager.setIsPaused(true);
-
-    // Calculate how much time has elapsed up to this pause
-    if (timeManager.getRecordingStartTime()) {
-        timeManager.setPausedElapsedTime(Date.now() - timeManager.getRecordingStartTime());
-    }
-
-    const conn1 = connectionStore.getConnectionOne();
-    const conn2 = connectionStore.getConnectionTwo();
-
-    if (conn1 !== null) {
-        await findCharacteristics(false, conn1);
-    }
-    if (conn2 !== null) {
-        await findCharacteristics(false, conn2);
-    }
-
-    BrowserWindow.getAllWindows().forEach((win) => {
-        win.webContents.send('stop-reading', { elapsedTime: timeManager.getPausedElapsedTime() });
-    });
-
-    return { success: true, elapsedTime: timeManager.getPausedElapsedTime() };
-}
 
 async function findCharacteristics(shouldRecord, peripheral) {
     peripheral.discoverServices([], (error, services) => {
@@ -112,9 +51,7 @@ function subscribeToCharacteristics(characteristic, peripheral) {
     characteristic._dataCallback = (data) => {
         let accelData = [];
         let gyroData = [];
-
         calculationUtils.decodeSensorData(data, accelData, gyroData);
-
         if (peripheral === connectionStore.getConnectionOne()) {
             // Store data from left device
             pendingLeftData = {
@@ -139,9 +76,11 @@ function subscribeToCharacteristics(characteristic, peripheral) {
                 displacement
             );
 
+
             // Append data to both buffers
             dataBuffer.appendToBuffer(jsonData);
             const buffer = dataBuffer.getDataBuffer()
+
 
             // When we have enough data points, downsample and send to frontend
             if (buffer.timeStamp.length >= TARGET_POINTS) {
@@ -164,6 +103,45 @@ function subscribeToCharacteristics(characteristic, peripheral) {
     characteristic.on('data', characteristic._dataCallback);
 }
 
+function isDeviceConnected(peripheral) {
+    if (!peripheral) return false;
+    return peripheral.state === 'connected';
+}
+
+function checkConnectionStatus() {
+    const conn1 = connectionStore.getConnectionOne();
+    const conn2 = connectionStore.getConnectionTwo();
+
+    const isConn1Connected = conn1 ? isDeviceConnected(conn1) : false;
+    const isConn2Connected = conn2 ? isDeviceConnected(conn2) : false;
+
+    return {
+        deviceOne: isConn1Connected,
+        deviceTwo: isConn2Connected
+    };
+}
+
+function setupDisconnectionListeners() {
+    const conn1 = connectionStore.getConnectionOne();
+    const conn2 = connectionStore.getConnectionTwo();
+
+    if (conn1) {
+        conn1.on('disconnect', () => {
+            BrowserWindow.getAllWindows().forEach((win) => {
+                win.webContents.send('device-disconnected', { device: 'one' });
+            });
+        });
+    }
+
+    if (conn2) {
+        conn2.on('disconnect', () => {
+            BrowserWindow.getAllWindows().forEach((win) => {
+                win.webContents.send('device-disconnected', { device: 'two' });
+            });
+        });
+    }
+}
+
 function unsubscribeToCharacteristics(characteristic) {
     characteristic.unsubscribe((error) => {
         if (error) {
@@ -178,7 +156,7 @@ function unsubscribeToCharacteristics(characteristic) {
 }
 
 module.exports = {
-    startBleReading,
-    stopBleReading,
+    checkConnectionStatus,
+    setupDisconnectionListeners,
     findCharacteristics
 };

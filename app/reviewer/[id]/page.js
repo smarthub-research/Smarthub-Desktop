@@ -19,10 +19,11 @@ export default function TestView() {
             try {
                 const data = await window.electronAPI.getReviewData();
                 setTestData(data || {})
-                setTestName(data.test_name)
+                if (data) {
+                    setTestName(data.test_name)
+                }
             } catch (err) {
                 console.error("Error fetching test data:", err);
-                setError("Failed to load test data.");
             } finally {
                 setLoading(false);
             }

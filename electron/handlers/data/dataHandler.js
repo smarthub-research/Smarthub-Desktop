@@ -2,14 +2,15 @@ const { ipcMain } = require('electron');
 const recordingHandler = require('./recordingHandler');
 const testDataHandler = require('./testDataHandler');
 const exportHandler = require('./exportHandler');
-const bleHandler = require('./bleHandler');
 const flagHandlers = require('../flagHandlers');
-const supabaseHandlers = require("./supabaseHandler")
+const bleHandler = require('./bleHandler');
+const supabaseHandlers = require("./supabaseHandler");
 
 function setupDataHandlers() {
     flagHandlers.setupFlagHandlers();
 
     // Set up all handlers
+    bleHandler.setupBleHandler();
     recordingHandler.setupRecordingHandlers();
     testDataHandler.setupTestDataHandlers();
     exportHandler.setupExportHandlers();

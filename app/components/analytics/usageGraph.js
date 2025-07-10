@@ -5,6 +5,7 @@ import {useEffect, useState} from "react";
 
 export default function UsageGraph({testFiles}) {
     const [chartData, setChartData] = useState([])
+    
     // Go through each test file, count the number of files recorded based on their day
     // Use the created_at key in each testFile and then increase the count for the day that it occurred on
     useEffect(() => {
@@ -16,9 +17,9 @@ export default function UsageGraph({testFiles}) {
 
                 // Format to MM/DD/YYYY
                 const month = String(dateObj.getMonth() + 1);
-                const day = String(dateObj.getDate());
+                const day = String(dateObj.getDate() + 1);
                 const year = dateObj.getFullYear();
-                const formattedDate = `${month}/${day}/${year}`;
+                const formattedDate = `${month}-${day}-${year}`;
 
                 // Use formatted date for the map
                 if (map.has(formattedDate)) {
@@ -31,7 +32,6 @@ export default function UsageGraph({testFiles}) {
                 date,
                 count
             }));
-            console.log(data)
             setChartData(data)
         }
         getData()

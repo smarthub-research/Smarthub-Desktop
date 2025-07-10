@@ -13,7 +13,15 @@ export default function ConnectedDevices({deviceOne, deviceTwo, setDeviceOne, se
 
     return (
         <div className="w-full h-fit">
-            <p className="text-lg md:text-xl font-bold mb-3">Connected</p>
+            <div className={'flex flex-row justify-between items-center pr-1'}>
+                <p className="text-lg md:text-xl font-bold mb-3">Connected</p>
+                <p className={'opacity-50 cursor-pointer'}
+                   onClick={async () => {
+                       await window.electronAPI.resetDevices();
+                       setDeviceOne(null);
+                       setDeviceTwo(null);
+                   }}>Disconnect all</p>
+            </div>
             <div className="flex flex-col bg-white py-2 px-4 rounded-lg w-full divide-y divide-black h-fit grow justify-center shadow-sm">
                 {deviceOne ? (
                     <Device

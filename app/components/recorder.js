@@ -1,5 +1,5 @@
 import Link from "next/link";
-import RecorderSVG from "../components/svg/recorderSVG";
+import RecorderSVG from "./svg/recorderSVG";
 
 // Component to display a card for the RecorderTab feature
 export default function Recorder() {

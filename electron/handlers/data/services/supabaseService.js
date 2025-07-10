@@ -1,7 +1,8 @@
-const { supabase } = require('../../../services/client');
+const { getSupabaseWithAuth } = require('../../../services/client');
 
 async function submitTestData(metadata) {
     try {
+        const supabase = await getSupabaseWithAuth();
         // Insert test file and get the inserted row's ID
         const testFileResult = await insertTestFile(metadata);
         if (!testFileResult.success) {
@@ -25,8 +26,8 @@ async function submitTestData(metadata) {
 
 async function insertTestFile(metadata) {
     try {
+        const supabase = await getSupabaseWithAuth();
         const testJson = metadata.data;
-        console.log(testJson)
         const { data, error } = await supabase
             .from('Test Files')
             .insert([
@@ -67,13 +68,14 @@ async function insertTestFile(metadata) {
 
 async function insertTestInfo(metadata) {
     try {
+        const supabase = await getSupabaseWithAuth();
         const { data, error } = await supabase
             .from('Test Info')
             .insert([
                 {
                     test_name: metadata.name || `Test ${metadata.test_file_id}`,
-                    comments: metadata.comments || null,
-                    flags: metadata.flags || null,
+                    comments: metadata.comments || "",
+                    flags: metadata.flags || [],
                     test_file_id: metadata.test_file_id, // Foreign key reference
                 }
             ])
@@ -93,6 +95,14 @@ async function insertTestInfo(metadata) {
 
 async function fetchTestFiles(numberOfTests = null) {
     try {
+        const supabase = await getSupabaseWithAuth();
+        console.log(supabase)
+
+        // Test authentication first
+        const { data: authTest, error: authError } = await supabase.auth.getUser();
+        console.log('Auth check result:', authTest?.user?.email || 'Not authenticated',
+            authError ? `Error: ${authError.message}` : 'No error');
+
         const { data: testFiles, error } = await supabase
             .from('Test Files')
             .select('*');
@@ -138,6 +148,7 @@ async function fetchTestFiles(numberOfTests = null) {
 
 async function updateTestName(testId, newName) {
     try {
+        const supabase = await getSupabaseWithAuth();
         // Find the Test Info record related to this test file
         const { data: testInfo, error: findError } = await supabase
             .from('Test Info')
@@ -169,8 +180,26 @@ async function updateTestName(testId, newName) {
     }
 }
 
+async function fetchAnnouncements() {
+    try {
+        const supabase = await getSupabaseWithAuth();
+        let { data: announcements, error } = await supabase
+            .from('announcements')
+            .select('*')
+        if (error) {
+            return { success: false, error: error.message };
+        }
+
+        return { success: true, data: announcements };
+    } catch (error) {
+        console.error('Error fetching announcements: ', error);
+        return { success: false, error: error.message };
+    }
+}
+
 module.exports = {
     submitTestData,
     fetchTestFiles,
     updateTestName,
+    fetchAnnouncements
 };

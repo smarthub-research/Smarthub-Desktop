@@ -390,7 +390,6 @@ export default function Chart({ timeStamps, data, title, graphId }) {
 
     return (
         <div className="grow w-full h-full p-6 bg-surface-50 rounded-xl shadow-lg transition-all duration-300 ">
-            {data && data.length > 0 ? (
                 <>
                     <div className="flex justify-between items-center mb-4">
                         <h3 className="text-sm text-gray-400">{title}</h3>
@@ -417,14 +416,6 @@ export default function Chart({ timeStamps, data, title, graphId }) {
                             `Showing ${dataPointCount === 0 ? 'all' : Math.min(dataPointCount, data.length)} of ${data.length} data points`}
                     </div>
                 </>
-            ) : (
-                <div className="h-full flex flex-col justify-center items-center text-gray-500">
-                    <p className="text-xl font-medium mb-2">{title}</p>
-                    <p className="text-sm">Waiting for data...</p>
-                </div>
-            )}
-
-
         </div>
     );
 }

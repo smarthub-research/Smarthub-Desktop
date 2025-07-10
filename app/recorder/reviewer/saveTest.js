@@ -10,14 +10,6 @@ export default function SaveTest() {
     const handleSaveTest = async () => {
         if (!window.electronAPI) return;
 
-        setFormErrors({testName: false})
-        // Validate required fields
-        if (!testName.trim()) {
-            setFormErrors(prev => ({...prev, testName: true}));
-            alert('Please enter a test name before saving');
-            return;
-        }
-
         // Call IPC function to save test data
         try {
             await window.electronAPI.submitTestData({

@@ -1,4 +1,4 @@
-import BugSVG from "../components/svg/bugSVG";
+import BugSVG from "./svg/bugSVG";
 
 export default function BugReporter() {
     return (

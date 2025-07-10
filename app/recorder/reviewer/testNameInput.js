@@ -6,7 +6,7 @@ export default function TestNameInput() {
 
     return (
         <div>
-            <label className="block mb-2 text-sm font-medium text-gray-300">
+            <label className="block mb-2 text-sm font-medium opacity-50">
                 Test Name
             </label>
             <input
@@ -25,11 +25,11 @@ export default function TestNameInput() {
                     }
                 })}
                 placeholder="Enter a name for this test"
-                className={`w-full bg-[#252525] border ${
+                className={`w-full border ${
                     formErrors.testName
                         ? 'border-red-500 ring-1 ring-red-500'
-                        : 'border-gray-700'
-                } rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:${
+                        : 'border-gray-500'
+                } rounded-lg p-3 text-black focus:outline-none focus:ring-2 focus:${
                     formErrors.testName ? 'ring-red-500' : 'ring-blue-500'
                 }`}
             />

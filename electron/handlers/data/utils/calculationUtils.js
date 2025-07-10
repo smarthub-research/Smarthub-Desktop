@@ -20,7 +20,7 @@ function decodeSensorData(data, accelData, gyroData) {
 
 function calc(accelDataLeft, accelDataRight, gyroDataLeft, gyroDataRight, displacement) {
     const velocity = getVelocity(gyroDataLeft, gyroDataRight);
-    displacement = getDisplacement(accelDataLeft, accelDataRight, velocity);
+    displacement = getDisplacement(accelDataLeft, accelDataRight, velocity, displacement);
     const trajectory_y = getTraj(velocity, displacement, gyroDataLeft, gyroDataRight).y;
     const trajectory_x = getTraj(velocity, displacement, gyroDataLeft, gyroDataRight).x;
 
@@ -38,7 +38,7 @@ function calc(accelDataLeft, accelDataRight, gyroDataLeft, gyroDataRight, displa
     }
 }
 
-function getDisplacement(accelDataLeft, accelDataRight, velocity) {
+function getDisplacement(accelDataLeft, accelDataRight, velocity, displacement) {
     displacement += velocity * DT;
     return displacement;
 }

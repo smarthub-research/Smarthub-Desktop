@@ -15,30 +15,32 @@ export default function Recorder() {
     // Handle end of recording
     function handleEndRecording() {
         if (window.electronAPI) {
-            window.electronAPI.setTestData(null);
+            window.electronAPI.setTestData(true);
             handleFlagging(false);
         }
     }
 
     return (
-        <div className={'grow'}>
-            <NavbarRecording/>
-            <div className="flex flex-col pt-12 pb-8 px-4 overflow-x-hidden grow">
-                   {/*style={{ width: flagging ? `${100 - width}vw` : '100vw' }}>*/}
-                <div className={"flex flex-col grow w-full px-12 self-center gap-4 justify-center"}>
-                    {/* Small control header under navbar */}
-                    <div className="flex justify-between items-center">
-                        {/* Grid vs box view for graphs */}
-                        <ViewSwapper boxView={boxView} setBoxView={setBoxView} />
-                        {/* End recording button */}
-                        <Link href={"./reviewer"}
-                              onClick={handleEndRecording}
-                              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
-                        >
-                            Finish Test
-                        </Link>
+        <div className={'flex flex-row grow'}>
+            <div className={'grow h-full'}>
+                <NavbarRecording/>
+                <div className="flex flex-col pt-12 pb-8 px-4 overflow-x-hidden grow">
+                    {/*style={{ width: flagging ? `${100 - width}vw` : '100vw' }}>*/}
+                    <div className={"flex flex-col grow w-full px-12 self-center gap-4 justify-center"}>
+                        {/* Small control header under navbar */}
+                        <div className="flex justify-between items-center">
+                            {/* Grid vs box view for graphs */}
+                            <ViewSwapper boxView={boxView} setBoxView={setBoxView} />
+                            {/* End recording button */}
+                            <Link href={"/recorder/reviewer"}
+                                  onClick={handleEndRecording}
+                                  className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
+                            >
+                                Finish Test
+                            </Link>
+                        </div>
+                        <ChartSection boxView={boxView}/>
                     </div>
-                    <ChartSection boxView={boxView}/>
                 </div>
             </div>
 

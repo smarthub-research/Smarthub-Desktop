@@ -5,6 +5,7 @@
   "dependencies": {
     "@abandonware/noble": "^1.9.2-26",
     "@electron/remote": "^2.1.2",
+    "@supabase/auth-helpers-nextjs": "^0.10.0",
     "@supabase/supabase-js": "^2.49.4",
     "@tailwindcss/postcss": "^4.0.10",
     "@testing-library/dom": "^10.4.0",
@@ -42,6 +43,18 @@
     "eject": "next eject",
     "dev": "next dev",
     "electron:start": "wait-on http://localhost:3000 && electron ."
+  },
+  "build": {
+    "appId": "com.kellengary.smarthub",
+    "mac": {
+      "icon": "public/icons/icon.icns"
+    },
+    "win": {
+      "icon": "public/icons/icon.ico"
+    },
+    "linux": {
+      "icon": "public/icons/icon.png"
+    }
   },
   "browserslist": {
     "production": [

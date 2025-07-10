@@ -5,7 +5,7 @@ export default function FlagSection() {
     const { allFlags } = useTest()
 
     return (
-        <div className="bg-[#1a1a1a] rounded-lg shadow-lg p-6">
+        <div className="bg-surface-50 rounded-lg shadow-lg p-6">
             <h2 className="text-xl font-semibold mb-4 flex items-center">
                 <span className="mr-2">Test Flags</span>
                 <span className="bg-blue-600 text-white text-xs px-2 py-1 rounded-full">{allFlags?.length || 0}</span>
