@@ -45,7 +45,7 @@ export default function Login() {
     /**
      * Changes formData variables on input change.
      *
-     * @param e
+     * @param e - the input change event
      */
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -58,7 +58,7 @@ export default function Login() {
     /**
      * Handles form submission for user authentication
      *
-     * @param {FormEvent<HTMLFormElement>} e - The form submission event
+     * @param e - The form submission event
      * @returns {Promise<void>}
      */
     const handleSubmit = async (e) => {

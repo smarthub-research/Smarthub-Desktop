@@ -1,10 +1,28 @@
+/**
+ * Authentication Signup Page
+ *
+ * This file contains the Signup component that handles user authentication using Supabase.
+ * This component renders a signup form with full name, email, and password fields, processes authentication,
+ * displays error messages, and redirects user to login after successful signup
+ */
+
 'use client'
 import { useState } from "react";
 import { supabase } from "../client";
 import { useRouter } from "next/navigation";
 
+/**
+ * Signup Component
+ *
+ * Renders a signup form and manages the authentication flow with Supabase
+ *
+ * @returns {JSX.Element} the signup form interface
+ * @constructor
+ */
 export default function Signup() {
     const router = useRouter();
+
+    // State management
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const [formData, setFormData] = useState({
@@ -14,6 +32,11 @@ export default function Signup() {
         confirmPassword: ''
     });
 
+    /**
+     * Changes formData variables on input change.
+     *
+     * @param e - the input change event
+     */
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData(prev => ({
@@ -22,11 +45,21 @@ export default function Signup() {
         }));
     };
 
+    /**
+     * Handles form submission for user signup
+     *
+     * @param e - the form submit event
+     * @returns {Promise<void>}
+     */
     const handleSubmit = async (e) => {
+        // Prevents default form submission behavior
         e.preventDefault();
+
+        // Clears errors and sets loading state
         setError('');
         setLoading(true);
 
+        // Check if passwords match
         if (formData.password !== formData.confirmPassword) {
             setError('Passwords do not match');
             setLoading(false);
@@ -34,7 +67,7 @@ export default function Signup() {
         }
 
         try {
-            // 1. Create auth user
+            // Create auth user
             const { data: authData, error: authError } = await supabase.auth.signUp({
                 email: formData.email,
                 password: formData.password,
@@ -46,9 +79,7 @@ export default function Signup() {
                 }
             });
 
-            if (authError) throw authError;
-
-            // 2. Insert user data into custom users table for RBAC
+            // Insert user data into custom users table for RBAC
             if (authData.user) {
                 const { error: profileError } = await supabase
                     .from('users')
@@ -70,6 +101,7 @@ export default function Signup() {
             // Redirect to login page with success message
             router.push('/auth/login?message=Account created successfully! Please check your email to verify your account.');
         } catch (err) {
+            // Displays error message if signup fails
             setError(err.message || 'Failed to create account. Please try again.');
             setLoading(false);
         }
@@ -78,8 +110,12 @@ export default function Signup() {
     return (
         <>
             <div className={'flex flex-col gap-8'}>
+                {/* Error message */}
                 {error && <p className="text-red-500 mb-4">{error}</p>}
+
+                {/* Signup form */}
                 <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
+                    {/* Full name input */}
                     <input
                         name="name"
                         type="text"
@@ -89,6 +125,7 @@ export default function Signup() {
                         className="p-2 border rounded"
                         required
                     />
+                    {/* Email input */}
                     <input
                         name="email"
                         type="email"
@@ -98,6 +135,7 @@ export default function Signup() {
                         className="p-2 border rounded"
                         required
                     />
+                    {/* Password input */}
                     <input
                         name="password"
                         type="password"
@@ -107,6 +145,7 @@ export default function Signup() {
                         className="p-2 border rounded"
                         required
                     />
+                    {/* Password confirmation */}
                     <input
                         name="confirmPassword"
                         type="password"
@@ -116,6 +155,7 @@ export default function Signup() {
                         className="p-2 border rounded"
                         required
                     />
+                    {/* Submit */}
                     <button
                         type="submit"
                         disabled={loading}
@@ -125,6 +165,7 @@ export default function Signup() {
                     </button>
                 </form>
             </div>
+            {/* Login router */}
             <p className="text-sm text-gray-600 mt-4">
                 Already have an account?{' '}
                 <span className="underline cursor-pointer text-primary-400 hover:text-primary-500"
