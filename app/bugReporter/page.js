@@ -1,9 +1,17 @@
+/**
+ * This file creates the entire bug reporter route
+ */
 "use client"
-
 import React, { useState } from "react";
-import Link from "next/link";
 
+/**
+ * The bug reporter component
+ *
+ * @returns {JSX.Element} - component
+ * @constructor
+ */
 export default function BugReporter() {
+    // Input values
     const [bug, setBug] = useState({
         title: "",
         description: "",
@@ -13,11 +21,16 @@ export default function BugReporter() {
         deviceInfo: "",
         email: ""
     });
-
+    // State variables
     const [formErrors, setFormErrors] = useState({});
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isSubmitted, setIsSubmitted] = useState(false);
 
+    /**
+     * Update bug values on input change
+     *
+     * @param e - the key event
+     */
     const handleChange = (e) => {
         const { name, value } = e.target;
         setBug(prev => ({
@@ -26,6 +39,11 @@ export default function BugReporter() {
         }));
     };
 
+    /**
+     * Ensures the form is filled out as needed for submission
+     *
+     * @returns {boolean}
+     */
     const validateForm = () => {
         const errors = {};
         if (!bug.title.trim()) errors.title = "Bug title is required";
@@ -37,13 +55,20 @@ export default function BugReporter() {
         return Object.keys(errors).length === 0;
     };
 
+    /**
+     * Handler for when form is submitted.
+     *
+     * @param e - The submission event
+     * @returns {Promise<void>}
+     */
     const handleSubmit = async (e) => {
+        // Prevent refresh
         e.preventDefault();
 
+        // if the form is incomplete
         if (!validateForm()) return;
 
         setIsSubmitting(true);
-
         try {
             // Simulate API call
             await new Promise(resolve => setTimeout(resolve, 1500));
@@ -68,11 +93,13 @@ export default function BugReporter() {
     return (
         <div className="grow min-h-screen overflow-x-hidden">
             <div className="container flex flex-col mx-auto max-h-screen px-4 justify-center">
+                {/* Title */}
                 <h1 className="text-3xl md:text-4xl font-bold tracking-wider mb-8 text-center">
                     BUG REPORTER
                 </h1>
 
                 {isSubmitted ? (
+                    // Completion screen
                     <div className="bg-[#1a1a1a] rounded-lg shadow-lg p-8 max-w-2xl mx-auto text-center">
                         <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-900 mb-6">
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -91,6 +118,7 @@ export default function BugReporter() {
                         </button>
                     </div>
                 ) : (
+                    // Submission screen
                     <div className="grid grid-cols-1 gap-8 max-w-4xl mx-auto">
                         <div className="bg-[#1a1a1a] rounded-lg shadow-lg p-6">
                             <form onSubmit={handleSubmit}>
@@ -99,6 +127,7 @@ export default function BugReporter() {
                                         <label className="block mb-2 text-sm font-medium text-gray-300">
                                             Bug Title <span className="text-red-500">*</span>
                                         </label>
+                                        {/* Title input */}
                                         <input
                                             type="text"
                                             name="title"
@@ -120,6 +149,7 @@ export default function BugReporter() {
                                         <label className="block mb-2 text-sm font-medium text-gray-300">
                                             Bug Description <span className="text-red-500">*</span>
                                         </label>
+                                        {/* Description */}
                                         <textarea
                                             name="description"
                                             value={bug.description}
@@ -141,6 +171,7 @@ export default function BugReporter() {
                                         <label className="block mb-2 text-sm font-medium text-gray-300">
                                             Steps to Reproduce
                                         </label>
+                                        {/* Steps */}
                                         <textarea
                                             name="stepsToReproduce"
                                             value={bug.stepsToReproduce}
@@ -156,6 +187,7 @@ export default function BugReporter() {
                                             <label className="block mb-2 text-sm font-medium text-gray-300">
                                                 Expected Behavior
                                             </label>
+                                            {/* Expected */}
                                             <textarea
                                                 name="expectedBehavior"
                                                 value={bug.expectedBehavior}
@@ -169,6 +201,7 @@ export default function BugReporter() {
                                             <label className="block mb-2 text-sm font-medium text-gray-300">
                                                 Actual Behavior
                                             </label>
+                                            {/* Bug behavior */}
                                             <textarea
                                                 name="actualBehavior"
                                                 value={bug.actualBehavior}
@@ -184,6 +217,7 @@ export default function BugReporter() {
                                         <label className="block mb-2 text-sm font-medium text-gray-300">
                                             Device & Environment Info
                                         </label>
+                                        {/* Device info */}
                                         <input
                                             type="text"
                                             name="deviceInfo"
@@ -198,6 +232,7 @@ export default function BugReporter() {
                                         <label className="block mb-2 text-sm font-medium text-gray-300">
                                             Contact Email <span className="text-red-500">*</span>
                                         </label>
+                                        {/* Email */}
                                         <input
                                             type="email"
                                             name="email"
@@ -215,6 +250,7 @@ export default function BugReporter() {
                                         )}
                                     </div>
 
+                                    {/* Submission button */}
                                     <div className="flex justify-end">
                                         <button
                                             type="submit"

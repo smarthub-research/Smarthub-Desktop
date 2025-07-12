@@ -1,6 +1,15 @@
+/**
+ * Creates the moving design on the left side of auth layout routes
+ *
+ */
 import { useEffect } from "react";
 import './auth.css';
 
+/**
+ * Animated video mask component
+ * @returns {JSX.Element} - animated design
+ * @constructor
+ */
 export default function VideoMask() {
     useEffect(() => {
         const element = document.querySelector('.moving-gradient');

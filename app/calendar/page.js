@@ -1,7 +1,12 @@
-import Graph from "../components/graphs/graph";
+"use client"
 
-export default function Calendar() {
+import Calendar18 from "./components/calendarBlock"
+
+export default function Page() {
     return (
-        <div className={'grow text-center'}>Calendar</div>
+        <div className={'grow mt-12'}>
+            <h1 className={'font-bold'}>Calendar</h1>
+            <Calendar18 />
+        </div>
     )
 }

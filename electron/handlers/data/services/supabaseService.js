@@ -96,7 +96,6 @@ async function insertTestInfo(metadata) {
 async function fetchTestFiles(numberOfTests = null) {
     try {
         const supabase = await getSupabaseWithAuth();
-        console.log(supabase)
 
         // Test authentication first
         const { data: authTest, error: authError } = await supabase.auth.getUser();

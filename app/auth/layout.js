@@ -1,7 +1,18 @@
+/**
+ * Auth layout file
+ *
+ * This file creates the layout for the login and signup pages
+ */
 'use client';
 import { useState } from 'react';
 import VideoMask from "./videoMask";
 
+/**
+ * Auth component
+ * @param children - children pages to receive this layout
+ * @returns {JSX.Element} - Layout file
+ * @constructor
+ */
 export default function Auth({ children }) {
     const [isSigningUp, setIsSigningUp] = useState(false);
 
