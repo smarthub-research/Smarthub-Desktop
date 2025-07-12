@@ -1,5 +1,10 @@
+/**
+ * Authentication Context
+ *
+ * This file contains the context used by all pages to actively access the current state of the
+ * user's authentication.
+ */
 'use client';
-
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from './client';
 

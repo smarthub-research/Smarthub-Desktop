@@ -78,12 +78,6 @@ export default function Login() {
 
             if (error) throw error;
 
-            // Retrieves full session with tokens upon successful authentication
-            const { data: { session } } = await supabase.auth.getSession();
-
-            // Passes session to electron process if in desktop context
-            await window.electronAPI.setAuthSession(session)
-
             // Successful login - redirect to dashboard
             router.push('/');
         } catch (err) {

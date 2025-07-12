@@ -1,4 +1,6 @@
-/* In auth.css */
+/*
+This file creates the moving graphic on the login and signup screens
+*/
 :root {
     --x-pos: 0%;
     --y-pos: 50%;
