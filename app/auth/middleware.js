@@ -1,7 +1,7 @@
 /**
  * This file creates the necessary middleware for a supabase auth session
  */
-import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs';
+import { createMiddlewareClient} from '@supabase/auth-helpers-nextjs';
 import { NextResponse } from 'next/server';
 
 /**

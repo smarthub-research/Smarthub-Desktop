@@ -11,6 +11,7 @@ import ProfileTab from "./profileTab";
 import Title from "./title";
 import {usePathname} from "next/navigation";
 import Link from "next/link";
+import DraggableNav from "../draggableNav";
 
 export default function Navbar() {
     const pathname = usePathname()
@@ -27,7 +28,9 @@ export default function Navbar() {
     return (
         <div className={`group sticky top-0 left-0 flex flex-col w-fit max-w-20 hover:max-w-56 h-screen text-black bg-surface-200
             border-surface-200 p-4 gap-4 transition-all duration-300 ease-in-out shrink-0`}>
+            <DraggableNav />
             {/* Title */}
+            <span/>
             <Title/>
             {/* Navigation items */}
             <div className="flex flex-col gap-2">

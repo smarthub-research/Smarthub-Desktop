@@ -110,7 +110,7 @@ export default function FlagConsole({setFlagging}) {
     return (
         <div
             className="h-full border-l border-surface-200 flex flex-col bg-white text-black shadow-xl
-            transition-all duration-500 ease-in-out"
+            transition-all duration-500 ease-in-out grow shrink-0"
             style={{
                 width: `${width}vw`,
                 transform: isVisible ? 'translateX(0)' : 'translateX(100%)',
@@ -120,21 +120,21 @@ export default function FlagConsole({setFlagging}) {
             {/* Resize handle */}
             <div
                 ref={dragHandleRef}
-                className={`absolute top-0 left-0 w-1 h-full cursor-ew-resize hover:bg-[#999999] ${isDragging ? 'bg-[#999999]' : ''}`}
+                className={`absolute top-0 left-0 w-1 h-full cursor-ew-resize`}
                 onMouseDown={handleMouseDown}
             />
 
-            <div className="flex flex-row p-4 border-b border-gray-800 justify-between">
+            <div className="flex flex-row p-4 border-b border-gray-700 justify-between">
                 <div className={"flex flex-col"}>
                     <h2 className="text-xl font-semibold mb-1">Flag Console</h2>
                     <p className="opacity-50 text-sm">Add notes to specific graphs</p>
                 </div>
-                <button onClick={setFlagging} className="opacity-50 hover:text-white self-start scale-200">
+                <button onClick={setFlagging} className="opacity-50 hover:opacity-100 self-start scale-200">
                     <BsX />
                 </button>
             </div>
 
-            <div className="p-4 border-b border-gray-800">
+            <div className="p-4 border-b border-gray-700">
                 <div className="mb-3">
                     <label className="block text-sm font-medium text-gray-400 mb-1">
                         Select Graph
@@ -144,10 +144,10 @@ export default function FlagConsole({setFlagging}) {
                             <button
                                 key={graph.id}
                                 onClick={() => setSelectedGraph(graph.id)}
-                                className={`flex items-center justify-center gap-2 py-2 px-3 rounded-lg border ${
+                                className={`flex items-center justify-center gap-2 py-2 px-3 rounded-lg border border-gray-700 ${
                                     selectedGraph === graph.id
-                                        ? 'border-blue-500 bg-blue-900/30 text-blue-300'
-                                        : 'border-gray-700 hover:bg-gray-800 text-gray-300'
+                                        ? 'bg-black text-white'
+                                        : 'hover:bg-surface-200 hover:border-black'
                                 }
                                 ${graph.name === 'General' ? 'col-span-2' : ''}`}
                             >
@@ -171,7 +171,7 @@ export default function FlagConsole({setFlagging}) {
                                 onKeyDown={handleKeyDown}
                                 placeholder="Enter annotation..."
                                 rows={1}
-                                className="w-full bg-gray-900 border border-gray-700 rounded-l-lg py-2 px-3 text-white
+                                className="w-full border border-gray-700 rounded-l-lg py-2 px-3
                                           focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none overflow-hidden"
                                 style={{ minHeight: '40px', maxHeight: '200px' }}
                             />
@@ -199,14 +199,14 @@ export default function FlagConsole({setFlagging}) {
                 ) : (
                     <div className="space-y-3">
                         {flags.map(flag => (
-                            <div key={flag.id} className="p-3 bg-gray-900 rounded-lg border border-gray-800">
+                            <div key={flag.id} className="p-3 bg-surface-50 rounded-lg border border-gray-700">
                                 <div className="flex justify-between items-center mb-1">
-                                    <span className="text-xs font-medium text-blue-400">
+                                    <span className="text-xs font-bold">
                                         {graphOptions.find(g => g.id === flag.graphId)?.name} Graph
                                     </span>
                                     <span className="text-xs text-gray-500">{flag.timestamp}</span>
                                 </div>
-                                <p className="text-white text-sm whitespace-pre-line">{flag.comment}</p>
+                                <p className="text-sm whitespace-pre-line">{flag.comment}</p>
                             </div>
                         ))}
                     </div>

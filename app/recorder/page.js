@@ -22,11 +22,10 @@ export default function Recorder() {
 
     return (
         <div className={'flex flex-row grow'}>
-            <div className={'grow h-full'}>
+            <div className={`h-full  mt-4`}>
                 <NavbarRecording/>
-                <div className="flex flex-col pt-12 pb-8 px-4 overflow-x-hidden grow">
-                    {/*style={{ width: flagging ? `${100 - width}vw` : '100vw' }}>*/}
-                    <div className={"flex flex-col grow w-full px-12 self-center gap-4 justify-center"}>
+                <div className="flex flex-col pt-12 pb-8 px-4 w-full">
+                    <div className={"flex flex-col w-full px-12 self-center gap-4 justify-center"}>
                         {/* Small control header under navbar */}
                         <div className="flex justify-between items-center">
                             {/* Grid vs box view for graphs */}

@@ -35,7 +35,7 @@
     "react-dom": "^18.3.1",
     "react-icons": "^5.5.0",
     "react-scripts": "5.0.1",
-    "recharts": "^2.15.3",
+    "recharts": "^2.15.4",
     "sass": "^1.85.1",
     "tailwind-merge": "^3.3.1",
     "wait-on": "^8.0.2",

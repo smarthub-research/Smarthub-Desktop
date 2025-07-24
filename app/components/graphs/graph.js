@@ -1,6 +1,20 @@
 'use client';
 
-import {ResponsiveContainer, Tooltip, XAxis, YAxis, AreaChart, Area} from "recharts";
+import {CartesianGrid, Line, LineChart, XAxis, YAxis} from "recharts"
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardFooter,
+    CardHeader,
+    CardTitle,
+} from "@/components/ui/card"
+import {
+    ChartConfig,
+    ChartContainer,
+    ChartTooltip,
+    ChartTooltipContent,
+} from "@/components/ui/chart"
 
 // Constants for chart colors
 const CHART_COLORS = {
@@ -12,7 +26,6 @@ const CHART_COLORS = {
 }
 
 function Graph({data}) {
-
 
     // Find first non-time key
     const dataKey = data && data.length > 0
@@ -38,53 +51,64 @@ function Graph({data}) {
                 : dataKey === 'velocity' ? CHART_COLORS.green
                     : CHART_COLORS.yellow;
 
-    const CustomTooltip = ({ active, payload, label }) => {
-        if (active && payload && payload.length) {
-            return (
-                <div className={"text-xs text-black bg-gray-300 p-2 rounded-lg"}>
-                    <p>Time: {label}</p>
-                    <p>{`${dataKey}: ${payload[0].value}`}</p>
-                    {dataKey2 && <p>{`${dataKey2}: ${payload[1].value}`}</p>}
-                </div>
-            );
-        }
-
-        return null;
+    const chartConfig = {
+        desktop: {
+            label: "Desktop",
+            color: "var(--chart-1)",
+        },
     };
 
     return (
-        <div className={'flex flex-col gap-2 h-full grow bg-white p-4 rounded-lg shadow-md'}>
-            <p>{title}</p>
-            <ResponsiveContainer height={"100%"} width={"100%"}>
-                <AreaChart
-                    width={400}
-                    height={300}
-                    data={data}
-                    margin={{
-                        top: 24,
-                        right: 24,
-                        left: 30, // Increased from 0
-                        bottom: 12,
-                    }}
-                >
-                    <Area type={"monotone"} dataKey={dataKey} stroke={chartColor} fill={chartColor} fillOpacity={0.6} />
-                    {dataKey2 &&
-                        <Area type={"monotone"} dataKey={dataKey2} stroke={CHART_COLORS.purple} fill={CHART_COLORS.purple} fillOpacity={0.6} />
-                    }
-                    <Tooltip content={<CustomTooltip/>} />
-                    <XAxis
-                        dataKey={"time"}
-                        label={{ value: 'Time (sec)', position: 'bottom', offset: 0 }}
-                        padding={{ left: 10, right: 10 }}
-                    />
-                    <YAxis
-                        dataKey={dataKey}
-                        label={{ value: title, angle: -90, position: 'insideLeft', offset: 10 }}
-                        tickFormatter={(value) => value.toFixed(2)}
-                    />
-                </AreaChart>
-            </ResponsiveContainer>
-        </div>
+        <Card>
+            <CardHeader>
+                <CardTitle>{title}</CardTitle>
+            </CardHeader>
+            <CardContent>
+                <ChartContainer config={chartConfig}>
+                    <LineChart
+                        accessibilityLayer
+                        data={data}
+                        margin={{
+                            right: 24,
+                        }}
+                    >
+                        <CartesianGrid vertical={false} />
+                        <XAxis
+                            dataKey={"time"}
+                            tickLine={false}
+                            tickMargin={8}
+                            tickFormatter={(value) => value.slice(0, 3)}
+                        />
+                        <YAxis
+                            dataKey={dataKey}
+                            tickLine={false}
+                            tickMargin={8}
+                            tickFormatter={(value) => value.toFixed(2)}
+                        />
+                        <ChartTooltip
+                            cursor={false}
+                            content={<ChartTooltipContent hideLabel />}
+                        />
+                        <Line
+                            dataKey={dataKey}
+                            type="natural"
+                            stroke={chartColor}
+                            strokeWidth={2}
+                            dot={false}
+                        />
+                        { dataKey2 && (
+                            <Line
+                                dataKey={dataKey2}
+                                type="natural"
+                                stroke={CHART_COLORS.purple}
+                                strokeWidth={2}
+                                dot={false}
+                            />
+                        )}
+                    </LineChart>
+                </ChartContainer>
+            </CardContent>
+        </Card>
     )
 }
 

@@ -6,8 +6,7 @@ import Link from "next/link";
 
 export default function Services() {
     return (
-        <div className={'p-4 bg-surface-50 rounded-xl shadow-sm'}>
-            <h2 className="mb-4 font-semibold">Services</h2>
+        <>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <Link href={'/recorder'}>
                     <Recorder />
@@ -22,6 +21,6 @@ export default function Services() {
                     <BugReporter />
                 </Link>
             </div>
-        </div>
+        </>
     )
 }

@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react';
+import {useEffect, useState} from 'react';
 import ConnectedDevices from "../recorder/connector/connectedDevices";
 import useFetchDevices from "../recorder/hooks/useFetchDevices";
 import NearbyDevices from "../recorder/connector/nearbyDevices";
@@ -12,12 +12,21 @@ export default function Settings() {
     const [notificationsEnabled, setNotificationsEnabled] = useState(true);
     const [darkMode, setDarkMode] = useState(false);
     const { user, signOut } = useAuth();
-    const [email, setEmail] = useState("user.metadata.email");
+    const [email, setEmail] = useState("");
 
     function handleLogout() {
         router.push('/auth/login')
         signOut();
     }
+
+    useEffect(() => {
+        async function updateEmail() {
+            console.log(user)
+            const email = await user.email
+            setEmail(email);
+        }
+        updateEmail()
+    }, []);
 
     return (
         <div className="container mx-auto py-8 px-4 max-w-4xl mt-4">

@@ -17,13 +17,10 @@ export default function Dashboard() {
     const {user, loading: authLoading} = useAuth();
 
     useEffect(() => {
-        // Skip fetching if still determining auth state
-        if (authLoading) return;
-
         const fetchTestFiles = async () => {
             try {
                 console.log("Fetching test files...");
-                const response = await window.electronAPI.fetchTestFiles();
+                const response = await window.electronAPI.fetchTestFilesAmount(10);
                 const data = response.data;
                 setTestFiles(data || []);
                 console.log("Test files fetched:", data?.length || 0);
@@ -36,7 +33,7 @@ export default function Dashboard() {
         }
 
         fetchTestFiles();
-    }, [authLoading]);
+    }, []);
 
     useEffect(() => {
         if (!authLoading && !user) {

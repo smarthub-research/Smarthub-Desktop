@@ -136,17 +136,17 @@ export default function ChartSection({boxView}) {
     }, []);
 
     return (
-        !timeStamp.length > 0 ? (
-            <div className="h-full flex flex-col justify-center items-center text-gray-500">
-                <p className="text-sm">Waiting for data...</p>
-            </div>
-            ) : (
-        <div className={`${boxView ? 'grid grid-cols-2 gap-8 grow' : 'flex flex-col gap-8 grow'}`}>
+        // !timeStamp.length > 0 ? (
+        //     <div className="h-full flex flex-col justify-center items-center text-gray-500">
+        //         <p className="text-sm">Waiting for data...</p>
+        //     </div>
+        //     ) : (
+        <div className={`${boxView ? 'grid grid-cols-2 gap-8 grow' : 'flex flex-col gap-8'}`}>
             <Chart timeStamps={timeStamp} data={displacement} title={'Displacement vs Time'} graphId={1}/>
             <Chart timeStamps={timeStamp} data={heading} title={'Heading vs Time'} graphId={2}/>
             <Chart timeStamps={timeStamp} data={velocity} title={'Velocity vs Time'} graphId={3}/>
             <Chart timeStamps={trajectory_x} data={trajectory_y} title={'Trajectory'} graphId={4}/>
         </div>
-        )
+        // )
     );
 }
