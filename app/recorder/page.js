@@ -22,7 +22,7 @@ export default function Recorder() {
 
     return (
         <div className={'flex flex-row grow'}>
-            <div className={`h-full  mt-4`}>
+            <div className={`h-full mt-4 grow`}>
                 <NavbarRecording/>
                 <div className="flex flex-col pt-12 pb-8 px-4 w-full">
                     <div className={"flex flex-col w-full px-12 self-center gap-4 justify-center"}>

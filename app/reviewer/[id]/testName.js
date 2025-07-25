@@ -1,6 +1,8 @@
 'use client'
 
 import React, {useState} from "react";
+import {FiArrowLeft} from "react-icons/fi";
+import Link from "next/link";
 
 export default function TestName({setTestData, testData, id}) {
     const [changingTestName, setChangingTestName] = useState(false);
@@ -22,6 +24,12 @@ export default function TestName({setTestData, testData, id}) {
 
     return (
         <div className="flex items-center">
+            <Link
+                href="/reviewer"
+                className="mr-4 p-2 rounded-full hover:bg-surface-300 transition-colors"
+            >
+                <FiArrowLeft className={'scale-150'}/>
+            </Link>
             <h1 className="text-3xl font-bold hover:underline flex items-center" onDoubleClick={() => setChangingTestName(true)}>
                 {changingTestName ? (
                     <input

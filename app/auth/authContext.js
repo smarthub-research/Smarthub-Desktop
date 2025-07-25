@@ -7,10 +7,13 @@
 'use client';
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from './client';
+import {useRouter, usePathname} from "next/navigation";
 
 const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
+    const router = useRouter();
+    const pathname = usePathname();
     const [user, setUser] = useState(null);
     const [userRole, setUserRole] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -61,6 +64,20 @@ export function AuthProvider({ children }) {
 
         return () => subscription?.unsubscribe();
     }, []);
+
+    // Handle redirects
+    useEffect(() => {
+        if (!loading) {
+            const isAuthPage = pathname?.startsWith('/auth');
+
+            if (!user && !isAuthPage) {
+                console.log("Not authenticated, redirecting to login");
+                router.push('/auth/login');
+            } else if (user && isAuthPage) {
+                router.push('/');
+            }
+        }
+    }, [user, loading, pathname, router]);
 
     // Auth functions
     const signIn = async (email, password) => {

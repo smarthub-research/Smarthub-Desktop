@@ -389,7 +389,7 @@ export default function Chart({ timeStamps, data, title, graphId }) {
     }
 
     return (
-        <div className="grow w-full h-full p-6 bg-surface-50 rounded-xl shadow-lg transition-all duration-300 ">
+        <div className="h-full p-6 bg-surface-50 rounded-xl shadow-lg transition-all duration-300">
                 <>
                     <div className="flex justify-between items-center mb-4">
                         <h3 className="text-sm text-gray-400">{title}</h3>

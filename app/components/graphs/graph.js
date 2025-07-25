@@ -8,13 +8,13 @@ import {
     CardFooter,
     CardHeader,
     CardTitle,
-} from "@/components/ui/card"
+} from "../ui/card"
 import {
     ChartConfig,
     ChartContainer,
     ChartTooltip,
     ChartTooltipContent,
-} from "@/components/ui/chart"
+} from "../ui/chart"
 
 // Constants for chart colors
 const CHART_COLORS = {
@@ -77,7 +77,7 @@ function Graph({data}) {
                             dataKey={"time"}
                             tickLine={false}
                             tickMargin={8}
-                            tickFormatter={(value) => value.slice(0, 3)}
+                            tickFormatter={(value) => String(value).slice(0, 3)}
                         />
                         <YAxis
                             dataKey={dataKey}
@@ -95,6 +95,7 @@ function Graph({data}) {
                             stroke={chartColor}
                             strokeWidth={2}
                             dot={false}
+                            isAnimationActive={false}
                         />
                         { dataKey2 && (
                             <Line

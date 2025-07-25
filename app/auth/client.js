@@ -14,6 +14,6 @@ export const supabase = createClient(supabaseUrl, supabaseKey, {
     auth: {
         persistSession: true, // Enable session persistence
         autoRefreshToken: true, // Allow token refresh
-        storage: sessionStorageAdapter // Use sessionStorage instead of localStorage
+        // storage: sessionStorageAdapter // Use sessionStorage instead of localStorage
     }
 });

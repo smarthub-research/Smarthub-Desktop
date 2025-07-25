@@ -1,20 +1,7 @@
-import {useRouter} from "next/navigation";
+import ViewButton from "./viewButton";
 
 // Displays 10 of the most recent tests
 export default function RecentTests({testFiles}) {
-    // Router so we can navigate to a specific test's review page
-    const router = useRouter();
-
-    // Handle viewing a specific test
-    const handleView = async (testName, file) => {
-        try {
-            await window.electronAPI.setReviewData(file)
-            router.push('/reviewer/' + file.id);
-        } catch (err) {
-            console.error("Error viewing file:", err);
-        }
-    }
-
     return (
         <div className={'p-4 bg-surface-50 rounded-xl shadow-sm'}>
             {/* Header + Number of tests showing */}
@@ -44,11 +31,7 @@ export default function RecentTests({testFiles}) {
                                         </p>
                                     </div>
                                     <div className="flex items-center">
-                                        {/* Navigate to the specific test */}
-                                        <button onClick={() => handleView(test.test_name, test)}
-                                            className="cursor-pointer hover:underline text-primary-500 text-sm">
-                                            View
-                                        </button>
+                                        <ViewButton test={test}/>
                                     </div>
                                 </div>
                             </li>

@@ -84,7 +84,7 @@ export default function ConnectionStatus() {
             {loading ? (
                 <div className="flex items-center space-x-2 py-2">
                     <div className="w-4 h-4 rounded-full bg-gray-700 animate-pulse"></div>
-                    <p className="text-gray-400">Connecting to devices...</p>
+                    <p className="text-gray-400">Waiting for devices...</p>
                 </div>
             ) : (
                 <div className="flex flex-row h-full bg-surface-300 p-2 rounded-lg">

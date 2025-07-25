@@ -1,57 +1,37 @@
 'use client'
 
+import { useState, useEffect } from 'react';
 import RecentTests from "./components/recentTests";
 import Analytics from "./components/analytics/analytics";
 import Services from "./components/services";
-import {useEffect, useState} from "react";
 import Announcements from "./components/announcements";
-import { useAuth } from "./auth/authContext";
-import {useRouter} from "next/navigation";
-import Splash from "./components/splash";
 import Loader from "./components/loader";
 
-export default function Dashboard() {
-    const router = useRouter();
+export default function DashboardClient() {
     const [testFiles, setTestFiles] = useState([]);
     const [loading, setLoading] = useState(true);
-    const {user, loading: authLoading} = useAuth();
 
     useEffect(() => {
-        const fetchTestFiles = async () => {
+        const fetchData = async () => {
             try {
-                console.log("Fetching test files...");
                 const response = await window.electronAPI.fetchTestFilesAmount(10);
-                const data = response.data;
-                setTestFiles(data || []);
-                console.log("Test files fetched:", data?.length || 0);
+                setTestFiles(response.data || []);
             } catch (error) {
                 console.error('Error fetching recent tests:', error);
-                setTestFiles([]); // Set empty array on error
             } finally {
                 setLoading(false);
             }
-        }
+        };
 
-        fetchTestFiles();
+        fetchData();
     }, []);
 
-    useEffect(() => {
-        if (!authLoading && !user) {
-            console.log("Not authenticated, redirecting to login");
-            router.push('/auth/login');
-        }
-    }, [user, authLoading, router]);
-
-    if (loading || authLoading) {
+    if (loading) {
         return (
             <div className={'h-screen w-screen'}>
                 <Loader/>
             </div>
         );
-    }
-
-    if (!user) {
-        return <Splash/>;
     }
 
     return (

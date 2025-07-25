@@ -5,6 +5,7 @@ const dataBuffer = require('./dataBufferService');
 const constants = require('../../../config/constants');
 const downsamplingUtils = require('../utils/downsamplingUtils')
 const calculationUtils = require("../utils/calculationUtils")
+const testDataService = require('./testDataService')
 
 // Global variables for BLE data processing
 let pendingLeftData = null;
@@ -83,11 +84,18 @@ function subscribeToCharacteristics(characteristic, peripheral) {
 
 
             // When we have enough data points, downsample and send to frontend
-            if (buffer.timeStamp.length >= TARGET_POINTS) {
+            // or we send on the first point received.
+            if (buffer.timeStamp.length >= TARGET_POINTS || dataBuffer.rawBuffer.length === 1) {
                 const downSampledData = downsamplingUtils.downsampleData(buffer, DOWNSAMPLE_TO);
+
+                // reformat data for our graphs
+                let finalData = processData(downSampledData);
+
                 // Send downsampled data to frontend
                 BrowserWindow.getAllWindows().forEach((win) => {
-                    win.webContents.send('new-ble-data', {data: downSampledData});
+                    if (win && !win.isDestroyed()) {
+                        win.webContents.send('new-ble-data', {data: finalData});
+                    }
                 });
 
                 // Reset buffer after sending
@@ -101,6 +109,35 @@ function subscribeToCharacteristics(characteristic, peripheral) {
     }
 
     characteristic.on('data', characteristic._dataCallback);
+}
+
+function processData(data) {
+    let returnData = {
+        displacement: [],
+        heading: [],
+        velocity: [],
+        trajectory: []
+    }
+    data.map((item) => {
+        returnData.displacement.push({
+            time: item.timeStamp,
+            displacement: item.displacement,
+        })
+        returnData.heading.push({
+            time: item.timeStamp,
+            heading: item.heading,
+        })
+        returnData.velocity.push({
+            time: item.timeStamp,
+            velocity: item.velocity,
+        })
+        returnData.trajectory.push({
+            time: item.timeStamp,
+            trajectory_x: item.trajectory_x,
+            trajectory_y: item.trajectory_y,
+        })
+    })
+    return returnData
 }
 
 function isDeviceConnected(peripheral) {

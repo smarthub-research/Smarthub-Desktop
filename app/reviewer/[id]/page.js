@@ -19,6 +19,7 @@ export default function TestView() {
             try {
                 const data = await window.electronAPI.getReviewData();
                 setTestData(data || {})
+                console.log(data)
                 if (data) {
                     setTestName(data.test_name)
                 }
@@ -38,7 +39,7 @@ export default function TestView() {
     }
 
     return (
-        <div className="grow flex flex-col items-center gap-2 py-8 px-12 h-screen">
+        <div className="grow flex flex-col items-center gap-4 py-8 px-12 min-h-screen">
             <div className={'self-start pt-8'}>
                 <TestName testData={testData} setTestData={setTestData} id={id}/>
                 <p>Recorded on: {testData.created_at.slice(0, testData.created_at.indexOf('T'))}</p>

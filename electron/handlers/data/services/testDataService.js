@@ -23,7 +23,6 @@ class TestDataService {
             dataValues = data;
         }
 
-
         this.testData = {
             gyro_left: dataValues.gyro_left || [],
             gyro_right: dataValues.gyro_right || [],
@@ -52,7 +51,7 @@ class TestDataService {
         this.reviewData = data
     }
 
-    getReviewData(options = {}) {
+    getReviewData() {
         // Apply any additional processing needed for review
         return this._prepareForReview(this.reviewData);
     }
@@ -93,22 +92,32 @@ class TestDataService {
         return lastItem.timeStamp ? (lastItem.timeStamp / 1000).toFixed(1) : 0;
     }
 
-    _processData(rawData, options) {
-        // Apply any necessary calculations or transformations
-        const processedData = calculationUtils.processRawData(rawData);
-
-        // Apply downsampling if needed
-        if (options.downsample) {
-            return downsamplingUtils.downsampleData(processedData, options.targetPoints);
-        }
-
-        return processedData;
+    formatTestData(data, dataType) {
+        return data.timeStamp.map((time, index) => ({
+            time: (Number(time) / 1000).toFixed(2),
+            [dataType]: data[dataType][index]
+        }));
     }
 
-    _prepareForReview(data, options) {
-        // Additional processing for review display
-        // Could include formatting, filtering, etc.
-        return data;
+    // Pairs trajectories with time stamps for trajectory graph
+    formatTrajectoryData(data) {
+        return data.timeStamp.map((time, index) => ({
+            time: (Number(time) / 1000).toFixed(2),
+            trajectory_x: data.trajectory_x[index],
+            trajectory_y: data.trajectory_y[index]
+        }))
+    }
+
+    _prepareForReview(data) {
+        let testData = {
+            ...data,
+            displacement: this.formatTestData(data, "displacement"),
+            heading: this.formatTestData(data, "heading"),
+            velocity: this.formatTestData(data, "velocity"),
+            trajectory: this.formatTrajectoryData(data)
+        }
+        console.log(testData)
+        return testData
     }
 }
 

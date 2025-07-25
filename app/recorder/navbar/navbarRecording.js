@@ -1,7 +1,6 @@
 'use client'
 
 import ConnectionStatus from "./connectionStatus";
-import {usePathname} from "next/navigation";
 import React, { useEffect, useState } from "react";
 import ControlPanel from "./controlPanel";
 import { useFlagging } from "../context/flaggingContext";
@@ -9,7 +8,6 @@ import Timer from "./timer";
 
 // This component handles the recording navbar for the SmartHub RecorderTab application.
 export default function NavbarRecording() {
-    const pathname = usePathname();
     const [show, setShow] = useState(true);
     const [lastScrollY, setLastScrollY] = useState(0);
     const { flagging, handleFlagging } = useFlagging();

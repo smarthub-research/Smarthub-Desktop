@@ -1,3 +1,4 @@
+'use client'
 import {AreaChart, Area, ResponsiveContainer} from "recharts";
 
 export default function UserGraph() {
