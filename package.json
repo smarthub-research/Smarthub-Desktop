@@ -43,12 +43,13 @@
   },
   "main": "electron/main.js",
   "scripts": {
-    "start": "concurrently \"cross-env BROWSER=none next dev --turbopack\" \"npm run electron:start\"",
+    "start": "concurrently \"cross-env BROWSER=none next dev --turbopack\" \"npm run electron:start\" \"npm run fastapi:start\"",
     "build": "next build",
     "test": "next test",
     "eject": "next eject",
     "dev": "next dev",
-    "electron:start": "wait-on http://localhost:3000 && electron ."
+    "electron:start": "wait-on http://localhost:3000 && electron .",
+    "fastapi:start": "cd backend && source venv/bin/activate && python3 -m main"
   },
   "build": {
     "appId": "com.kellengary.smarthub",

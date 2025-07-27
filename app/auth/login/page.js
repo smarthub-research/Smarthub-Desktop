@@ -8,7 +8,6 @@
 
 'use client'
 import { useState } from "react";
-import { supabase } from "../client";
 import { useRouter, useSearchParams } from "next/navigation";
 
 /**
@@ -70,19 +69,28 @@ export default function Login() {
         setLoading(true);
 
         try {
-            // Authenticates with Supabase using provided credentials
-            const { data, error } = await supabase.auth.signInWithPassword({
-                email: formData.email,
-                password: formData.password,
+            // Authenticates with  FastAPI backend
+            const response = await fetch('http://localhost:8000/auth/login', {
+                body: JSON.stringify({
+                    email: formData.email,
+                    password: formData.password
+                })
             });
-
-            if (error) throw error;
-
-            // Successful login - redirect to dashboard
-            router.push('/');
+            const data = await response.json();
+            if (response.ok) {
+                // Store the access token
+                if (data.session.access_token) {
+                    localStorage.setItem('access_token', data.session.access_token);
+                }
+                // Successful login - redirect to dashboard
+                router.push('/');
+            } else {
+                throw new Error(data.message || 'Login failed');
+            }
         } catch (err) {
             // Displays error message if authentication fails
             setError(err.message || 'Failed to sign in. Please check your credentials.');
+        } finally {
             setLoading(false);
         }
     };

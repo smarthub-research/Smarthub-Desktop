@@ -16,8 +16,6 @@ function createMainWindow() {
     const mainWindow = new BrowserWindow({
         titleBarStyle: "hiddenInset",
         title: 'Smarthub Desktop',
-        // width: width,
-        // height: height,
         width: width,
         height: height,
         backgroundColor: '#000000',

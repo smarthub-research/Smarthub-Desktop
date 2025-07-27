@@ -55,7 +55,6 @@ export default function ChartSection({boxView}) {
             ) : (
             //     No data fallback
             <div className="flex flex-col items-center justify-center h-64 text-gray-500">
-                <div className="text-6xl mb-4">📊</div>
                 <h3 className="text-xl font-semibold mb-2">No Test Data Available</h3>
                 <p className="text-center text-sm mb-4">
                     Start recording to see displacement, velocity, heading, and trajectory charts
