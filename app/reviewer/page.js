@@ -19,7 +19,7 @@ export default function ReviewerHomePage() {
     useEffect(() => {
         const fetchTestFiles = async () => {
             try {
-                const response = await fetch("http://0.0.0.0:8000/db/tests", {
+                const response = await fetch("http://localhost:8000/db/tests", {
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/json'

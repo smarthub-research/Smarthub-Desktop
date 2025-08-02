@@ -34,7 +34,7 @@ export function AuthProvider({ children }) {
         const token = localStorage.getItem('access_token');
         if (token) {
             try {
-                const response = await fetch('http://0.0.0.0:8000/auth/me', {
+                const response = await fetch('http://localhost:8000/auth/me', {
                     method: 'GET',
                     headers: {
                         'Authorization': `Bearer ${token}`,
@@ -58,7 +58,7 @@ export function AuthProvider({ children }) {
 
     async function handleLogout() {
         try {
-            await fetch("http://0.0.0.0:8000/auth/logout", {
+            await fetch("http://localhost:8000/auth/logout", {
                 method: "POST",
                 credentials: "include",
             });
@@ -74,7 +74,7 @@ export function AuthProvider({ children }) {
     useEffect(() => {
         const fetchUser = async () => {
             try {
-                const response = await fetch("http://0.0.0.0:8000/auth/me", {
+                const response = await fetch("http://localhost:8000/auth/me", {
                     method: "GET",
                     credentials: "include",
                 });

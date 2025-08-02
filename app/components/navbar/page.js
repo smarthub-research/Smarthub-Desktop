@@ -30,7 +30,6 @@ export default function Navbar() {
             border-surface-200 p-4 gap-4 transition-all duration-300 ease-in-out shrink-0`}>
             <DraggableNav />
             {/* Title */}
-            <span/>
             <Title/>
             {/* Navigation items */}
             <div className="flex flex-col gap-2">

@@ -11,7 +11,7 @@ supabase: Client = create_client(url, key)
 
 
 # API configuration
-API_HOST = "0.0.0.0"
+API_HOST = "localhost"
 API_PORT = 8000
 
 # CORS origins

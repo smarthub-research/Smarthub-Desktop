@@ -66,7 +66,7 @@ export default function Signup() {
         }
 
         try {
-            const response = await fetch("http://0.0.0.0:8000/auth/signup", {
+            const response = await fetch("http://localhost:8000/auth/signup", {
                 method: 'POST',
                 body: {
                     full_name: formData.name,

@@ -10,7 +10,7 @@ export default function Announcements() {
     useEffect(() => {
         async function fetchAnnouncements() {
             try {
-                const response = await fetch("http://0.0.0.0:8000/db/announcements", {
+                const response = await fetch("http://localhost:8000/db/announcements", {
                     method: 'GET'
                 });
                 const data = await response.json();

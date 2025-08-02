@@ -16,7 +16,7 @@ export default function TestView() {
     useEffect(() => {
         async function fetchTestData() {
             try {
-                const response = await fetch("http://0.0.0.0:8000/db/tests/" + id, {
+                const response = await fetch("http://localhost:8000/db/tests/" + id, {
                     method: "GET",
                 });
                 const data = await response.json();
