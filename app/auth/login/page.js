@@ -9,6 +9,7 @@
 'use client'
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useAuth} from "../authContext";
 
 /**
  * Login Component
@@ -31,6 +32,8 @@ export default function Login() {
     // Extract URL query parameters for displaying messages
     const searchParams = useSearchParams();
     const message = searchParams.get('message');
+
+    const { getUser } = useAuth();
 
     // State management
     const [error, setError] = useState('');
@@ -70,7 +73,11 @@ export default function Login() {
 
         try {
             // Authenticates with  FastAPI backend
-            const response = await fetch('http://localhost:8000/auth/login', {
+            const response = await fetch('http://0.0.0.0:8000/auth/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
                 body: JSON.stringify({
                     email: formData.email,
                     password: formData.password
@@ -83,13 +90,16 @@ export default function Login() {
                     localStorage.setItem('access_token', data.session.access_token);
                 }
                 // Successful login - redirect to dashboard
+                await getUser()
+                console.log("login success");
                 router.push('/');
             } else {
                 throw new Error(data.message || 'Login failed');
             }
         } catch (err) {
             // Displays error message if authentication fails
-            setError(err.message || 'Failed to sign in. Please check your credentials.');
+            setError(
+                'Failed to sign in. Please check your credentials.');
         } finally {
             setLoading(false);
         }

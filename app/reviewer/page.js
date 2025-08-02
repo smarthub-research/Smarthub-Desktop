@@ -7,7 +7,7 @@ import SearchFilters from "./searchFilters";
 
 export default function ReviewerHomePage() {
     const router = useRouter();
-    const [files, setFiles] = useState([]);
+    const [files, setTestFiles] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [filters, setFilters] = useState({
@@ -17,22 +17,23 @@ export default function ReviewerHomePage() {
     });
 
     useEffect(() => {
-        async function loadFiles() {
+        const fetchTestFiles = async () => {
             try {
-                if (!window.electronAPI) {
-                    throw new Error("Electron API is not available");
-                }
-                const response = await window.electronAPI.fetchTestFiles();
-                setFiles(response.data || []);
-            } catch (err) {
-                console.error("Error fetching files:", err);
-                setError(err.message);
+                const response = await fetch("http://0.0.0.0:8000/db/tests", {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                const data = await response.json();
+                setTestFiles(data.data || [])
+            } catch (error) {
+                console.error('Error fetching recent tests:', error);
             } finally {
                 setLoading(false);
             }
-        }
-
-        loadFiles();
+        };
+        fetchTestFiles();
     }, []);
 
     const handleFilterChange = (filter) => {
@@ -53,7 +54,6 @@ export default function ReviewerHomePage() {
 
     const handleView = async (testName, file) => {
         try {
-            await window.electronAPI.setReviewData(file)
             router.push('/reviewer/' + file.id);
         } catch (err) {
             console.error("Error viewing file:", err);
@@ -101,7 +101,7 @@ export default function ReviewerHomePage() {
                             ))}
                         </div>
                     ) : (
-                        <div className="bg-[#1a1a1a] rounded-lg p-8 text-center">
+                        <div className="bg-white rounded-lg p-8 text-center">
                             <p className="text-gray-400 text-lg mb-4">No test files available.</p>
                             <button
                                 className="bg-blue-600 hover:bg-blue-700 text-white py-2 px-6 rounded-lg transition"

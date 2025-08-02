@@ -3,7 +3,7 @@ import ProfileSVG from "../svg/profileSVG";
 import {useAuth} from "../../auth/authContext";
 
 export default function ProfileTab({getItemClasses}) {
-    const { user } = useAuth();
+    const { user, userRole } = useAuth();
 
     return (
         <div className={`${getItemClasses('profile')}`}>
@@ -12,7 +12,7 @@ export default function ProfileTab({getItemClasses}) {
                 {user && (
                     <>
                         <p className={'font-semibold'}>{user.user_metadata.full_name}</p>
-                        <p className={'opacity-50'}>{user.user_metadata.role}</p>
+                        <p className={'opacity-50'}>{userRole}</p>
                     </>
                 )}
             </div>

@@ -11,18 +11,16 @@ export default function TestView() {
     const params = useParams();
     const id = params?.id;
     const [testData, setTestData] = useState(null);
-    const [testName,setTestName] = useState(null);
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
         async function fetchTestData() {
             try {
-                const data = await window.electronAPI.getReviewData();
-                setTestData(data || {})
-                console.log(data)
-                if (data) {
-                    setTestName(data.test_name)
-                }
+                const response = await fetch("http://0.0.0.0:8000/db/tests/" + id, {
+                    method: "GET",
+                });
+                const data = await response.json();
+                setTestData(data.data[0])
             } catch (err) {
                 console.error("Error fetching test data:", err);
             } finally {

@@ -3,30 +3,17 @@ import {useEffect, useState} from 'react';
 import ConnectedDevices from "../recorder/connector/connectedDevices";
 import useFetchDevices from "../recorder/hooks/useFetchDevices";
 import NearbyDevices from "../recorder/connector/nearbyDevices";
-import {useAuth} from "../auth/authContext";
 import {useRouter} from "next/navigation";
+import { useAuth } from "../auth/authContext";
 
 export default function Settings() {
     const router = useRouter();
     const { devices, deviceOne, deviceTwo, setDeviceOne, setDeviceTwo } = useFetchDevices();
     const [notificationsEnabled, setNotificationsEnabled] = useState(true);
     const [darkMode, setDarkMode] = useState(false);
-    const { user, signOut } = useAuth();
+    const [user, setUser] = useState(null);
     const [email, setEmail] = useState("");
-
-    function handleLogout() {
-        router.push('/auth/login')
-        signOut();
-    }
-
-    useEffect(() => {
-        async function updateEmail() {
-            console.log(user)
-            const email = await user.email
-            setEmail(email);
-        }
-        updateEmail()
-    }, []);
+    const { handleLogout } = useAuth();
 
     return (
         <div className="container mx-auto py-8 px-4 max-w-4xl mt-4">

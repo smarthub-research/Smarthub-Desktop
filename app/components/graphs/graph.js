@@ -1,20 +1,38 @@
 'use client';
 
-import {CartesianGrid, Line, LineChart, XAxis, YAxis} from "recharts"
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardFooter,
-    CardHeader,
-    CardTitle,
-} from "../ui/card"
-import {
-    ChartConfig,
-    ChartContainer,
-    ChartTooltip,
-    ChartTooltipContent,
-} from "../ui/chart"
+import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts"
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card"
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "../ui/chart"
+import { memo, useEffect, useRef, useState } from "react";
+
+function useDebouncedResize(delay = 1000) {
+    const [size, setSize] = useState({ width: 0, height: 0 });
+    const ref = useRef();
+
+    useEffect(() => {
+        if (!ref.current) return;
+        let timeout;
+        const handleResize = () => {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => {
+                if (ref.current) {
+                    setSize({
+                        width: ref.current.offsetWidth,
+                        height: ref.current.offsetHeight
+                    });
+                }
+            }, delay);
+        };
+        window.addEventListener("resize", handleResize);
+        handleResize();
+        return () => {
+            clearTimeout(timeout);
+            window.removeEventListener("resize", handleResize);
+        };
+    }, [delay]);
+
+    return [ref, size];
+}
 
 // Constants for chart colors
 const CHART_COLORS = {
@@ -26,6 +44,8 @@ const CHART_COLORS = {
 }
 
 function Graph({data}) {
+
+    const [containerRef, containerSize] = useDebouncedResize(150);
 
     // Find first non-time key
     const dataKey = data && data.length > 0
@@ -58,14 +78,23 @@ function Graph({data}) {
         },
     };
 
+    // Y Axis domain calculation
+    const yValues = data?.map(d => d[dataKey]).filter(v => typeof v === "number");
+    const yMin = yValues && yValues.length ? Math.min(...yValues) : 0;
+    const yMax = yValues && yValues.length ? Math.max(...yValues) : 1;
+    const yPadding = (yMax - yMin) * 0.3 || 1;
+    const domain = [yMin - yPadding, yMax + yPadding];
+
     return (
-        <Card>
+        <Card ref={containerRef}>
             <CardHeader>
                 <CardTitle>{title}</CardTitle>
             </CardHeader>
             <CardContent>
                 <ChartContainer config={chartConfig}>
                     <LineChart
+                        width={containerSize.width || 400}
+                        height={containerSize.height ? containerSize.height - 80 : 300}
                         accessibilityLayer
                         data={data}
                         margin={{
@@ -84,6 +113,7 @@ function Graph({data}) {
                             tickLine={false}
                             tickMargin={8}
                             tickFormatter={(value) => value.toFixed(2)}
+                            domain={domain}
                         />
                         <ChartTooltip
                             cursor={false}
@@ -113,4 +143,4 @@ function Graph({data}) {
     )
 }
 
-export default Graph;
+export default memo(Graph);

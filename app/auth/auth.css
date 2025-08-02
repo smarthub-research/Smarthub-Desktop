@@ -24,7 +24,6 @@ This file creates the moving graphic on the login and signup screens
     left: 0;
     right: 0;
     bottom: 0;
-    background: url('/texture.jpg');
     background-size: cover;
     background-position: var(--texture-x, 0%) var(--texture-y, 0%);
     opacity: var(--texture-opacity);

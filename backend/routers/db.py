@@ -38,3 +38,13 @@ async def get_test(test_id: int):
         .execute()
     )
     return response
+
+# Get all announcements
+@router.get("/announcements")
+async def get_announcements():
+    response = (
+        supabase.table("announcements")
+        .select("*")
+        .execute()
+    )
+    return response

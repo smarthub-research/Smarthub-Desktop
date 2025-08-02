@@ -10,8 +10,11 @@ export default function Announcements() {
     useEffect(() => {
         async function fetchAnnouncements() {
             try {
-                const response = await window.electronAPI.fetchAnnouncements();
-                setAnnouncements(response.data);
+                const response = await fetch("http://0.0.0.0:8000/db/announcements", {
+                    method: 'GET'
+                });
+                const data = await response.json();
+                setAnnouncements(data.data || []);
             } catch (error) {
                 setError(error.message);
                 setAnnouncements([]);

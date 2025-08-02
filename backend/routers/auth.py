@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from constants import supabase
 from pydantic import BaseModel
 
@@ -12,34 +12,49 @@ router = APIRouter(
 class AuthRequest(BaseModel):
     email: str
     password: str
+    full_name: str = None
 
 # Logs a user in and sends the JWT for the session
-@router.get("/login")
+@router.post("/login")
 async def login(request: AuthRequest):
-    response = supabase.auth.sign_in_with_password(
-        {
-            "email": request.email,
-            "password": request.password,
-        }
-    )
+    try:
+        response = supabase.auth.sign_in_with_password(
+            {
+                "email": request.email,
+                "password": request.password,
+            }
+        )
+    except Exception as e:
+        raise HTTPException(status_code=404, detail=str(e))
     return response
 
+@router.get("/me")
+async def me():
+    return supabase.auth.get_user()
+
 # Logs the user out and deletes their current session in supabase
-@router.get("/logout")
+@router.post("/logout")
 async def logout():
     response = supabase.auth.sign_out()
     return response
 
 # Creates a new user in the db
-@router.get("/signup")
+@router.post("/signup")
 async def signup(request: AuthRequest):
-    response = supabase.auth.sign_up(
+    new_user = supabase.auth.sign_up(
         {
             "email": request.email,
             "password": request.password,
+            "options": {
+                "data": {
+                    "full_name": request.full_name,
+                    "role": 'clinician'
+                }
+            }
         }
     )
-    return response
+
+    return new_user
 
 # Resets a users password by sending an email page
 # Reminder: Customize this email page at some point.

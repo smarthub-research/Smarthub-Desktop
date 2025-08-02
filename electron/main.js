@@ -1,5 +1,5 @@
 const path = require('path');
-const { app, screen} = require('electron');
+const { app, screen, session } = require('electron');
 const {initializeAllHandlers} = require("./handlers");
 const BrowserWindow = require('electron').BrowserWindow;
 
@@ -30,17 +30,19 @@ function createMainWindow() {
         app.dock.setIcon(path.resolve(__dirname, 'assets/icons/icon.png'));
     }
 
-    mainWindow.loadURL('http://localhost:3000');
+    mainWindow.loadURL('http://localhost:3000/auth/login');
 }
 
-app.whenReady().then(() => {
+app.on("ready", async () => {
+    const ses = session.defaultSession;
+    await ses.clearStorageData();
     createMainWindow();
     app.on('activate', () => {
         if (BrowserWindow.getAllWindows().length === 0) {
             createMainWindow();
         }
     })
-});
+})
 
 app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') app.quit();

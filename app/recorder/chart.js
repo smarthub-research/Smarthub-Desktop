@@ -9,7 +9,7 @@ import {
     Title,
     Tooltip,
 } from "chart.js";
-import React, {useMemo, useRef, useState} from "react";
+import React, {memo, useMemo, useRef, useState} from "react";
 import useFetchFlags from "./hooks/useFetchFlags";
 import ChartToolbar from "./chartToolbar";
 
@@ -41,7 +41,7 @@ const CHART_COLORS = {
 }
 
 // Chart component for displaying various sensor data for different chart types
-export default function Chart({ timeStamps, data, title, graphId }) {
+function Chart({ timeStamps, data, title, graphId }) {
     const [flags] = useFetchFlags({ graphId });
     const [dataPointCount, setDataPointCount] = useState(50);
     const [scrollPosition, setScrollPosition] = useState(0);
@@ -419,3 +419,5 @@ export default function Chart({ timeStamps, data, title, graphId }) {
         </div>
     );
 }
+
+export default memo(Chart);

@@ -8,7 +8,6 @@
 
 'use client'
 import { useState } from "react";
-import { supabase } from "../client";
 import { useRouter } from "next/navigation";
 
 /**
@@ -67,37 +66,14 @@ export default function Signup() {
         }
 
         try {
-            // Create auth user
-            const { data: authData, error: authError } = await supabase.auth.signUp({
-                email: formData.email,
-                password: formData.password,
-                options: {
-                    data: {
-                        full_name: formData.name,
-                        role: 'clinician'
-                    }
-                }
-            });
-
-            // Insert user data into custom users table for RBAC
-            if (authData.user) {
-                const { error: profileError } = await supabase
-                    .from('users')
-                    .insert([
-                        {
-                            id: authData.user.id,
-                            full_name: formData.name,
-                            email: formData.email,
-                            role: 'clinician',
-                            created_at: new Date()
-                        }
-                    ]);
-
-                if (profileError) {
-                    console.error('Error saving user profile:', profileError);
-                }
-            }
-
+            const response = await fetch("http://0.0.0.0:8000/auth/signup", {
+                method: 'POST',
+                body: {
+                    full_name: formData.name,
+                    email: formData.email,
+                    password: formData.password
+                },
+            })
             // Redirect to login page with success message
             router.push('/auth/login?message=Account created successfully! Please check your email to verify your account.');
         } catch (err) {

@@ -12,18 +12,23 @@ export default function DashboardClient() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const fetchData = async () => {
+        const fetchTestFiles = async () => {
             try {
-                const response = await window.electronAPI.fetchTestFilesAmount(10);
-                setTestFiles(response.data || []);
+                const response = await fetch("http://0.0.0.0:8000/db/tests", {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                const data = await response.json();
+                setTestFiles(data.data.slice(0, (10 || data.data.length - 1)) || []);
             } catch (error) {
                 console.error('Error fetching recent tests:', error);
             } finally {
                 setLoading(false);
             }
         };
-
-        fetchData();
+        fetchTestFiles();
     }, []);
 
     if (loading) {
