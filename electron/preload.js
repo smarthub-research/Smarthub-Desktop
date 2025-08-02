@@ -73,13 +73,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
     submitTestData: (metadata) => ipcRenderer.invoke('submit-test-data', metadata),
     fetchTestFiles: () => ipcRenderer.invoke('fetch-test-files'),
-    fetchTestFilesAmount: (numberOfTests) => ipcRenderer.invoke('fetch-test-files-amount', numberOfTests),
     updateTestName: (id, testName) => ipcRenderer.invoke('update-test-name', id, testName),
-
-    fetchAnnouncements: () => ipcRenderer.invoke('fetch-announcements'),
-    setAuthSession: (session) => ipcRenderer.invoke('set-auth-session', session),
-
-    submitBugReport: (metadata) => ipcRenderer.invoke('submit-bug-report', metadata),
 
     // Add a general removeListener method for backward compatibility
     removeListener: (channel, callback) => {

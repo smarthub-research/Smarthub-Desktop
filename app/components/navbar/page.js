@@ -12,6 +12,7 @@ import Title from "./title";
 import {usePathname} from "next/navigation";
 import Link from "next/link";
 import DraggableNav from "../draggableNav";
+import MessagesTab from "./messagesTab";
 
 export default function Navbar() {
     const pathname = usePathname()
@@ -37,6 +38,7 @@ export default function Navbar() {
                 <Link href={'/recorder'}><RecorderTab getItemClasses={getItemClasses}/></Link>
                 <Link href={'/reviewer'}><ReviewerTab getItemClasses={getItemClasses}/></Link>
                 <Link href={'/calendar'}><CalendarTab getItemClasses={getItemClasses}/></Link>
+                <Link href={'/messages'}><MessagesTab getItemClasses={getItemClasses}/></Link>
                 <Link href={'/bugReporter'}><BugReporterTab getItemClasses={getItemClasses}/></Link>
             </div>
 

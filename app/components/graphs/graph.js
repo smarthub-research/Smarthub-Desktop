@@ -1,6 +1,6 @@
 'use client';
 
-import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts"
+import {CartesianGrid, Label, Line, LineChart, XAxis, YAxis} from "recharts"
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card"
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "../ui/chart"
 import { memo, useEffect, useRef, useState } from "react";
@@ -45,7 +45,7 @@ const CHART_COLORS = {
 
 function Graph({data}) {
 
-    const [containerRef, containerSize] = useDebouncedResize(150);
+    const [containerRef, containerSize] = useDebouncedResize(1000);
 
     // Find first non-time key
     const dataKey = data && data.length > 0
@@ -91,7 +91,7 @@ function Graph({data}) {
                 <CardTitle>{title}</CardTitle>
             </CardHeader>
             <CardContent>
-                <ChartContainer config={chartConfig}>
+                <ChartContainer config={chartConfig} className={'max-h-[20dvh] w-full'}>
                     <LineChart
                         width={containerSize.width || 400}
                         height={containerSize.height ? containerSize.height - 80 : 300}
@@ -106,8 +106,10 @@ function Graph({data}) {
                             dataKey={"time"}
                             tickLine={false}
                             tickMargin={8}
-                            tickFormatter={(value) => String(value).slice(0, 3)}
+                            tickFormatter={(value) => (value / 1000).toFixed(2)} // ms to seconds
                         />
+                        <Label value="Time (s)" position="insideBottom" offset={-5} />
+
                         <YAxis
                             dataKey={dataKey}
                             tickLine={false}

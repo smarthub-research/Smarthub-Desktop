@@ -68,6 +68,11 @@ class DataBuffer {
     clearBuffers() {
         this.dataBuffer = this.initializeBuffer();
     }
+
+    clearAllBuffers() {
+        this.dataBuffer = this.initializeBuffer();
+        this.rawBuffer = this.initializeBuffer();
+    }
 }
 
 module.exports = new DataBuffer();

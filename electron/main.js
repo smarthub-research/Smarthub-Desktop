@@ -14,7 +14,6 @@ function createMainWindow() {
     console.log('Icon path:', iconPath);
 
     const mainWindow = new BrowserWindow({
-        titleBarStyle: "hiddenInset",
         title: 'Smarthub Desktop',
         width: width,
         height: height,

@@ -87,7 +87,7 @@ export default function ConnectionStatus() {
                     <p className="text-gray-400">Waiting for devices...</p>
                 </div>
             ) : (
-                <div className="flex flex-row h-full bg-surface-300 p-2 rounded-lg">
+                <div className="flex flex-col h-full p-2 rounded-lg">
                     <div className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg">
                         <div className="flex items-center space-x-3">
                             {connectionStatus.deviceOne ? (

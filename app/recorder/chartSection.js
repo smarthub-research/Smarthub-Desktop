@@ -28,25 +28,37 @@ export default function ChartSection({boxView}) {
         });
     }
 
+    const [counter, setCounter] = useState(0);
+
+    const bleDataHandler = (newData) => {
+        setCounter((count) => {
+            console.log(`Received BLE data ${count + 1}:`, newData.data);
+            return count + 1;
+        });
+        handleData(newData.data);
+    };
+
+    const restartHandler = () => {
+        clearData();
+    };
+
     useEffect(() => {
         if (window.electronAPI) {
-            const bleDataHandler = (newData) => {
-                console.log('Received BLE data:', newData.data);
-                handleData(newData.data);
-            };
+            // Register listeners and store their cleanup functions
+            const removeBleListener = window.electronAPI.onBLEData(bleDataHandler);
+            const removeRestartListener = window.electronAPI.onRestartRecording(restartHandler);
 
-            const restartHandler = () => {
-                clearData();
+            // Return combined cleanup function
+            return () => {
+                if (removeBleListener) removeBleListener();
+                if (removeRestartListener) removeRestartListener();
             };
-
-            window.electronAPI.onBLEData(bleDataHandler);
-            window.electronAPI.onRestartRecording(restartHandler);
         }
     }, []);
 
     return (
         testData.displacement.length> 0 ? (
-                <div className={`${boxView ? 'grid grid-cols-2 gap-8 grow' : 'flex flex-col gap-8 shrink'}`}>
+                <div className={`${boxView ? 'grid grid-cols-2 gap-8 grow' : 'flex flex-col gap-8'}`}>
                     <Graph data={testData.displacement}/>
                     <Graph data={testData.heading}/>
                     <Graph data={testData.velocity}/>

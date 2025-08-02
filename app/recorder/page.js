@@ -6,11 +6,13 @@ import { useFlagging } from "./context/flaggingContext";
 import NavbarRecording from "./navbar/navbarRecording";
 import ChartSection from "./chartSection";
 import ViewSwapper from "./viewSwapper";
+import {useTest} from "./context/testContext";
 
 // Main RecorderTab component
 export default function Recorder() {
     const [boxView, setBoxView] = useState(false);
     const { flagging, handleFlagging, width } = useFlagging();
+    const { testData } = useTest();
 
     // Handle end of recording
     function handleEndRecording() {

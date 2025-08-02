@@ -1,34 +1,41 @@
 import UsageGraph from "./usageGraph";
 import Upcoming from "./upcoming";
 import UserGraph from "./userGraph";
+import { useAuth } from "../../auth/authContext";
+import { FaEnvelope, FaCheckCircle, FaClipboardList } from "react-icons/fa";
 
-export default function Analytics({testFiles}) {
+export default function Analytics({ testFiles }) {
+    const { user } = useAuth();
+    // Hardcoded values
+    const messages = 42;
+    const recordedTests = 17;
+    const newTests = 5;
+
     return (
-        <div className={'p-4 bg-surface-50 rounded-xl shadow-sm'}>
-            <h2 className="mb-2 font-semibold text-gray-80">Analytics</h2>
-            <div className="grid grid-cols-5 gap-4">
-                {/* Usage graph card */}
-                <div className="col-span-2 border border-surface-200 bg-white rounded-lg shadow-sm p-3 h-52">
-                    <h2 className="text-sm font-medium mb-1">Usage Statistics</h2>
-                    <div className="h-40">
-                        <UsageGraph testFiles={testFiles}/>
+        <div className="p-6 bg-surface-50 rounded-2xl shadow-lg">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="flex items-center p-4">
+                    <FaEnvelope className="text-blue-500 text-3xl mr-4" />
+                    <div>
+                        <p className="text-lg font-semibold">{messages}</p>
+                        <span className="text-gray-500">Messages</span>
                     </div>
                 </div>
-
-                {/* User graph card */}
-                <div className="col-span-2 border border-surface-200 bg-white rounded-lg shadow-sm p-3 h-52">
-                    <h2 className="text-sm font-medium mb-1">User Activity</h2>
-                    <div className="h-40">
-                        <UserGraph />
+                <div className="flex items-center p-4">
+                    <FaCheckCircle className="text-green-500 text-3xl mr-4" />
+                    <div>
+                        <p className="text-lg font-semibold">{recordedTests}</p>
+                        <span className="text-gray-500">Recorded Tests</span>
                     </div>
                 </div>
-
-                {/*/!* Upcoming events card *!/*/}
-                {/*<div className="border border-surface-200 bg-white rounded-lg shadow-sm">*/}
-                {/*    <Upcoming />*/}
-                {/*</div>*/}
+                <div className="flex items-center p-4">
+                    <FaClipboardList className="text-yellow-500 text-3xl mr-4" />
+                    <div>
+                        <p className="text-lg font-semibold">{newTests}</p>
+                        <span className="text-gray-500">New Tests to Review</span>
+                    </div>
+                </div>
             </div>
         </div>
-
     );
 }

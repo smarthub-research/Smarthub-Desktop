@@ -77,11 +77,9 @@ function subscribeToCharacteristics(characteristic, peripheral) {
                 displacement
             );
 
-
             // Append data to both buffers
             dataBuffer.appendToBuffer(jsonData);
             const buffer = dataBuffer.getDataBuffer()
-
 
             // When we have enough data points, downsample and send to frontend
             // or we send on the first point received.
@@ -90,6 +88,7 @@ function subscribeToCharacteristics(characteristic, peripheral) {
 
                 // reformat data for our graphs
                 let finalData = processData(downSampledData);
+                dataBuffer.clearBuffers();
 
                 // Send downsampled data to frontend
                 BrowserWindow.getAllWindows().forEach((win) => {
@@ -97,9 +96,9 @@ function subscribeToCharacteristics(characteristic, peripheral) {
                         win.webContents.send('new-ble-data', {data: finalData});
                     }
                 });
+                console.log("DATA: ", finalData);
 
                 // Reset buffer after sending
-                dataBuffer.clearBuffers();
             }
 
             // Clear the pending data after processing

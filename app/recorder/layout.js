@@ -1,5 +1,6 @@
 import React from "react";
 import {FlaggingProvider} from "./context/flaggingContext";
+import {TestProvider} from "./context/testContext";
 
 export const metadata = {
     title: 'SmartHub RecorderTab',
@@ -8,8 +9,10 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
     return (
-        <FlaggingProvider>
-            {children}
-        </FlaggingProvider>
+        <TestProvider>
+            <FlaggingProvider>
+                {children}
+            </FlaggingProvider>
+        </TestProvider>
     )
 }

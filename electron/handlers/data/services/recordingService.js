@@ -1,7 +1,7 @@
 const BrowserWindow = require('electron').BrowserWindow;
-const connectionStore = require('../../../services/connectionStore');
 const timeManager = require('../../../services/timeManager');
-const bleService = require('./bleServices');
+const dataBuffer = require("./dataBufferService")
+const testDataService = require("./testDataService");
 const flagHandlers = require('../../flagHandlers');
 
 class RecordingService {
@@ -11,6 +11,9 @@ class RecordingService {
         timeManager.setPausedElapsedTime(0);
         timeManager.setIsPaused(false);
         flagHandlers.clearFlags();
+        dataBuffer.clearAllBuffers();
+
+
 
         this.notifyAllWindows('restart-recording', { startTime: timeManager.getRecordingStartTime() });
 
