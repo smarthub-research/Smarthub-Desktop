@@ -1,5 +1,4 @@
 import Graph from "../../components/graphs/graph";
-import React from "react";
 
 export default function GraphSection({testData}) {
     return (

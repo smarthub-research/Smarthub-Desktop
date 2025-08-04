@@ -1,6 +1,5 @@
-import UsageGraph from "./usageGraph";
-import Upcoming from "./upcoming";
-import UserGraph from "./userGraph";
+"use client"
+
 import { useAuth } from "../../auth/authContext";
 import { FaEnvelope, FaCheckCircle, FaClipboardList } from "react-icons/fa";
 

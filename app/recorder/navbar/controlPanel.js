@@ -1,11 +1,11 @@
-import { BsFillPlayFill } from "react-icons/bs";
-import { BsFillStopFill } from "react-icons/bs";
-import { BsArrowCounterclockwise } from "react-icons/bs";
-import { BsFillFlagFill } from "react-icons/bs";
 import { useState, useEffect } from "react";
+import StopButton from "./stopButton";
+import RestartButton from "./restartButton";
+import FlaggingButton from "./flaggingButton";
+import StartButton from "./startButton";
 
 // Component for the control panel with buttons to start, stop, and restart recording,
-export default function ControlPanel({setFlagging, flagging}) {
+export default function ControlPanel() {
     const [recording, setRecording] = useState(false);
 
     // Set up and clean up IPC listeners
@@ -35,78 +35,12 @@ export default function ControlPanel({setFlagging, flagging}) {
         };
     }, []);
 
-    // Lets us receive BLE data from the main process
-    async function beginBleReading() {
-        try {
-            if (window.electronAPI) {
-                await window.electronAPI.beginReadingData();
-                // Setting recording state is now handled by the IPC listener
-            }
-        } catch (error) {
-            console.error("Error starting BLE reading:", error);
-        }
-    }
-
-    // Stops the BLE recording and sets the recording state to false
-    async function stopRecording() {
-        try {
-            if (window.electronAPI) {
-                await window.electronAPI.stopRecordingData();
-                // Setting recording state is now handled by the IPC listener
-            }
-        } catch (error) {
-            console.error("Error stopping recording:", error);
-        }
-    }
-
-    // Restarts the recording by stopping and then starting it again
-    async function restartRecording() {
-        try {
-            if (window.electronAPI) {
-                await window.electronAPI.restartRecording();
-                await window.electronAPI.clearFlags();
-            }
-        } catch (error) {
-            console.error("Error restarting recording:", error);
-        }
-    }
-
     return (
-        <>
-            <div
-                className="flex flex-row h-full gap-3 px-4 items-center justify-center rounded-xl">
-                <button
-                    onClick={beginBleReading}
-                    disabled={recording}
-                    className={`flex justify-center items-center w-12 h-12 rounded-full
-                    ${recording ? 'bg-green-800 cursor-not-allowed opacity-50' : 'bg-green-600 hover:bg-green-500'}
-                    transition-colors text-white text-xl shadow-md`}>
-                    <BsFillPlayFill/>
-                </button>
-
-                <button
-                    onClick={stopRecording}
-                    disabled={!recording}
-                    className={`flex justify-center items-center w-12 h-12 rounded-full
-                    ${!recording ? 'bg-red-800 cursor-not-allowed opacity-50' : 'bg-red-600 hover:bg-red-500'}
-                    transition-colors text-white text-xl shadow-md`}>
-                    <BsFillStopFill/>
-                </button>
-
-                <button
-                    onClick={restartRecording}
-                    className="flex justify-center w-12 h-12 items-center bg-gray-700 hover:bg-gray-600
-                    rounded-full transition-colors text-white text-xl shadow-md">
-                    <BsArrowCounterclockwise/>
-                </button>
-
-                <button
-                    onClick={setFlagging}
-                    className={`flex justify-center items-center w-12 h-12 border border-gray-600
-                    hover:bg-primary-400 bg-primary-500 rounded-full transition-colors text-white text-xl shadow-md`}>
-                    <BsFillFlagFill/>
-                </button>
-            </div>
-        </>
+        <div className="flex flex-row h-full gap-3 px-4 items-center justify-center rounded-xl">
+            <StartButton recording={recording}/>
+            <StopButton recording={recording}/>
+            <RestartButton/>
+            <FlaggingButton/>
+        </div>
     );
 }

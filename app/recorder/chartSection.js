@@ -10,6 +10,7 @@ export default function ChartSection({boxView}) {
     });
 
     function handleData(data) {
+        data = data.data
         // Update testData with the new formatted data from BLE service
         setTestData(prevTestData => ({
             displacement: [...prevTestData.displacement, ...data.displacement],
@@ -28,16 +29,6 @@ export default function ChartSection({boxView}) {
         });
     }
 
-    const [counter, setCounter] = useState(0);
-
-    const bleDataHandler = (newData) => {
-        setCounter((count) => {
-            console.log(`Received BLE data ${count + 1}:`, newData.data);
-            return count + 1;
-        });
-        handleData(newData.data);
-    };
-
     const restartHandler = () => {
         clearData();
     };
@@ -45,7 +36,7 @@ export default function ChartSection({boxView}) {
     useEffect(() => {
         if (window.electronAPI) {
             // Register listeners and store their cleanup functions
-            const removeBleListener = window.electronAPI.onBLEData(bleDataHandler);
+            const removeBleListener = window.electronAPI.onBLEData(handleData);
             const removeRestartListener = window.electronAPI.onRestartRecording(restartHandler);
 
             // Return combined cleanup function

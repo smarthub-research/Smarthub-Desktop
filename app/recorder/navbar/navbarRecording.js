@@ -3,32 +3,15 @@
 import ConnectionStatus from "./connectionStatus";
 import React, { useEffect, useState } from "react";
 import ControlPanel from "./controlPanel";
-import { useFlagging } from "../context/flaggingContext";
 import Timer from "./timer";
 
 // This component handles the recording navbar for the SmartHub RecorderTab application.
 export default function NavbarRecording() {
-    const [show, setShow] = useState(true);
-    const [lastScrollY, setLastScrollY] = useState(0);
-    const { flagging, handleFlagging } = useFlagging();
     const [recordingState, setRecordingState] = useState({
         isRecording: false,
         startTime: null
     });
     const [recordingTime, setRecordingTime] = useState(0);
-
-    // Handle scroll events to show/hide the navbar
-    useEffect(() => {
-        const handleScroll = () => {``
-            setShow(window.scrollY <= lastScrollY);
-            setLastScrollY(window.scrollY);
-        };
-
-        window.addEventListener("scroll", handleScroll);
-        return () => {
-            window.removeEventListener("scroll", handleScroll);
-        };
-    }, [lastScrollY]);
 
     // Add timer effect for continuous updates
     useEffect(() => {
@@ -76,7 +59,6 @@ export default function NavbarRecording() {
             isRecording: false,
             startTime: null
         });
-        // No need to calculate final time here as it's continuously updated by the timer effect
     };
 
     // Set up and clean up IPC listeners
@@ -110,10 +92,9 @@ export default function NavbarRecording() {
     }, []);
 
     return (
-        <div className={`sticky flex flex-row grow justify-center items-center p-4 gap-6 top-0 z-5 w-full h-[10vh]
-        ${show ? "opacity-100" : "opacity-0"} transition`}>
+        <div className={`sticky z-10 bg-linear-to-b from-surface-200 to-transparent flex flex-row grow justify-center items-center p-4 gap-6 top-0 w-full h-[10dvh] transition`}>
             <ConnectionStatus/>
-            <ControlPanel setFlagging={handleFlagging} flagging={flagging}/>
+            <ControlPanel/>
             <Timer recordingTime={recordingTime} recordingState={recordingState} />
         </div>
     );

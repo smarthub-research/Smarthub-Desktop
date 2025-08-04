@@ -48,3 +48,15 @@ async def get_announcements():
         .execute()
     )
     return response
+
+# Changes the test at the given id based on the new test data
+# EX. in testName.js the user can change the test name
+@router.put("/update_test/{test_id}")
+async def update_test(test_id: int, new_data: dict):
+    response = (
+        supabase.table("test_info")
+        .update(new_data)
+        .eq("id", test_id)
+        .execute()
+    )
+    return response

@@ -1,18 +1,17 @@
 'use client';
-import React, { useEffect, useState } from "react";
+
+import { useState } from "react";
 import Link from "next/link";
 import FlagConsole from "./navbar/flagConsole";
 import { useFlagging } from "./context/flaggingContext";
 import NavbarRecording from "./navbar/navbarRecording";
 import ChartSection from "./chartSection";
 import ViewSwapper from "./viewSwapper";
-import {useTest} from "./context/testContext";
 
 // Main RecorderTab component
 export default function Recorder() {
     const [boxView, setBoxView] = useState(false);
     const { flagging, handleFlagging, width } = useFlagging();
-    const { testData } = useTest();
 
     // Handle end of recording
     function handleEndRecording() {
@@ -24,9 +23,9 @@ export default function Recorder() {
 
     return (
         <div className={'flex flex-row grow'}>
-            <div className={`h-full mt-4 grow`}>
+            <div className={`h-full grow`}>
                 <NavbarRecording/>
-                <div className="flex flex-col pt-12 pb-8 px-4 w-full">
+                <div className="flex flex-col pb-8 px-4 w-full">
                     <div className={"flex flex-col w-full px-12 self-center gap-4 justify-center"}>
                         {/* Small control header under navbar */}
                         <div className="flex justify-between items-center">

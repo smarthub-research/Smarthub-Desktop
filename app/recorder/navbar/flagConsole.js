@@ -1,6 +1,6 @@
 'use client';
 
-import {useState, useRef, useEffect, use} from "react";
+import {useState, useRef, useEffect} from "react";
 import {BsFillSendFill, BsGraphUp, BsX} from "react-icons/bs";
 import useFetchFlags from "../hooks/useFetchFlags";
 import { useFlagging } from "../context/flaggingContext";
@@ -9,7 +9,7 @@ import { useFlagging } from "../context/flaggingContext";
 export default function FlagConsole({setFlagging}) {
     const [comment, setComment] = useState("");
     const [selectedGraph, setSelectedGraph] = useState(null);
-    const [flags, setFlags] = useFetchFlags();
+    const { flags } = useFetchFlags();
     const [isDragging, setIsDragging] = useState(false);
     const [isVisible, setIsVisible] = useState(false);
     const dragHandleRef = useRef(null);

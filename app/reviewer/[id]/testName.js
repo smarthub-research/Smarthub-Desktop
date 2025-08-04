@@ -4,18 +4,23 @@ import React, {useState} from "react";
 import {FiArrowLeft} from "react-icons/fi";
 import Link from "next/link";
 
-export default function TestName({setTestData, testData, id}) {
+export default function TestName({ testData, id }) {
     const [changingTestName, setChangingTestName] = useState(false);
     const [updatedTestName, setUpdatedTestName] = useState("");
 
     const handleUpdateTestName = async () => {
         try {
-            await window.electronAPI.updateTestName(id, updatedTestName);
-            // Update local state to reflect the change
-            setTestData({
-                ...testData,
-                test_name: updatedTestName
-            });
+            const response = await fetch("http://localhost:8000/db/update_test/" + id, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    test_name: updatedTestName
+                })
+            })
+            testData.test_name = updatedTestName;
+            console.log(response)
             setChangingTestName(false);
         } catch (err) {
             console.error("Error updating test name:", err);
@@ -30,7 +35,7 @@ export default function TestName({setTestData, testData, id}) {
             >
                 <FiArrowLeft className={'scale-150'}/>
             </Link>
-            <h1 className="text-3xl font-bold hover:underline flex items-center" onDoubleClick={() => setChangingTestName(true)}>
+            <h1 className="text-3xl font-bold hover:cursor-pointer flex items-center" onDoubleClick={() => setChangingTestName(true)}>
                 {changingTestName ? (
                     <input
                         type="text"
@@ -44,7 +49,7 @@ export default function TestName({setTestData, testData, id}) {
                             }
                         }}
                         autoFocus
-                        className="border-none text-white bg-transparent p-0 m-0 w-full h-full text-3xl font-bold focus:outline-none focus:underline"
+                        className="border-none text-black bg-transparent p-0 m-0 w-full h-full text-3xl font-bold focus:outline-none"
                     />
                 ) : (
                     testData?.test_name || "Unnamed Test"

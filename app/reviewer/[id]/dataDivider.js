@@ -1,5 +1,3 @@
-import React from "react";
-
 export default function DataDivider({testData}) {
     return (
         <div className={'grid grid-cols-4 justify-around text-center items-center w-full p-4 bg-white shadow-md rounded-lg divide-x divide-surface-300'}>
@@ -9,7 +7,7 @@ export default function DataDivider({testData}) {
             </div>
             <div className={'px-6'}>
                 <p className={'opacity-75 text-sm'}>Distance</p>
-                <p className={'font-semibold text-xl'}>{testData.test_files.distance}</p>
+                <p className={'font-semibold text-xl'}>{testData.test_files.distance || "No distance recorded"}</p>
             </div>
             <div className={'px-6'}>
                 <p className={'opacity-75 text-sm'}>Flags</p>
