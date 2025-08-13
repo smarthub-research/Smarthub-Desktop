@@ -1,6 +1,6 @@
 import {BsFillPlayFill} from "react-icons/bs";
 
-export default function StartButton({ recording }) {
+export default function StartButton({ enabled, recording }) {
     // Lets us receive BLE data from the main process
     async function beginBleReading() {
         try {
@@ -16,9 +16,9 @@ export default function StartButton({ recording }) {
     return (
         <button
             onClick={beginBleReading}
-            disabled={recording}
+            disabled={recording || !enabled}
             className={`flex justify-center items-center w-12 h-12 rounded-full
-                    ${recording ? 'bg-green-800 cursor-not-allowed opacity-50' : 'bg-green-600 hover:bg-green-500'}
+                    ${(recording || !enabled) ? 'bg-green-800 cursor-not-allowed opacity-60' : 'bg-green-600 hover:bg-green-500'}
                     transition-colors text-white text-xl shadow-md`}>
             <BsFillPlayFill/>
         </button>

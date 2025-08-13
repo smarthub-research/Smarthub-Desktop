@@ -1,6 +1,6 @@
 import {BsFillStopFill} from "react-icons/bs";
 
-export default function  StopButton({ recording}) {
+export default function  StopButton({ enabled, recording}) {
     // Stops the BLE recording and sets the recording state to false
     async function stopRecording() {
         try {
@@ -16,9 +16,9 @@ export default function  StopButton({ recording}) {
     return (
         <button
             onClick={stopRecording}
-            disabled={!recording}
+            disabled={!recording || !enabled}
             className={`flex justify-center items-center w-12 h-12 rounded-full
-                    ${!recording ? 'bg-red-800 cursor-not-allowed opacity-50' : 'bg-red-600 hover:bg-red-500'}
+                    ${(!recording || !enabled) ? 'bg-red-800 cursor-not-allowed opacity-60' : 'bg-red-600 hover:bg-red-500'}
                     transition-colors text-white text-xl shadow-md`}>
             <BsFillStopFill/>
         </button>

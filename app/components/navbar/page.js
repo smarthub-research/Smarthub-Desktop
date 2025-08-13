@@ -29,11 +29,11 @@ export default function Navbar() {
     return (
         <div className={`group sticky top-0 left-0 flex flex-col w-fit max-w-20 hover:max-w-56 h-screen text-black bg-surface-200
             border-surface-200 p-4 gap-4 transition-all duration-300 ease-in-out shrink-0 z-20`}>
-            <DraggableNav />
+            {/*<DraggableNav />*/}
             {/* Title */}
             <Title/>
             {/* Navigation items */}
-            <div className="flex flex-col gap-2">
+            <div className="flex  flex-col gap-2">
                 <Link href={'/'}><DashboardTab getItemClasses={getItemClasses}/></Link>
                 <Link href={'/recorder'}><RecorderTab getItemClasses={getItemClasses}/></Link>
                 <Link href={'/reviewer'}><ReviewerTab getItemClasses={getItemClasses}/></Link>
@@ -43,7 +43,7 @@ export default function Navbar() {
             </div>
 
             {/* Bottom section */}
-            <div className="flex flex-col gap-2 text-sm mt-auto">
+            <div className="flex relative flex-col gap-2 text-sm mt-auto">
                 <Link href={'/settings'}><SettingsTab getItemClasses={getItemClasses}/></Link>
                 <ProfileTab getItemClasses={getItemClasses}/>
             </div>

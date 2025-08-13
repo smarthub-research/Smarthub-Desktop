@@ -8,7 +8,7 @@ const FlaggingContext = createContext();
 // FlaggingProvider component provides the flagging state and functions to manage it.
 export function FlaggingProvider({ children }) {
     const [flagging, setFlagging] = useState(false);
-    const [width, setWidth] = useState(20);
+    const [width, setWidth] = useState(10);
 
     // Function to toggle the flagging state or set it to a specific value.
     const handleFlagging = (value) => {

@@ -12,17 +12,62 @@ export function AuthProvider({ children }) {
     const [userRole, setUserRole] = useState(null);
     const [loading, setLoading] = useState(true);
 
-    // Restore user on mount
+    // Single useEffect for fetching user data on mount and token changes
     useEffect(() => {
-        getUser();
-        // eslint-disable-next-line
+        const fetchUser = async () => {
+            const token = localStorage.getItem('access_token');
+            if (token) {
+                try {
+                    const response = await fetch('http://localhost:8000/auth/me', {
+                        method: 'GET',
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                        },
+                        credentials: "include",
+                    });
+                    const data = await response.json();
+                    if (response.ok && data.user) {
+                        setUser(data.user);
+                        setUserRole(data.user.user_metadata?.role || null);
+                        setEmail(data.user.email || "");
+                    } else {
+                        localStorage.removeItem('access_token');
+                        sessionStorage.removeItem('access_token');
+                        setUser(null);
+                        setUserRole(null);
+                        setEmail("");
+                    }
+                } catch (err) {
+                    console.error("Error fetching user:", err);
+                }
+            } else {
+                setUser(null);
+                setUserRole(null);
+                setEmail("");
+            }
+            setLoading(false);
+        };
+
+        fetchUser();
+
+        // Also set up event listener for storage changes (for multiple tabs)
+        const handleStorageChange = (e) => {
+            if (e.key === 'access_token') {
+                fetchUser();
+            }
+        };
+
+        window.addEventListener('storage', handleStorageChange);
+        return () => window.removeEventListener('storage', handleStorageChange);
     }, []);
 
-    // Handle redirects
+    // Navigation/redirect logic
     useEffect(() => {
         if (!loading) {
             const isAuthPage = pathname?.startsWith('/auth');
-            if (!user && !isAuthPage) {
+            const token = localStorage.getItem('access_token');
+
+            if (!token && !isAuthPage) {
                 router.push('/auth/login');
             } else if (user && isAuthPage) {
                 router.push('/');
@@ -39,21 +84,20 @@ export function AuthProvider({ children }) {
                     headers: {
                         'Authorization': `Bearer ${token}`,
                     },
+                    credentials: "include",
                 });
                 const data = await response.json();
                 if (response.ok && data.user) {
                     setUser(data.user);
                     setUserRole(data.user.user_metadata?.role || null);
-                } else {
-                    setUser(null);
-                    setUserRole(null);
+                    setEmail(data.user.email || "");
+                    return data.user;
                 }
             } catch (err) {
-                setUser(null);
-                setUserRole(null);
+                console.error("Error in getUser:", err);
             }
         }
-        setLoading(false);
+        return null;
     }
 
     async function handleLogout() {
@@ -62,32 +106,41 @@ export function AuthProvider({ children }) {
                 method: "POST",
                 credentials: "include",
             });
+            // Clear storage
+            localStorage.removeItem('access_token');
+            sessionStorage.removeItem('access_token');
+            // Update state
             setUser(null);
             setUserRole(null);
             setEmail(null);
+            router.push('/auth/login');
         } catch (e) {
-            // Optionally handle error
+            console.error("Logout error:", e);
         }
-        router.push('/auth/login');
     }
 
-    useEffect(() => {
-        const fetchUser = async () => {
-            try {
-                const response = await fetch("http://localhost:8000/auth/me", {
-                    method: "GET",
-                    credentials: "include",
-                });
-                const data = await response.json();
-                setUser(data.data);
-                setEmail(data.data?.email || "");
-            } catch (e) {
-                setUser(null);
-                setEmail("");
+    // Expose this method to the context
+    const handleLogin = async (credentials) => {
+        try {
+            const response = await fetch('http://localhost:8000/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(credentials),
+                credentials: 'include',
+            });
+            const data = await response.json();
+            if (response.ok && data.session?.access_token) {
+                localStorage.setItem('access_token', data.session.access_token);
+                sessionStorage.setItem('access_token', data.session.access_token);
+                await getUser();
+                return true;
             }
-        };
-        fetchUser();
-    }, []);
+            return false;
+        } catch (error) {
+            console.error('Login error:', error);
+            return false;
+        }
+    };
 
     // RBAC helper function
     const hasRole = (requiredRole) => {
@@ -98,7 +151,16 @@ export function AuthProvider({ children }) {
     };
 
     return (
-        <AuthContext.Provider value={{ user, getUser, handleLogout, userRole, loading, hasRole }}>
+        <AuthContext.Provider value={{
+            user,
+            email,
+            getUser,
+            handleLogin,
+            handleLogout,
+            userRole,
+            loading,
+            hasRole
+        }}>
             {children}
         </AuthContext.Provider>
     );

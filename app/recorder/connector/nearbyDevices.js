@@ -1,7 +1,6 @@
 
 import Device from "./device";
 import {useState} from "react";
-import {hidden} from "next/dist/lib/picocolors";
 
 export default function NearbyDevices({devices, deviceOne, deviceTwo, setDeviceOne, setDeviceTwo}) {
     const [isCollapsed, setCollapsed] = useState(false)
@@ -16,27 +15,11 @@ export default function NearbyDevices({devices, deviceOne, deviceTwo, setDeviceO
     }
 
     return (
-        <div className={`w-full flex-grow ${!isCollapsed && 'pb-6'}`}>
-            <div className={'flex justify-between pr-1 items-center'}>
-                <p className="text-lg md:text-xl font-bold mb-3">Nearby</p>
-                <span onClick={() => {setCollapsed(!isCollapsed)}} className={'mb-1'}>
-                    {isCollapsed ?
-                        (
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5"
-                                 stroke="currentColor" className="size-6 cursor-pointer">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5"/>
-                            </svg>
-                        ):(
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="size-6 cursor-pointer">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 15.75 7.5-7.5 7.5 7.5" />
-                            </svg>
-                        )
-                    }
-                </span>
+        <div className={`w-full flex-grow`}>
+            <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold">Nearby</h3>
             </div>
-            <div className={`bg-white rounded-lg divide-y divide-black 
-            ${isCollapsed ? ('h-0 p-0 m-0 overflow-hidden opacity-0') : ('h-[35vh] md:h-[40vh] py-2 px-4 overflow-y-auto opacity-100')} 
-            drop-shadow-sm transition-all duration-300`}>
+            <div className={'flex flex-col py-2 space-y-3 w-full h-fit grow justify-center'}>
                 {devices.length === 0 ? (
                     <p className="text-gray-400 text-center py-4">Searching for devices...</p>
                 ) : (

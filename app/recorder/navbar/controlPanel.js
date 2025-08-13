@@ -7,6 +7,7 @@ import StartButton from "./startButton";
 // Component for the control panel with buttons to start, stop, and restart recording,
 export default function ControlPanel() {
     const [recording, setRecording] = useState(false);
+    const [enabled, setEnabled] = useState(false);
 
     // Set up and clean up IPC listeners
     useEffect(() => {
@@ -35,12 +36,26 @@ export default function ControlPanel() {
         };
     }, []);
 
+    useEffect(() => {
+        async function fetchDevices() {
+            try {
+                const result = await window.electronAPI.getConnectedDevices();
+                if (result[0] && result[1]) {
+                    setEnabled(true);
+                }
+            } catch (error) {
+                console.error("Error fetching devices:", error);
+            }
+        }
+        fetchDevices();
+    }, []);
+
     return (
         <div className="flex flex-row h-full gap-3 px-4 items-center justify-center rounded-xl">
-            <StartButton recording={recording}/>
-            <StopButton recording={recording}/>
-            <RestartButton/>
-            <FlaggingButton/>
+            <StartButton enabled={enabled} recording={recording}/>
+            <StopButton enabled={enabled} recording={recording}/>
+            <RestartButton enabled={enabled} />
+            <FlaggingButton enabled={enabled} />
         </div>
     );
 }

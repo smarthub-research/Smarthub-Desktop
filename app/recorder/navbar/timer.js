@@ -11,7 +11,7 @@ export default function Timer({recordingState, recordingTime}) {
                 </div>
             ) : (
                 <div className="flex items-center text-gray-400">
-                    <span className="h-2 w-2 rounded-full bg-gray-500 mr-2"></span>
+                    <span className="h-2 w-2 rounded-full bg-red-400 mr-2 animate-pulse"></span>
                     <span className="text-sm font-medium">
                         {recordingTime.toFixed(1) > 0 ? ("Not Recording " + recordingTime.toFixed(1) + "s") : ("Not recording")}
                     </span>

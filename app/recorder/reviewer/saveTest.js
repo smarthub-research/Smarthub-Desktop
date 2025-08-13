@@ -12,14 +12,22 @@ export default function SaveTest() {
 
         // Call IPC function to save test data
         try {
-            await window.electronAPI.submitTestData({
-                data: testData,
-                name: testName,
-                distance: `${testDistance}${unitType}`,
-                comments: comments,
-                flags: allFlags
-            });
-
+            const distance = `${testDistance}${unitType}`;
+            const flags = allFlags || [];
+            const response = await fetch("http://localhost:8000/db/write_test", {
+                method: "POST",
+                headers: {
+                    "content-type": "application/json"
+                },
+                body: JSON.stringify({
+                    testData,
+                    testName,
+                    distance,
+                    comments,
+                    flags
+                })
+            })
+            console.log(response)
             // Show success notification
             alert('Test saved successfully');
             router.push('/')

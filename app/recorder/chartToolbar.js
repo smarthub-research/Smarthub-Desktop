@@ -31,6 +31,7 @@ export default function ChartToolbar(props) {
     return (
         <div className="flex items-center space-x-4">
             {dataPointCount !== 0 && data && data.length > dataPointCount && (
+                <>
                 <div className="flex items-center space-x-2">
                     <button
                         onClick={handleScrollLeft}
@@ -68,30 +69,33 @@ export default function ChartToolbar(props) {
                         Reset
                     </button>
                 </div>
+
+                {/* Displays the number of data points being shown as a dropdown */}
+                <div className="flex items-center">
+                    <label htmlFor={`dataPoints-${graphId}`} className="text-gray-400 mr-2 text-sm">
+                        Data points:
+                    </label>
+                    <select
+                        id={`dataPoints-${graphId}`}
+                        value={dataPointCount}
+                        onChange={(e) => {
+                            setDataPointCount(Number(e.target.value));
+                            setScrollPosition(0);
+                        }}
+                        className="bg-gray-900 text-white border border-gray-700 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    >
+                        {/* Number of data point options */}
+                        <option value="0">All</option>
+                        <option value="10">10</option>
+                        <option value="25">25</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                        <option value="200">200</option>
+                    </select>
+                </div>
+                </>
             )}
-            {/* Displays the number of data points being shown as a dropdown */}
-            <div className="flex items-center">
-                <label htmlFor={`dataPoints-${graphId}`} className="text-gray-400 mr-2 text-sm">
-                    Data points:
-                </label>
-                <select
-                    id={`dataPoints-${graphId}`}
-                    value={dataPointCount}
-                    onChange={(e) => {
-                        setDataPointCount(Number(e.target.value));
-                        setScrollPosition(0);
-                    }}
-                    className="bg-gray-900 text-white border border-gray-700 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
-                >
-                    {/* Number of data point options */}
-                    <option value="0">All</option>
-                    <option value="10">10</option>
-                    <option value="25">25</option>
-                    <option value="50">50</option>
-                    <option value="100">100</option>
-                    <option value="200">200</option>
-                </select>
-            </div>
+
         </div>
     )
 }

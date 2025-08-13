@@ -5,7 +5,7 @@ import GraphSection from "./graphSection";
 export default async function TestView({ params }) {
     const id = (await params).id;
 
-    const response = await fetch("http://localhost:8000/db/tests/" + id, {
+    const response = await fetch("http://localhost:8000/db/tests/" + id + "?format=review", {
         method: "GET",
         cache: 'no-store'
     });

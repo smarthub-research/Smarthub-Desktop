@@ -33,7 +33,7 @@ export default function Login() {
     const searchParams = useSearchParams();
     const message = searchParams.get('message');
 
-    const { getUser } = useAuth();
+    const { getUser, handleLogin } = useAuth();
 
     // State management
     const [error, setError] = useState('');
@@ -64,42 +64,25 @@ export default function Login() {
      * @returns {Promise<void>}
      */
     const handleSubmit = async (e) => {
-        // Prevents default form submission behavior
         e.preventDefault();
-
-        // Clears previous errors and sets loading state
         setError('');
         setLoading(true);
 
         try {
-            // Authenticates with  FastAPI backend
-            const response = await fetch('http://localhost:8000/auth/login', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    email: formData.email,
-                    password: formData.password
-                })
+            // Use the handleLogin method from AuthContext
+            const success = await handleLogin({
+                email: formData.email,
+                password: formData.password
             });
-            const data = await response.json();
-            if (response.ok) {
-                // Store the access token
-                if (data.session.access_token) {
-                    localStorage.setItem('access_token', data.session.access_token);
-                }
-                // Successful login - redirect to dashboard
-                await getUser()
+
+            if (success) {
                 console.log("login success");
                 router.push('/');
             } else {
-                throw new Error(data.message || 'Login failed');
+                throw new Error('Login failed');
             }
         } catch (err) {
-            // Displays error message if authentication fails
-            setError(
-                'Failed to sign in. Please check your credentials.');
+            setError('Failed to sign in. Please check your credentials.');
         } finally {
             setLoading(false);
         }

@@ -83,7 +83,7 @@ export default function ConnectionStatus() {
         <div className="my-auto rounded-xl ">
             {loading ? (
                 <div className="flex items-center space-x-2 py-2">
-                    <div className="w-4 h-4 rounded-full bg-gray-700 animate-pulse"></div>
+                    <div className="w-4 h-4 rounded-full bg-primary-300 animate-pulse"></div>
                     <p className="text-gray-400">Waiting for devices...</p>
                 </div>
             ) : (

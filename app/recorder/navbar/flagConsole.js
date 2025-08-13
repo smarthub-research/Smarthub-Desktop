@@ -9,18 +9,20 @@ import { useFlagging } from "../context/flaggingContext";
 export default function FlagConsole({setFlagging}) {
     const [comment, setComment] = useState("");
     const [selectedGraph, setSelectedGraph] = useState(null);
-    const { flags } = useFetchFlags();
+    const [flags, setFlags] = useFetchFlags();
     const [isDragging, setIsDragging] = useState(false);
     const [isVisible, setIsVisible] = useState(false);
+    const [isExpanded, setIsExpanded] = useState(false);
     const dragHandleRef = useRef(null);
     const textareaRef = useRef(null);
     const { width, setWidth } = useFlagging();
 
-    // Animation on mount
+    // Animation on mount - update this
     useEffect(() => {
         // Small delay to ensure DOM is ready
         const timer = setTimeout(() => {
             setIsVisible(true);
+            setIsExpanded(true);
         }, 50);
 
         return () => clearTimeout(timer);
@@ -52,7 +54,7 @@ export default function FlagConsole({setFlagging}) {
         // Create a new flag object
         const newFlag = {
             id: Date.now(),
-            dateTime: new Date().toLocaleTimeString(),
+            timeStamp: new Date().toLocaleTimeString(),
             comment,
             graphId: selectedGraph
         };
@@ -109,7 +111,7 @@ export default function FlagConsole({setFlagging}) {
 
     return (
         <div
-            className="h-full border-l border-surface-200 flex flex-col bg-white text-black shadow-xl
+            className="h-full pt-4 pr-4 flex flex-col
             transition-all duration-500 ease-in-out grow shrink-0"
             style={{
                 width: `${width}vw`,
@@ -123,22 +125,16 @@ export default function FlagConsole({setFlagging}) {
                 className={`absolute top-0 left-0 w-1 h-full cursor-ew-resize`}
                 onMouseDown={handleMouseDown}
             />
-
-            <div className="flex flex-row p-4 border-b border-gray-700 justify-between">
-                <div className={"flex flex-col"}>
-                    <h2 className="text-xl font-semibold mb-1">Flag Console</h2>
-                    <p className="opacity-50 text-sm">Add notes to specific graphs</p>
+            <div className={"flex flex-col p-4 gap-4 bg-white rounded-lg"}>
+                <div className="flex flex-row justify-between">
+                    <div className={"flex flex-col"}>
+                        <h2 className="text-xl font-semibold mb-1">Flag Console</h2>
+                        <p className="opacity-50 text-sm">Add notes to specific graphs</p>
+                    </div>
                 </div>
-                <button onClick={setFlagging} className="opacity-50 hover:opacity-100 self-start scale-200">
-                    <BsX />
-                </button>
-            </div>
 
-            <div className="p-4 border-b border-gray-700">
-                <div className="mb-3">
-                    <label className="block text-sm font-medium text-gray-400 mb-1">
-                        Select Graph
-                    </label>
+                <div>
+                    <p className="block text-sm font-medium opacity-50 mb-1">Select Graph</p>
                     <div className="grid grid-cols-2 gap-2">
                         {graphOptions.map(graph => (
                             <button
@@ -149,7 +145,7 @@ export default function FlagConsole({setFlagging}) {
                                         ? 'bg-black text-white'
                                         : 'hover:bg-surface-200 hover:border-black'
                                 }
-                                ${graph.name === 'General' ? 'col-span-2' : ''}`}
+                            ${graph.name === 'General' ? 'col-span-2' : ''}`}
                             >
                                 {(graph.name !== 'General') && (<BsGraphUp />)}
                                 <span>{graph.name}</span>
@@ -157,24 +153,23 @@ export default function FlagConsole({setFlagging}) {
                         ))}
                     </div>
                 </div>
-                <div className="mb-3">
-                    <label htmlFor="comment" className="block text-sm font-medium text-gray-400 mb-1">
-                        Comment
-                    </label>
+
+                <div>
+                    <p className="block text-sm font-medium opacity-50 mb-1">Comment</p>
                     <div className="flex">
                         <div className="relative flex-grow">
-                            <textarea
-                                ref={textareaRef}
-                                id="comment"
-                                value={comment}
-                                onChange={(e) => setComment(e.target.value)}
-                                onKeyDown={handleKeyDown}
-                                placeholder="Enter annotation..."
-                                rows={1}
-                                className="w-full border border-gray-700 rounded-l-lg py-2 px-3
-                                          focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none overflow-hidden"
-                                style={{ minHeight: '40px', maxHeight: '200px' }}
-                            />
+                        <textarea
+                            ref={textareaRef}
+                            id="comment"
+                            value={comment}
+                            onChange={(e) => setComment(e.target.value)}
+                            onKeyDown={handleKeyDown}
+                            placeholder="Enter annotation..."
+                            rows={1}
+                            className="w-full border border-gray-700 rounded-l-lg py-2 px-3
+                                      focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none overflow-hidden"
+                            style={{ minHeight: '40px', maxHeight: '200px' }}
+                        />
                         </div>
                         <button
                             onClick={handleAddFlag}
@@ -186,32 +181,32 @@ export default function FlagConsole({setFlagging}) {
                             <BsFillSendFill />
                         </button>
                     </div>
-                    <p className="text-xs text-gray-500 mt-1">Press Shift+Enter for a new line</p>
                 </div>
-            </div>
 
-            <div className="flex-1 overflow-y-auto p-4">
-                <h3 className="text-sm uppercase text-gray-500 mb-2 font-medium">Recent Flags</h3>
-                {flags.length === 0 ? (
-                    <div className="text-gray-500 text-sm text-center mt-4">
-                        No flags added yet
-                    </div>
-                ) : (
-                    <div className="space-y-3">
-                        {flags.map(flag => (
-                            <div key={flag.id} className="p-3 bg-surface-50 rounded-lg border border-gray-700">
-                                <div className="flex justify-between items-center mb-1">
+                <div className="flex-1 overflow-y-auto">
+                    <h3 className="text-sm uppercase text-gray-500 mb-2 font-medium">Recent Flags</h3>
+                    {flags.length === 0 ? (
+                        <div className="text-gray-500 text-sm text-center mt-4">
+                            No flags added yet
+                        </div>
+                    ) : (
+                        <div className="space-y-3">
+                            {flags.map(flag => (
+                                <div key={flag.id} className="p-3 bg-surface-50 rounded-lg border border-gray-700">
+                                    <div className="flex justify-between items-center mb-1">
                                     <span className="text-xs font-bold">
                                         {graphOptions.find(g => g.id === flag.graphId)?.name} Graph
                                     </span>
-                                    <span className="text-xs text-gray-500">{flag.timestamp}</span>
+                                        <span className="text-xs text-gray-500">{flag.timestamp}</span>
+                                    </div>
+                                    <p className="text-sm whitespace-pre-line">{flag.comment}</p>
                                 </div>
-                                <p className="text-sm whitespace-pre-line">{flag.comment}</p>
-                            </div>
-                        ))}
-                    </div>
-                )}
+                            ))}
+                        </div>
+                    )}
+                </div>
             </div>
+
         </div>
     );
 }

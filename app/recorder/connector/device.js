@@ -1,6 +1,7 @@
 
 import { useState } from "react";
 import ConnectionButton from "./connectionButton";
+import { Badge } from "../../components/ui/badge";
 
 // Device component to handle BLE device connections
 export default function Device({ device, status, onConnect, onDisconnect }) {
@@ -31,16 +32,27 @@ export default function Device({ device, status, onConnect, onDisconnect }) {
     };
 
     return (
-        <div className="flex flex-row items-center justify-between gap-3 py-2 transition-colors duration-200 px-3">
-            <div className="flex-grow min-w-0">
-                <p className="text-base sm:text-lg truncate">{device.name}</p>
+        <div className="flex items-center justify-between p-3 border rounded-lg">
+            <div className="flex items-center gap-3">
+                <div>
+                    <p className="font-medium">{device.name}</p>
+                </div>
             </div>
-            <ConnectionButton
-                clickAction={status === "connected" ? disconnectBle : connectToBle}
-                status={status}
-                disabled={status === "cannotConnect"}
-                connecting={connecting}
-            />
+            {device.name !== "No Connected Device" && (
+                <div className="flex items-center gap-2">
+                    {status === "connected" && (
+                        <Badge variant="secondary" className="bg-green-100 text-green-800">
+                            Connected
+                        </Badge>
+                    )}
+                    <ConnectionButton
+                        clickAction={status === "connected" ? disconnectBle : connectToBle}
+                        status={status}
+                        disabled={status === "cannotConnect"}
+                        connecting={connecting}
+                    />
+                </div>
+            )}
         </div>
     );
 }

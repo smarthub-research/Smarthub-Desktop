@@ -11,39 +11,40 @@ export default function ConnectedDevices({deviceOne, deviceTwo, setDeviceOne, se
         }
     }
 
+    async function handleDisconnectAll() {
+        await window.electronAPI.resetDevices();
+        setDeviceOne(null);
+        setDeviceTwo(null);
+    }
+
     return (
         <div className="w-full h-fit">
-            <div className={'flex flex-row justify-between items-center pr-1'}>
-                <p className="text-lg md:text-xl font-bold mb-3">Connected</p>
-                <p className={'opacity-50 cursor-pointer'}
-                   onClick={async () => {
-                       await window.electronAPI.resetDevices();
-                       setDeviceOne(null);
-                       setDeviceTwo(null);
-                   }}>Disconnect all</p>
+            <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold">Connected</h3>
+                <button className={'opacity-50 cursor-pointer'} onClick={handleDisconnectAll}>
+                    Disconnect all
+                </button>
             </div>
-            <div className="flex flex-col bg-white py-2 px-4 rounded-lg w-full divide-y divide-black h-fit grow justify-center shadow-sm">
-                {deviceOne ? (
-                    <Device
-                        device={deviceOne}
-                        status={'connected'}
-                        onDisconnect={handleDisconnect}
-                    />
+            <div className="flex flex-col space-y-3 w-full h-fit grow justify-center">
+                {deviceOne || deviceTwo ? (
+                    <>
+                        {deviceOne && (
+                            <Device
+                                device={deviceOne}
+                                status={'connected'}
+                                onDisconnect={handleDisconnect}
+                            />
+                        )}
+                        {deviceTwo && (
+                            <Device
+                                device={deviceTwo}
+                                status={'connected'}
+                                onDisconnect={handleDisconnect}
+                            />
+                        )}
+                    </>
                 ) : (
-                    <Device
-                        device={{name:"No Connected Device"}}
-                    />
-                )}
-                {deviceTwo ? (
-                    <Device
-                        device={deviceTwo}
-                        status={'connected'}
-                        onDisconnect={handleDisconnect}
-                    />
-                ) : (
-                    <Device
-                        device={{name:"No Connected Device"}}
-                    />
+                    <p>No devices connected</p>
                 )}
             </div>
         </div>

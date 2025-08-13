@@ -12,7 +12,7 @@ export default function ConnectionButton({ clickAction, status, connecting, disa
             case "connected":
                 return "bg-green-700 hover:bg-red-700 text-white";
             case "notConnected":
-                return "bg-blue-600 hover:bg-blue-500 text-white";
+                return "bg-primary-400 hover:bg-primary-600 text-white";
             case "cannotConnect":
                 return "bg-gray-800 text-gray-400 cursor-not-allowed opacity-60";
             default:
@@ -29,22 +29,21 @@ export default function ConnectionButton({ clickAction, status, connecting, disa
     // If connecting, show a loader instead of text
     if (connecting) {
         return (
-            <div className="min-w-[6rem] sm:min-w-[7rem] md:min-w-[8rem] bg-gray-800 px-3 py-2 text-center rounded-lg flex items-center justify-center h-10">
-                <Loader />
+            <div className="text-white bg-gray-800 px-3 py-1 text-sm text-center rounded-lg flex items-center justify-center">
+                Connecting...
             </div>
         );
     }
 
     return (
         <button
-            onMouseEnter={() => status === "connected" && setText("Disconnect")}
             onMouseLeave={() => setText("")}
             onClick={handleClick}
             disabled={status === "cannotConnect" || disabled}
-            className={`${getButtonStyles()} min-w-[6rem] sm:min-w-[7rem] md:min-w-[8rem] px-3 py-2 text-center 
-            rounded-lg transition-all duration-300 text-sm font-medium h-10 cursor-pointer`}
+            className={`${getButtonStyles()} px-3 py-1 text-center 
+            rounded-md transition-all duration-300 text-sm font-medium cursor-pointer`}
         >
-            {text || (status === "connected" ? "Connected"
+            {text || (status === "connected" ? "Disconnect"
                 : status === "notConnected" ? "Connect"
                     : "Not Available")}
         </button>

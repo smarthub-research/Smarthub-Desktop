@@ -57,13 +57,13 @@ export default function ChartSection({boxView}) {
                 </div>
             ) : (
             //     No data fallback
-            <div className="flex flex-col items-center justify-center h-64 text-gray-500">
+            <div className="flex flex-col items-center justify-center grow text-gray-500">
                 <h3 className="text-xl font-semibold mb-2">No Test Data Available</h3>
                 <p className="text-center text-sm mb-4">
                     Start recording to see displacement, velocity, heading, and trajectory charts
                 </p>
                 <div className="flex items-center space-x-2 text-xs">
-                    <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
+                    <div className="w-2 h-2 bg-primary-300 rounded-full animate-pulse"></div>
                     <span>Waiting for BLE data...</span>
                 </div>
             </div>
