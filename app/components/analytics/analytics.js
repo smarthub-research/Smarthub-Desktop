@@ -16,7 +16,7 @@ export default function Analytics({ testFiles }) {
     const newTests = 5;
 
     return (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 h-[10dvh]">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 h-full">
             <Card>
                 <CardHeader>
                     <div className={'w-full flex flex-row justify-between'}>

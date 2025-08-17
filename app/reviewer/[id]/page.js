@@ -5,13 +5,11 @@ import GraphSection from "./graphSection";
 export default async function TestView({ params }) {
     const id = (await params).id;
 
-    const response = await fetch("http://localhost:8000/db/tests/" + id + "?format=review", {
+    const response = await fetch("http://localhost:8000/db/tests/" + id + "?response_format=review", {
         method: "GET",
         cache: 'no-store'
     });
-
-    const data = await response.json();
-    const testData = data.data[0];
+    const testData = await response.json();
 
     return (
         <div className="grow flex flex-col items-center gap-4 py-8 px-12 min-h-screen">

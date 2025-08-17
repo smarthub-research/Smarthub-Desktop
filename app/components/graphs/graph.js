@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "../ui/card"
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "../ui/chart"
 import { memo, useEffect, useRef, useState } from "react";
 import ChartToolbar from "../../recorder/chartToolbar";
+import {usePathname} from "next/navigation";
 
 function useDebouncedResize(delay = 1000) {
     const [size, setSize] = useState({ width: 0, height: 0 });
@@ -45,6 +46,9 @@ const CHART_COLORS = {
 }
 
 function Graph({data}) {
+    // Only animate if not on recorder page
+    const pathName = usePathname();
+    const animate = pathName !== '/recorder';
 
     const [containerRef, containerSize] = useDebouncedResize(25000);
 
@@ -135,7 +139,7 @@ function Graph({data}) {
                                     stroke={chartColor}
                                     strokeWidth={2}
                                     dot={false}
-                                    isAnimationActive={false}
+                                    isAnimationActive={animate}
                                 />
                                 { dataKey2 && (
                                     <Line
@@ -144,6 +148,7 @@ function Graph({data}) {
                                         stroke={CHART_COLORS.purple}
                                         strokeWidth={2}
                                         dot={false}
+                                        isAnimationActive={animate}
                                     />
                                 )}
                             </LineChart>

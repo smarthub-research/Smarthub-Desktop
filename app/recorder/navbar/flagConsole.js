@@ -34,7 +34,6 @@ export default function FlagConsole({setFlagging}) {
         { id: 2, name: "H vs T" },
         { id: 3, name: "V vs T" },
         { id: 4, name: "Traj" },
-        { id: 5, name: "General" },
     ];
 
     // Auto-resize textarea based on content
@@ -142,13 +141,11 @@ export default function FlagConsole({setFlagging}) {
                                 onClick={() => setSelectedGraph(graph.id)}
                                 className={`flex items-center justify-center gap-2 py-2 px-3 rounded-lg border border-gray-700 ${
                                     selectedGraph === graph.id
-                                        ? 'bg-black text-white'
+                                        ? 'bg-primary-500 text-white'
                                         : 'hover:bg-surface-200 hover:border-black'
-                                }
-                            ${graph.name === 'General' ? 'col-span-2' : ''}`}
+                                }`}
                             >
-                                {(graph.name !== 'General') && (<BsGraphUp />)}
-                                <span>{graph.name}</span>
+                                <span className={'py-1'}></span>
                             </button>
                         ))}
                     </div>
@@ -184,7 +181,7 @@ export default function FlagConsole({setFlagging}) {
                 </div>
 
                 <div className="flex-1 overflow-y-auto">
-                    <h3 className="text-sm uppercase text-gray-500 mb-2 font-medium">Recent Flags</h3>
+                    <h3 className="text-sm text-gray-500 mb-2 font-medium">Recent Flags</h3>
                     {flags.length === 0 ? (
                         <div className="text-gray-500 text-sm text-center mt-4">
                             No flags added yet

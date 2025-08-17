@@ -55,7 +55,7 @@ export default function ControlPanel() {
             <StartButton enabled={enabled} recording={recording}/>
             <StopButton enabled={enabled} recording={recording}/>
             <RestartButton enabled={enabled} />
-            <FlaggingButton enabled={enabled} />
+            {/*<FlaggingButton enabled={enabled} />*/}
         </div>
     );
 }

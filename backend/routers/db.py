@@ -54,16 +54,52 @@ async def get_tests():
     )
     return response
 
+# Converts the response from supabase into the format:
+#   "displacement" : {"displacement": [], "timeStamp": []},
+#   "velocity" : {"velocity": [], "timeStamp": []},
+#   "heading" : {"heading": [], "timeStamp": []},
+#   "trajectory" : {"trajectory_y": [], "trajectory_x": [], "timeStamp": []}
 def format_for_review(response):
-    formatted_response = {}
+    test_data = response.data[0]
+    test_files = test_data["test_files"]
+    time_stamps = test_files["timeStamp"]
 
+    # Format individual data types with timestamps
+    def format_data_with_time(data_array, data_type):
+        return [
+            {
+                "time": round(float(time) / 1000, 2),
+                data_type: data_array[index] if index < len(data_array) else None
+            }
+            for index, time in enumerate(time_stamps)
+        ]
 
+    # Format trajectory data with timestamps
+    def format_trajectory_data():
+        trajectory_x = test_files["trajectory_x"]
+        trajectory_y = test_files["trajectory_y"]
+        return [
+            {
+                "time": round(float(time) / 1000, 2),
+                "trajectory_x": trajectory_x[index] if index < len(trajectory_x) else None,
+                "trajectory_y": trajectory_y[index] if index < len(trajectory_y) else None
+            }
+            for index, time in enumerate(time_stamps)
+        ]
+
+    formatted_response = {
+        **test_data,
+        "displacement": format_data_with_time(test_files["displacement"], "displacement"),
+        "velocity": format_data_with_time(test_files["velocity"], "velocity"),
+        "heading": format_data_with_time(test_files["heading"], "heading"),
+        "trajectory": format_trajectory_data()
+    }
 
     return formatted_response
 
 # Get a single test
 @router.get("/tests/{test_id}")
-async def get_test(test_id: int, format: str = None):
+async def get_test(test_id: int, response_format: str = None):
     response = (
         supabase.table("test_info")
         .select("*, test_files(*)")
@@ -71,7 +107,7 @@ async def get_test(test_id: int, format: str = None):
         .execute()
     )
 
-    if format == "review":
+    if response_format == "review":
         formatted_response = format_for_review(response)
         return formatted_response
 
