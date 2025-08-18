@@ -3,7 +3,7 @@
 export default function ChartTabs({setActiveChartTab, activeChartTab}) {
     return (
         <div>
-            <div className="flex bg-white rounded-lg p-0.5">
+            <div className="flex bg-white rounded-lg p-0.5 shadow-sm">
                 <button
                     className={`font-medium text-sm flex-1 px-4 py-2 rounded-sm transition-colors duration-200 cursor-pointer
                     ${activeChartTab === 'displacement' ? 'bg-primary-500 text-white' : 'hover:bg-surface-200'}`}

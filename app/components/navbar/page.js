@@ -15,7 +15,8 @@ import DraggableNav from "../draggableNav";
 import MessagesTab from "./messagesTab";
 
 export default function Navbar() {
-    const pathname = usePathname()
+    // Get the base path and not the ending
+    const pathname = usePathname().split("/")[1];
 
     // Function to get the classes for each navigation item based on the current page and minimized state
     const getItemClasses = (pageName) => {
