@@ -80,15 +80,15 @@ export default function ConnectionStatus() {
     }, []);
 
     return (
-        <div className="my-auto rounded-xl ">
+        <div className="my-auto rounded-xl hidden md:block">
             {loading ? (
                 <div className="flex items-center space-x-2 py-2">
                     <div className="w-4 h-4 rounded-full bg-primary-300 animate-pulse"></div>
                     <p className="text-gray-400">Waiting for devices...</p>
                 </div>
             ) : (
-                <div className="flex flex-col h-full p-2 rounded-lg">
-                    <div className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg">
+                <div className="flex flex-col h-full p-2 rounded-lg text-sm">
+                    <div className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg ">
                         <div className="flex items-center space-x-3">
                             {connectionStatus.deviceOne ? (
                                 <BsCheckCircleFill className="text-green-500" />
@@ -99,11 +99,6 @@ export default function ConnectionStatus() {
                                 {devices[0] ? devices[0].name : `Device 1 not found`}
                             </span>
                         </div>
-                        <span className={`text-xs font-medium px-1 rounded ${
-                            connectionStatus.deviceOne ?  'bg-green-500' : 'bg-amber-500'
-                        }`}>
-                            {connectionStatus.deviceOne ? 'Connected' : 'Disconnected'}
-                        </span>
                     </div>
 
                     <div className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg">
@@ -117,11 +112,6 @@ export default function ConnectionStatus() {
                                 {devices[1] ? devices[1].name : `Device 2 not found`}
                             </span>
                         </div>
-                        <span className={`text-xs font-medium px-1 rounded ${
-                            connectionStatus.deviceTwo ?  'bg-green-500' : 'bg-amber-500'
-                        }`}>
-                            {connectionStatus.deviceTwo ? 'Connected' : 'Disconnected'}
-                        </span>
                     </div>
                 </div>
             )}

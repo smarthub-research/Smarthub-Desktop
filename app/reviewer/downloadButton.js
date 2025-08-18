@@ -13,7 +13,7 @@ export default function DownloadButton({testFile}) {
 
     return (
         <button
-            className="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded flex items-center gap-2 transition-colors cursor-pointer"
+            className="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg flex items-center gap-2 transition-colors cursor-pointer"
             onClick={() => handleDownload(testFile)}
         >
             <FiDownload size={16} />

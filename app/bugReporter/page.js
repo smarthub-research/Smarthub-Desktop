@@ -57,11 +57,8 @@ export default function BugReporter() {
     };
 
     return (
-        <div className="flex min-h-screen items-center justify-center grow">
-            <div className="w-full max-w-xl mx-auto p-6">
-                <h1 className="text-2xl font-bold text-gray-800 mb-6 text-center tracking-tight">
-                    Bug Reporter
-                </h1>
+        <div className="flex min-h-screen mt-16  grow">
+            <div className="w-[60%] mx-auto p-6">
                 <div className="bg-white rounded-xl shadow-md p-8">
                     {isSubmitted ? (
                         <div className="flex flex-col items-center">

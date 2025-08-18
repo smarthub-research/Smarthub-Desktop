@@ -13,7 +13,7 @@ export default function ViewButton({testFile}) {
 
     return (
         <button
-            className="bg-gray-700 hover:bg-gray-600 text-white py-2 px-4 rounded transition-colors cursor-pointer"
+            className="bg-gray-700 hover:bg-gray-600 text-white py-2 px-4 rounded-lg transition-colors cursor-pointer"
             onClick={() => handleView(testFile)}
         >
             View

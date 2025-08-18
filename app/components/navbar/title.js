@@ -1,9 +1,20 @@
 'use client'
 import LogoSVG from "../svg/logoSVG";
 import {useEffect, useState} from "react";
+import {usePathname} from "next/navigation";
 
 export default function Title() {
     const [isAtTop, setIsAtTop] = useState(true);
+
+    const path = usePathname();
+    const componentName = path === "/" ? "Dashboard"
+        : path.includes("/recorder") ? "Recorder"
+        : path.includes("/reviewer") ? "Reviewer"
+        : path.includes("/calendar") ? "Calendar"
+        : path.includes("/messages") ? "Messages"
+        : path.includes("/bugReporter") ? "Bug Reporter"
+        : path.includes("/settings") ? "Settings"
+        : "Desktop";
 
     useEffect(() => {
         const handleScroll = () => {
@@ -27,7 +38,7 @@ export default function Title() {
             <LogoSVG/>
             <span className={`${isAtTop ? "opacity-100" : "opacity-0"} group-hover:opacity-100 absolute ml-12 whitespace-nowrap mb-2 transition-all duration-300 font-bold uppercase`}>
                 <p>Smarthub</p>
-                <p className={'text-xs font-medium leading-2'}>Desktop</p>
+                <p className={'text-xs font-medium leading-2'}>{componentName}</p>
             </span>
         </div>
 
