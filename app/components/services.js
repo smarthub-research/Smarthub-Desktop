@@ -11,7 +11,7 @@ export default function Services() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <Link href={'/recorder'}><Recorder/></Link>
                 <Link href={'/reviewer'}><Reviewer/></Link>
-                <Link href={'/calendar'}><Calendar/></Link>
+                {/*<Link href={'/calendar'}><Calendar/></Link>*/}
                 <Link href={'/bugReporter'}><BugReporter/></Link>
             </div>
         </>

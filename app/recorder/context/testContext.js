@@ -1,5 +1,5 @@
 "use client"
-import { createContext, useContext, useState, useEffect } from 'react';
+import {createContext, useContext, useEffect, useState} from 'react';
 
 const TestContext = createContext();
 
@@ -13,6 +13,21 @@ export function TestProvider({ children }) {
     const [formErrors, setFormErrors] = useState({
         testName: false
     });
+
+    async function fetchReviewData() {
+        if (window.electronAPI) {
+            try {
+                await window.electronAPI.setReviewData(testData);
+                return await window.electronAPI.getReviewData();
+            } catch (error) {
+                console.error('Error fetching review data:', error);
+            } finally {
+                setIsLoading(false);
+            }
+        } else {
+            setIsLoading(false);
+        }
+    }
 
     useEffect(() => {
         const fetchTestData = async () => {
@@ -37,7 +52,7 @@ export function TestProvider({ children }) {
         <TestContext.Provider value={{
             testData, testName, setTestName, testDistance, setTestDistance,
             unitType, setUnitType, comments, setComments, formErrors, setFormErrors,
-            isLoading
+            isLoading, fetchReviewData
         }}>
             {children}
         </TestContext.Provider>

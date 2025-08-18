@@ -35,7 +35,7 @@ export default function TestFileCard({ testFile }) {
                     </div>
 
                     <div className="flex gap-2">
-                        <DownloadButton testFile={testFile} />
+                        {/*<DownloadButton testFile={testFile} />*/}
                         <ViewButton testFile={testFile} />
                     </div>
                 </div>

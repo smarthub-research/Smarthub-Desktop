@@ -1,18 +1,13 @@
 'use client';
-import { useRouter } from 'next/navigation';
 import useFetchFlags from '../hooks/useFetchFlags';
-import { FiArrowLeft } from 'react-icons/fi';
 import { TestProvider, useTest } from '../context/testContext';
-import FlagSection from "./flagSection";
 import TestMetrics from "./testMetrics";
 import TestInformation from "./testInformation";
 import ChartReview from "./chartReview";
-import DownloadCSV from "./downloadCSV";
 import SaveTest from "./saveTest";
 
 // Main component for the ReviewerTab page
 function ReviewerContent() {
-    const router = useRouter();
     const [allFlags] = useFetchFlags();
     const { isLoading } = useTest();
 
@@ -29,7 +24,7 @@ function ReviewerContent() {
             <div className="flex items-center justify-between">
                 <h1 className="text-3xl font-bold">Review Test</h1>
                 <div className="flex gap-3">
-                    <DownloadCSV />
+                    {/*<DownloadCSV />*/}
                     <SaveTest allFlags={allFlags} />
                 </div>
             </div>
@@ -37,12 +32,12 @@ function ReviewerContent() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div className="lg:col-span-2 space-y-6">
                     <ChartReview />
-                    <FlagSection allFlags={allFlags} />
+                    {/*<FlagSection allFlags={allFlags} />*/}
                 </div>
 
                 <div className="space-y-6">
                     <TestInformation />
-                    <TestMetrics />
+                    {/*<TestMetrics />*/}
                 </div>
             </div>
         </div>
