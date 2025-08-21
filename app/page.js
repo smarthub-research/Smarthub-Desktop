@@ -15,14 +15,14 @@ export default async function DashboardClient() {
 
     return (
         <div className="mt-12 flex flex-col h-full w-full p-6 lg:p-10 gap-6 bg-surface-200">
-            <Analytics testFiles={testFiles} />
+            {/*<Analytics testFiles={testFiles} />*/}
             <div className=" grid grid-cols-1 lg:grid-cols-3 gap-6 w-full">
                 <div className="flex flex-col gap-4 lg:col-span-2">
                     <Services/>
                 </div>
                 <div className="flex flex-col gap-6 lg:col-span-1">
                     <RecentTests testFiles={testFiles}/>
-                    <Announcements/>
+                    {/*<Announcements/>*/}
                 </div>
             </div>
         </div>

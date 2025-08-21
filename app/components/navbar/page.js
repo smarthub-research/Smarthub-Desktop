@@ -15,7 +15,8 @@ import DraggableNav from "../draggableNav";
 import MessagesTab from "./messagesTab";
 
 export default function Navbar() {
-    const pathname = usePathname()
+    // Get the base path and not the ending
+    const pathname = usePathname().split("/")[1];
 
     // Function to get the classes for each navigation item based on the current page and minimized state
     const getItemClasses = (pageName) => {
@@ -37,8 +38,8 @@ export default function Navbar() {
                 <Link href={'/'}><DashboardTab getItemClasses={getItemClasses}/></Link>
                 <Link href={'/recorder'}><RecorderTab getItemClasses={getItemClasses}/></Link>
                 <Link href={'/reviewer'}><ReviewerTab getItemClasses={getItemClasses}/></Link>
-                <Link href={'/calendar'}><CalendarTab getItemClasses={getItemClasses}/></Link>
-                <Link href={'/messages'}><MessagesTab getItemClasses={getItemClasses}/></Link>
+                {/*<Link href={'/calendar'}><CalendarTab getItemClasses={getItemClasses}/></Link>*/}
+                {/*<Link href={'/messages'}><MessagesTab getItemClasses={getItemClasses}/></Link>*/}
                 <Link href={'/bugReporter'}><BugReporterTab getItemClasses={getItemClasses}/></Link>
             </div>
 

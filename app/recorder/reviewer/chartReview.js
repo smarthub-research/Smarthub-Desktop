@@ -1,12 +1,35 @@
 import ChartTabs from "./chartTabs";
-import Chart from "../chart";
-import {useState} from "react";
+import React, {useEffect, useState} from "react";
 import {useTest} from "../context/testContext";
+import Graph from "../../components/graphs/graph";
+
 
 // Component to display charts based on the active tab
 export default function ChartReview() {
-    const { testData } = useTest()
+    const { fetchReviewData, testData: rawTestData } = useTest();
     const [activeChartTab, setActiveChartTab] = useState('displacement');
+    const [testData, setTestData] = useState(null);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        const loadReviewData = async () => {
+            if (rawTestData) {
+                try {
+                    const formattedData = await fetchReviewData();
+                    setTestData(formattedData);
+                    console.log(formattedData);
+                } catch (error) {
+                    console.error('Error fetching review data:', error);
+                } finally {
+                    setIsLoading(false);
+                }
+            } else {
+                setIsLoading(false);
+            }
+        };
+
+        loadReviewData();
+    }, [rawTestData, fetchReviewData]);
 
     // Render the chart content based on the active tab
     const renderChartContent = () => {
@@ -14,46 +37,26 @@ export default function ChartReview() {
         return (
             <>
                 {activeChartTab === 'displacement' && (
-                    <Chart
-                        timeStamps={testData.timeStamp}
-                        data={testData.displacement}
-                        title="Displacement vs Time"
-                        graphId={1}
-                    />
+                    <Graph data={testData.displacement}/>
                 )}
                 {activeChartTab === 'heading' && (
-                    <Chart
-                        timeStamps={testData.timeStamp}
-                        data={testData.heading}
-                        title="Heading vs Time"
-                        graphId={2}
-                    />
+                    <Graph data={testData.heading}/>
                 )}
                 {activeChartTab === 'velocity' && (
-                    <Chart
-                        timeStamps={testData.timeStamp}
-                        data={testData.velocity}
-                        title="Velocity vs Time"
-                        graphId={3}
-                    />
+                    <Graph data={testData.velocity}/>
                 )}
                 {activeChartTab === 'trajectory' && (
-                    <Chart
-                        timeStamps={testData.trajectory_x}
-                        data={testData.trajectory_y}
-                        title="Trajectory"
-                        graphId={4}
-                    />
+                    <Graph data={testData.trajectory}/>
                 )}
             </>
         );
     };
 
     return (
-        <div className="bg-surface-50 rounded-lg shadow-lg overflow-hidden">
+        <div className={'flex flex-col gap-4'}>
             {/* Set the tab then render the correct chart */}
             <ChartTabs activeChartTab={activeChartTab} setActiveChartTab={setActiveChartTab}/>
-            <div className="h-[400px] p-4">
+            <div className="h-[400px]">
                 {renderChartContent()}
             </div>
         </div>

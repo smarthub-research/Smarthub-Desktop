@@ -14,7 +14,7 @@ export default function Settings() {
         <div className="container mx-auto py-8 px-4 max-w-4xl mt-4">
             <h1 className="text-3xl font-bold text-center text-gray-800 pb-4">Settings</h1>
 
-            <Tabs setPage={setPage} page={page}/>
+            {/*<Tabs setPage={setPage} page={page}/>*/}
             {page === "devices" ? <Devices/> : page === "account" ? <Account/> : page === "appearance" ? <Appearance/> : <Help/>}
         </div>
     );
