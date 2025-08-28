@@ -7,29 +7,43 @@ import { memo, useEffect, useRef, useState } from "react";
 import ChartToolbar from "../../recorder/chartToolbar";
 import {usePathname} from "next/navigation";
 
-function useDebouncedResize(delay = 1000) {
+function useDebouncedResize(delay = 100) {
     const [size, setSize] = useState({ width: 0, height: 0 });
     const ref = useRef();
 
     useEffect(() => {
         if (!ref.current) return;
         let timeout;
+        
+        const updateSize = () => {
+            if (ref.current) {
+                const rect = ref.current.getBoundingClientRect();
+                setSize({
+                    width: rect.width,
+                    height: rect.height
+                });
+            }
+        };
+        
         const handleResize = () => {
             clearTimeout(timeout);
-            timeout = setTimeout(() => {
-                if (ref.current) {
-                    setSize({
-                        width: ref.current.offsetWidth,
-                        height: ref.current.offsetHeight
-                    });
-                }
-            }, delay);
+            timeout = setTimeout(updateSize, delay);
         };
+        
+        // Create ResizeObserver for better container size tracking
+        const resizeObserver = new ResizeObserver(handleResize);
+        
+        if (ref.current) {
+            resizeObserver.observe(ref.current);
+            updateSize(); // Initial size
+        }
+        
         window.addEventListener("resize", handleResize);
-        handleResize();
+        
         return () => {
             clearTimeout(timeout);
             window.removeEventListener("resize", handleResize);
+            resizeObserver.disconnect();
         };
     }, [delay]);
 
@@ -50,7 +64,7 @@ function Graph({data}) {
     const pathName = usePathname();
     const animate = pathName !== '/recorder';
 
-    const [containerRef, containerSize] = useDebouncedResize(25000);
+    const [containerRef, containerSize] = useDebouncedResize(100);
 
     // Find first non-time key
     const dataKey = data && data.length > 0
@@ -91,26 +105,27 @@ function Graph({data}) {
     const domain = [yMin - yPadding, yMax + yPadding];
 
     return (
-        <Card ref={containerRef}>
+        <Card ref={containerRef} className="h-full flex flex-col gap-2 py-4">
             {title !== "Data" && (
-                <CardHeader>
+                <CardHeader className="flex-shrink-0">
                     <div className={'flex flex-row justify-between items-center'}>
                         <CardTitle>{title}</CardTitle>
                         <ChartToolbar/>
                     </div>
                 </CardHeader>
             )}
-            <CardContent>
+            <CardContent className="flex-1 flex flex-col p-0">
                 {title !== "Data" ?
                     (
-                        <ChartContainer config={chartConfig} className={'max-h-[25dvh] w-full'}>
+                        <ChartContainer config={chartConfig} className={'h-full w-full min-h-0'}>
                             <LineChart
-                                width={containerSize.width || 400}
-                                height={containerSize.height ? containerSize.height - 80 : 300}
                                 accessibilityLayer
                                 data={data}
                                 margin={{
-                                    right: 24,
+                                    top: 16,
+                                    right: 36,
+                                    bottom: 16,
+                                    left: 0,
                                 }}
                             >
                                 <CartesianGrid vertical={false} />

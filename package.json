@@ -49,7 +49,7 @@
     "eject": "next eject",
     "dev": "next dev",
     "electron:start": "wait-on http://localhost:3000 && electron .",
-    "fastapi:start": "cd backend && source venv/bin/activate && python3 -m main"
+    "fastapi:start": "cd backend && source ../.venv/bin/activate && python3 -m main"
   },
   "build": {
     "appId": "com.kellengary.smarthub",

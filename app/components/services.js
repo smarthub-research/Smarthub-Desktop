@@ -3,6 +3,7 @@ import Reviewer from "./reviewer";
 import Calendar from "./calendar";
 import BugReporter from "./bugReporter";
 import Link from "next/link";
+import Calibration from "./calibration";
 
 export default function Services() {
     return (
@@ -11,8 +12,9 @@ export default function Services() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <Link href={'/recorder'}><Recorder/></Link>
                 <Link href={'/reviewer'}><Reviewer/></Link>
+                <Link href={'/calibration'}><Calibration/></Link>
                 {/*<Link href={'/calendar'}><Calendar/></Link>*/}
-                <Link href={'/bugReporter'}><BugReporter/></Link>
+                {/*<Link href={'/bugReporter'}><BugReporter/></Link>*/}
             </div>
         </>
     )

@@ -13,7 +13,7 @@ export default async function TestView({ params }) {
 
     return (
         <div className="grow flex flex-col items-center gap-4 py-8 px-12 min-h-screen">
-            <div className={'self-start pt-8'}>
+            <div className={'self-start pt-6'}>
                 <TestName testData={testData} id={id} />
                 <p>Recorded on: {testData.created_at.slice(0, testData.created_at.indexOf('T'))}</p>
             </div>
