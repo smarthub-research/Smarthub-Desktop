@@ -62,7 +62,9 @@ class DataBuffer {
         this.rawBuffer.heading.push(data.heading);
         this.rawBuffer.trajectory_x.push(data.trajectory_x);
         this.rawBuffer.trajectory_y.push(data.trajectory_y);
-        this.rawBuffer.timeStamp.push(data.timeStamp);
+
+        // DONT FORGET YOU WROTE THIS SHIT
+        this.rawBuffer.timeStamp.push(data.timeStamp / 1000);
     }
 
     clearBuffers() {

@@ -11,7 +11,24 @@ class TestDataService {
         return this.testData
     }
 
+    _spreadData(data) {
+        if (!data || !Array.isArray(data)) {
+            return [];
+        }
+        
+        let fix = [];
+        for (let val of data) {
+            if (Array.isArray(val)) {
+                fix.push(val[0]);
+            } else {
+                fix.push(val);
+            }
+        }
+        return fix;
+    }
+
     setTestData(data) {
+        console.log("TEST DATA SET: ", data);
         let dataValues;
         if (data === null) {
             // Return without changing anything if explicitly set to null
@@ -24,8 +41,8 @@ class TestDataService {
         }
 
         this.testData = {
-            gyro_left: dataValues.gyro_left || [],
-            gyro_right: dataValues.gyro_right || [],
+            gyro_left: this._spreadData(dataValues.gyro_left) || [],
+            gyro_right: this._spreadData(dataValues.gyro_right) || [],
             accel_left: dataValues.accel_left || [],
             accel_right: dataValues.accel_right || [],
             displacement: dataValues.displacement || [],

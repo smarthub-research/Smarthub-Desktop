@@ -2,7 +2,9 @@ import { CheckCircle, Play, Settings, Target, Wifi } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 
+// Step by step instructions for calibrating devices
 export default function CalibrationSteps({currentStep = 0}) {
+    
     const calibrationSteps = [
         {
             title: "Connect Devices",
@@ -11,14 +13,14 @@ export default function CalibrationSteps({currentStep = 0}) {
             requirement: "2 devices required"
         },
         {
-            title: "Position Robot",
-            description: "Place robot on a flat surface with clear 10-meter path",
+            title: "Position Tests",
+            description: "Position tester on a flat surface with clear 10-meter path",
             icon: Target,
             requirement: "Straight line setup"
         },
         {
             title: "Record Movement",
-            description: "Drive robot straight forward 10 meters, then turn around and return",
+            description: "Drive straight forward 10 meters, then turn around and return",
             icon: Play,
             requirement: "~30 second recording"
         },

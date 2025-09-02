@@ -1,4 +1,4 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 
 export default function Instructions() {
     return (
@@ -14,15 +14,15 @@ export default function Instructions() {
                     </div>
                     <div className="flex items-start space-x-2">
                         <span className="font-semibold text-blue-600">2.</span>
-                        <span>Place your robot on a flat surface with at least 10 meters of clear space ahead.</span>
+                        <span>Position the tester on a flat surface with at least 10 meters of clear space ahead.</span>
                     </div>
                     <div className="flex items-start space-x-2">
                         <span className="font-semibold text-blue-600">3.</span>
-                        <span>Click "Start Calibration" and drive the robot straight forward 10 meters.</span>
+                        <span>Click "Start Calibration" and move straight forward 10 meters.</span>
                     </div>
                     <div className="flex items-start space-x-2">
                         <span className="font-semibold text-blue-600">4.</span>
-                        <span>Turn the robot around and drive back to the starting position.</span>
+                        <span>Turn around and drive back to the starting position.</span>
                     </div>
                     <div className="flex items-start space-x-2">
                         <span className="font-semibold text-blue-600">5.</span>

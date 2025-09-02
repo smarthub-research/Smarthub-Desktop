@@ -4,6 +4,7 @@ import CalibrationName from './calibrationName';
 
 export default function Controls({calibrationStep, setCalibrationStep, calibrationName, setCalibrationName, connectedDevices}) {
 
+    // Begin receiving ble data to liveDataAndResults
     async function startCalibration() {
         try {
             if (window.electronAPI) {
@@ -15,17 +16,62 @@ export default function Controls({calibrationStep, setCalibrationStep, calibrati
         }
     }
 
+    // End the calibration, get test data and format to send to calculate calibration
     async function stopCalibration() {
         try {
             if (window.electronAPI) {
                 await window.electronAPI.stopRecordingData();
                 setCalibrationStep("processing")
-                // Set test data to be fetched by livedataandresults with no formatting
-                await window.electronAPI.setTestData(false);
+                
+                // Save the buffer data to testData after calibration
+                const saveResult = await window.electronAPI.setTestData(true);
+                // if (!saveResult.success) {
+                //     console.error("Failed to save calibration data:", saveResult.error);
+                //     setCalibrationStep("error");
+                //     return;
+                // }
+                const testData = await window.electronAPI.getTestData();
+                
+                // Prepare calibration data for API
+                const calibrationData = {
+                    // Get the number from the device name. Both numbers should be the same for both devices.
+                    smarthub_id: "8888",
+                    calibration_name: calibrationName,
+                    gyro_left: testData.gyro_left || [],
+                    gyro_right: testData.gyro_right || [],
+                    time_from_start: testData.timeStamp || []
+                };
+
+                console.log(calibrationData)
+                
+                // Call your calibration API
+                const response = await fetch("http://localhost:8000/calibrate/", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(calibrationData)
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    console.log("Calibration completed:", result);
+                    setCalibrationStep("completed");
+                } else {
+                    console.error("Calibration API failed:", await response.text());
+                    setCalibrationStep("error");
+                }
             }
         } catch (error) {
-            console.error("Error stopping recording:", error);
+            console.error("Error during calibration:", error);
+            setCalibrationStep("error");
         }
+    }
+
+    // Clear all data and reset calibration stage to idle
+    async function resetCalibration() {
+        await window.electronAPI.restartRecording();
+        setCalibrationStep("idle")
     }
 
     return (

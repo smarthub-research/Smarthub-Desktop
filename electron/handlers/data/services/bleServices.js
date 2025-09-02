@@ -134,8 +134,8 @@ function processData(data) {
             trajectory_x: item.trajectory_x,
             trajectory_y: item.trajectory_y,
         })
-        returnData.gyro_left.push(item.gyro_left)
-        returnData.gyro_right.push(item.gyro_right)    
+        returnData.gyro_left.push(...item.gyro_left)
+        returnData.gyro_right.push(...item.gyro_right)    
         returnData.timeStamp.push(item.timeStamp)
     })
     return returnData

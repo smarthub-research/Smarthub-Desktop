@@ -1,4 +1,5 @@
 
+// Input form for the calibrationName
 export default function CalibrationName({calibrationStep, calibrationName, setCalibrationName}) {
     return (
         <div>
