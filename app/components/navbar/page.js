@@ -4,24 +4,24 @@
 import DashboardTab from "./dashboardTab";
 import RecorderTab from "./recorderTab";
 import ReviewerTab from "./reviewerTab";
-import CalendarTab from "./calendarTab";
 import BugReporterTab from "./bugReporterTab";
 import SettingsTab from "./settingsTab";
 import ProfileTab from "./profileTab";
 import Title from "./title";
-import {usePathname} from "next/navigation";
+import {usePathname, useRouter} from "next/navigation";
 import Link from "next/link";
-import DraggableNav from "../draggableNav";
-import MessagesTab from "./messagesTab";
+import CalibrationTab from "./calibrationTab";
 
 export default function Navbar() {
     // Get the base path and not the ending
-    const pathname = usePathname().split("/")[1];
+    const fullPathname = usePathname();
+    const pathname = fullPathname.split("/")[1];
+    const router = useRouter();
 
     // Function to get the classes for each navigation item based on the current page and minimized state
     const getItemClasses = (pageName) => {
         let baseClasses = "flex items-center justify-start opacity-60 py-2 px-1.5 rounded cursor-pointer hover:inner-shadow hover:shadow-sm";
-        if (pathname.includes(pageName) || (pathname === "/" && pageName === 'home')) {
+        if (pathname.includes(pageName) || (fullPathname === "/" && pageName === 'home')) {
             return `${baseClasses} bg-surface-100 border-surface-300 opacity-100 border font-medium text-primary-600`;
         }
         return baseClasses;
@@ -35,12 +35,23 @@ export default function Navbar() {
             <Title/>
             {/* Navigation items */}
             <div className="flex  flex-col gap-2">
-                <Link href={'/'}><DashboardTab getItemClasses={getItemClasses}/></Link>
+                <Link href={'/'}
+                      onMouseEnter={() => router.prefetch('/')}
+                >
+                    <DashboardTab getItemClasses={getItemClasses}/>
+                </Link>
                 <Link href={'/recorder'}><RecorderTab getItemClasses={getItemClasses}/></Link>
-                <Link href={'/reviewer'}><ReviewerTab getItemClasses={getItemClasses}/></Link>
+                <Link href={'/reviewer'}
+                      onMouseEnter={() => router.prefetch('/reviewer')}
+                >
+                    <ReviewerTab getItemClasses={getItemClasses}/>
+                </Link>
+                <Link href={"/calibration"}>
+                    <CalibrationTab getItemClasses={getItemClasses}/>
+                </Link>
                 {/*<Link href={'/calendar'}><CalendarTab getItemClasses={getItemClasses}/></Link>*/}
                 {/*<Link href={'/messages'}><MessagesTab getItemClasses={getItemClasses}/></Link>*/}
-                <Link href={'/bugReporter'}><BugReporterTab getItemClasses={getItemClasses}/></Link>
+                {/*<Link href={'/bugReporter'}><BugReporterTab getItemClasses={getItemClasses}/></Link>*/}
             </div>
 
             {/* Bottom section */}

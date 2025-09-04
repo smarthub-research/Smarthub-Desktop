@@ -14,6 +14,7 @@ export default function Title() {
         : path.includes("/messages") ? "Messages"
         : path.includes("/bugReporter") ? "Bug Reporter"
         : path.includes("/settings") ? "Settings"
+        : path.includes("/calibration") ? "Calibrator"
         : "Desktop";
 
     useEffect(() => {

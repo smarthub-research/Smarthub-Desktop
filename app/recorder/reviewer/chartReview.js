@@ -53,10 +53,10 @@ export default function ChartReview() {
     };
 
     return (
-        <div className={'flex flex-col gap-4'}>
+        <div className={'flex flex-col gap-4 h-full'}>
             {/* Set the tab then render the correct chart */}
             <ChartTabs activeChartTab={activeChartTab} setActiveChartTab={setActiveChartTab}/>
-            <div className="h-[400px]">
+            <div className="flex-1 min-h-0">
                 {renderChartContent()}
             </div>
         </div>

@@ -1,11 +1,9 @@
 const BrowserWindow = require('electron').BrowserWindow;
 const connectionStore = require('../../../services/connectionStore');
-const { noble } = require('../../deviceDiscovery');
 const dataBuffer = require('./dataBufferService');
 const constants = require('../../../config/constants');
 const downsamplingUtils = require('../utils/downsamplingUtils')
 const calculationUtils = require("../utils/calculationUtils")
-const testDataService = require('./testDataService')
 
 // Global variables for BLE data processing
 let pendingLeftData = null;
@@ -96,8 +94,6 @@ function subscribeToCharacteristics(characteristic, peripheral) {
                         win.webContents.send('new-ble-data', {data: finalData});
                     }
                 });
-                console.log("DATA: ", finalData);
-
                 // Reset buffer after sending
             }
 
@@ -115,7 +111,10 @@ function processData(data) {
         displacement: [],
         heading: [],
         velocity: [],
-        trajectory: []
+        trajectory: [],
+        gyro_left: [],
+        gyro_right: [],
+        timeStamp: []
     }
     data.map((item) => {
         returnData.displacement.push({
@@ -135,6 +134,9 @@ function processData(data) {
             trajectory_x: item.trajectory_x,
             trajectory_y: item.trajectory_y,
         })
+        returnData.gyro_left.push(...item.gyro_left)
+        returnData.gyro_right.push(...item.gyro_right)    
+        returnData.timeStamp.push(item.timeStamp)
     })
     return returnData
 }

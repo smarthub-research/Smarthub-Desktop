@@ -1,4 +1,3 @@
-import React from "react";
 
 // Component to create the toolbar for the chart
 export default function ChartToolbar(props) {

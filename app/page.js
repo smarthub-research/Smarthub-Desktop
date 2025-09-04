@@ -1,17 +1,20 @@
 import RecentTests from "./components/recentTests";
-import Analytics from "./components/analytics/analytics";
 import Services from "./components/services";
-import Announcements from "./components/announcements";
 
 export default async function DashboardClient() {
-    const response = await fetch("http://localhost:8000/db/tests", {
-        method: 'GET',
-        headers: {
-            'Content-Type': 'application/json'
-        }
-    });
-    const data = await response.json();
-    const testFiles = data.data || []
+    let testFiles = []
+    try {
+        const response = await fetch("http://localhost:8000/db/tests", {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        const data = await response.json();
+        testFiles = data.data || []
+    } catch (error) {
+        console.log(error);
+    }
 
     return (
         <div className="mt-12 flex flex-col h-full w-full p-6 lg:p-10 gap-6 bg-surface-200">

@@ -15,6 +15,7 @@ export default function ViewButton({testFile}) {
         <button
             className="bg-gray-700 hover:bg-gray-600 text-white py-2 px-4 rounded-lg transition-colors cursor-pointer"
             onClick={() => handleView(testFile)}
+            onMouseEnter={() => router.prefetch('/reviewer/' + testFile.id)}
         >
             View
         </button>
