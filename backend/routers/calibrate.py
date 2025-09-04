@@ -1,5 +1,6 @@
 from fastapi import APIRouter
 import copy
+import json
 from scipy.fftpack import fftfreq, irfft, rfft
 from scipy.optimize import fsolve
 import numpy as np
@@ -27,7 +28,7 @@ async def perform_calibration(data: dict):
     calibration.perform_calibration()
 
     return {
-        "response": await save_calibration(smarthub_id, data, calibration.left_gain, calibration.right_gain, calibration.wheel_dist, calibration_name),
+        "response": await save_calibration(smarthub_id, calibration.data, calibration.wheel_dist, calibration.left_gain, calibration.right_gain, calibration_name),
         "left_gain": calibration.left_gain,
         "right_gain": calibration.right_gain,
         "wheel_distance": calibration.wheel_dist
@@ -45,27 +46,17 @@ class Calibration:
         }
 
     def perform_calibration(self):
-
         self.smooth_data()
 
         self.left_gain, self.right_gain, self.wheel_dist = fsolve(minimize_turnaround, [20,20,20], args=self.data)
 
     def smooth_data(self):
-        data = {'time_from_start': copy.deepcopy(self.data['time_from_start']),
-                'gyro_left': copy.deepcopy(self.data['gyro_left']),
-                'gyro_right': copy.deepcopy(self.data['gyro_right'])}
         
-        # find shortest array
-        min_len = min(len(data['gyro_left']), len(data['gyro_right']), len(data['time_from_start']))
-        data['gyro_left'] = data['gyro_left'][:min_len]
-        data['gyro_right'] = data['gyro_right'][:min_len]
-        data['time_from_start'] = data['time_from_start'][:min_len]
-
         # Filtering with low pass filter
         filter_freq =  6
         # Calculate fourier transform of right gyroscope data to convert to frequency domain
-        W_right = fftfreq(len(data['gyro_right']), d=data['time_from_start'][1]-data['time_from_start'][0])
-        f_gyro_right = rfft(data['gyro_right'])
+        W_right = fftfreq(len(self.data['gyro_right']), d=self.data['time_from_start'][1]-self.data['time_from_start'][0])
+        f_gyro_right = rfft(self.data['gyro_right'])
         # Filter out right gyroscope signal above 6 Hz
         f_right_filtered = f_gyro_right.copy()
         f_right_filtered[(np.abs(W_right)>filter_freq)] = 0
@@ -74,10 +65,10 @@ class Calibration:
 
         self.data['gyro_right_smoothed'] = list(gyro_right_smoothed)
 
-        # Calculate fourier transform of right gyroscope data to convert to frequency domain
-        W_left = fftfreq(len(data['gyro_left']), d=data['time_from_start'][1]-data['time_from_start'][0])
-        f_gyro_left = rfft(data['gyro_left'])
-        # Filter out right gyroscope signal above 6 Hz
+        # Calculate fourier transform of left gyroscope data to convert to frequency domain
+        W_left = fftfreq(len(self.data['gyro_left']), d=self.data['time_from_start'][1]-self.data['time_from_start'][0])
+        f_gyro_left = rfft(self.data['gyro_left'])
+        # Filter out left gyroscope signal above 6 Hz
         f_left_filtered = f_gyro_left.copy()
         f_left_filtered[(np.abs(W_left)>filter_freq)] = 0
         # convert filtered signal back to time domain
@@ -88,7 +79,6 @@ class Calibration:
 
 def minimize_turnaround(params, test):
     ml, mr, W = params
-
 
     if 'elapsed_time_s' in test:
         time_from_start = np.array(test['elapsed_time_s'])
@@ -127,12 +117,12 @@ def minimize_turnaround(params, test):
     # net_distance_error = (10 - (disp_m[start_turn] + (disp_m[-1] - disp_m[end_turn])))
     net_distance_error = (10 - disp_m[-1])
 
-    halfway_point = disp_m[-1] / 2
+    # halfway_point = disp_m[-1] / 2
 
     # quarter_point = disp_m[-1] / 4
     # three_quarter_point = disp_m[-1] * 3 / 4
 
-    distance_error = 5 - halfway_point
+    # distance_error = 5 - halfway_point
 
     first_half = traj[:start_turn]
     second_half = traj[end_turn:]
