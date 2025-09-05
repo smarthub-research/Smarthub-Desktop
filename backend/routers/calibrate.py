@@ -1,6 +1,4 @@
 from fastapi import APIRouter
-import copy
-import json
 from scipy.fftpack import fftfreq, irfft, rfft
 from scipy.optimize import fsolve
 import numpy as np
@@ -19,6 +17,14 @@ router = APIRouter(
     responses={404: {"description": "Not found"}}
 )
 
+# JSON payload expected:
+# {
+#	"smarthub_id": string,
+#	"calibration_name" : string,
+#	"gyro_right": [integers],
+#   "gyro_left": [integers],
+#   "time_from_start": [integers]
+# }
 @router.post("/")
 async def perform_calibration(data: dict):
     smarthub_id = data["smarthub_id"]
@@ -26,16 +32,12 @@ async def perform_calibration(data: dict):
     calibration = Calibration(data)
 
     calibration.perform_calibration()
+    response = await save_calibration(smarthub_id, calibration.data, calibration.wheel_dist, calibration.left_gain, calibration.right_gain, calibration_name)
 
-    return {
-        "response": await save_calibration(smarthub_id, calibration.data, calibration.wheel_dist, calibration.left_gain, calibration.right_gain, calibration_name),
-        "left_gain": calibration.left_gain,
-        "right_gain": calibration.right_gain,
-        "wheel_distance": calibration.wheel_dist
-    }
+    return response.data
 
+# Class that stores all methods needed for calibration
 class Calibration:
-    
     def __init__(self, data):
         self.data = {
             'gyro_right': data['gyro_right'],
@@ -79,13 +81,7 @@ class Calibration:
 
 def minimize_turnaround(params, test):
     ml, mr, W = params
-
-    if 'elapsed_time_s' in test:
-        time_from_start = np.array(test['elapsed_time_s'])
-    elif 'time_from_start' in test:
-        time_from_start = np.array(test['time_from_start'])
-    else:
-        raise ValueError("No time data found")
+    time_from_start = np.array(test['time_from_start'])
     
     min_len = min(len(time_from_start), len(test['gyro_left_smoothed']), len(test['gyro_right_smoothed']))
 
@@ -107,22 +103,11 @@ def minimize_turnaround(params, test):
         turning_points = np.where(np.abs(np.array(heading_diff)) > 0.1)
         if turning_points:
             minimize_turnaround.start_turn, minimize_turnaround.end_turn = (largest_consecutive_group(turning_points[0])[0], largest_consecutive_group(turning_points[0])[-1])
-            # print(time_from_start[minimize_turnaround.start_turn], time_from_start[minimize_turnaround.end_turn])
 
     start_turn = minimize_turnaround.start_turn
     end_turn = minimize_turnaround.end_turn
 
-    # print(10 - (disp_m[start_turn] + (disp_m[-1] - disp_m[end_turn])))
-
-    # net_distance_error = (10 - (disp_m[start_turn] + (disp_m[-1] - disp_m[end_turn])))
     net_distance_error = (10 - disp_m[-1])
-
-    # halfway_point = disp_m[-1] / 2
-
-    # quarter_point = disp_m[-1] / 4
-    # three_quarter_point = disp_m[-1] * 3 / 4
-
-    # distance_error = 5 - halfway_point
 
     first_half = traj[:start_turn]
     second_half = traj[end_turn:]
@@ -135,11 +120,6 @@ def minimize_turnaround(params, test):
     # Compute the net loss between the two halves
     net_loss = compute_net_loss(first_half, second_half)
 
-    # print()
-    # print(net_loss, distance_error, turn_loss)
-    # print(net_loss, net_distance_error, turn_loss)
-
-    # return net_loss, distance_error, heading_diff
     return net_loss, net_distance_error, turn_loss
 
 
@@ -184,6 +164,7 @@ def compute_net_loss(points1, points2):
     return rms_distance
 
 
+# Writes to the database the calculated calibration
 async def save_calibration(smarthub_id, data, wheel_dist, left_gain, right_gain, calibration_name):
     # save dictionary to json
     response = (
