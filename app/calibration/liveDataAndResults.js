@@ -38,7 +38,9 @@ export default function LiveDataAndResults({calibrationStep}) {
 
     return (
         <div className="space-y-4">
-            <LiveData calibrationStep={calibrationStep} calibrationData={calibrationData}/>
+            {calibrationData.length > 0 && (
+                <LiveData calibrationStep={calibrationStep} calibrationData={calibrationData}/>
+            )}
 
             {results && (
                 <Results/>

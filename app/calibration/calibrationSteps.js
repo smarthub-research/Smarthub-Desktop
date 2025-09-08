@@ -32,6 +32,7 @@ export default function CalibrationSteps({currentStep = 0}) {
         }
     ];
 
+    // Method to get the status of the calibration
     const getStepStatus = (stepIndex) => {
         if (stepIndex < currentStep) return 'completed';
         if (stepIndex === currentStep) return 'active';

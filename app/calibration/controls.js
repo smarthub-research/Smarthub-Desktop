@@ -24,12 +24,7 @@ export default function Controls({calibrationStep, setCalibrationStep, calibrati
                 setCalibrationStep("processing")
                 
                 // Save the buffer data to testData after calibration
-                const saveResult = await window.electronAPI.setTestData(true);
-                // if (!saveResult.success) {
-                //     console.error("Failed to save calibration data:", saveResult.error);
-                //     setCalibrationStep("error");
-                //     return;
-                // }
+                await window.electronAPI.setTestData(true);
                 const testData = await window.electronAPI.getTestData();
                 
                 // Prepare calibration data for API
@@ -79,7 +74,7 @@ export default function Controls({calibrationStep, setCalibrationStep, calibrati
             <CardHeader>
                 <CardTitle>Calibration Control</CardTitle>
                 <CardDescription>
-                    Follow the steps to calibrate your SmartHub robot's movement parameters
+                    Follow the steps to calibrate your Smarthub's movement parameters
                 </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">

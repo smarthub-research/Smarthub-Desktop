@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 
+// Hard coded instructions for users to perform calibrations
 export default function Instructions() {
     return (
         <Card>

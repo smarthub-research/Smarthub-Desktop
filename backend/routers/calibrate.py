@@ -36,6 +36,18 @@ async def perform_calibration(data: dict):
 
     return response.data
 
+
+# Get all calibrations in the db
+@router.get("/all")
+async def get_all_calibrations():
+    response = (
+        supabase.table("calibrations")
+        .select("*")
+        .execute()
+    )
+    return response.data
+
+
 # Class that stores all methods needed for calibration
 class Calibration:
     def __init__(self, data):

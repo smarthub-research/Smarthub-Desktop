@@ -4,6 +4,7 @@ const dataBuffer = require('./dataBufferService');
 const constants = require('../../../config/constants');
 const downsamplingUtils = require('../utils/downsamplingUtils')
 const calculationUtils = require("../utils/calculationUtils")
+const calibration = require('../../../services/calibrationService')
 
 // Global variables for BLE data processing
 let pendingLeftData = null;
@@ -51,6 +52,7 @@ function subscribeToCharacteristics(characteristic, peripheral) {
         let accelData = [];
         let gyroData = [];
         calculationUtils.decodeSensorData(data, accelData, gyroData);
+    
         if (peripheral === connectionStore.getConnectionOne()) {
             // Store data from left device
             pendingLeftData = {
@@ -67,6 +69,7 @@ function subscribeToCharacteristics(characteristic, peripheral) {
 
         // Only process data when we have both left and right readings
         if (pendingLeftData && pendingRightData) {
+            const gainData = applyGain(pendingLeftData, pendingRightData);
             const jsonData = calculationUtils.calc(
                 pendingLeftData.accelData,
                 pendingRightData.accelData,
@@ -85,6 +88,7 @@ function subscribeToCharacteristics(characteristic, peripheral) {
                 const downSampledData = downsamplingUtils.downsampleData(buffer, DOWNSAMPLE_TO);
 
                 // reformat data for our graphs
+                
                 let finalData = processData(downSampledData);
                 dataBuffer.clearBuffers();
 
@@ -104,6 +108,17 @@ function subscribeToCharacteristics(characteristic, peripheral) {
     }
 
     characteristic.on('data', characteristic._dataCallback);
+}
+
+// Both data comes in the form of {
+//  accelData:
+//  gyroData:
+// }
+function applyGain(leftData, rightData) {
+    for (let i = 0; i < leftData.length; i++) {
+        leftData[i] *= calibration.leftGain
+        rightData[i] *= calibration.rightGain
+    }
 }
 
 function processData(data) {

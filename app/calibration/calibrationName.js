@@ -1,5 +1,5 @@
 
-// Input form for the calibrationName
+// Input form for the calibrationName only active before the recording has begun
 export default function CalibrationName({calibrationStep, calibrationName, setCalibrationName}) {
     return (
         <div>
@@ -12,7 +12,7 @@ export default function CalibrationName({calibrationStep, calibrationName, setCa
                 onChange={(e) => setCalibrationName(e.target.value)}
                 placeholder="Enter calibration name..."
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600"
-                disabled={calibrationStep !== 'idle'}
+                disabled={calibrationStep !== ('idle' || 'connecting')}
             />
         </div>
     )

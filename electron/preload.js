@@ -75,6 +75,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     fetchTestFiles: () => ipcRenderer.invoke('fetch-test-files'),
     updateTestName: (id, testName) => ipcRenderer.invoke('update-test-name', id, testName),
 
+    setCalibration: (calibration) => ipcRenderer.invoke("set-calibration", calibration),
+
     // Add a general removeListener method for backward compatibility
     removeListener: (channel, callback) => {
         if (callback && typeof callback === 'function') {

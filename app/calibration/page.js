@@ -29,8 +29,11 @@ export default function Calibration() {
         async function fetchDevices() {
             try {
                 const result = await window.electronAPI.getConnectedDevices();
-                setConnectedDevices(result);
-                setCalibrationStep("idle")
+                // Ensure that we got devices returned before we update state
+                if (result.length > 0) {
+                    setConnectedDevices(result);
+                    setCalibrationStep("idle")
+                }
             } catch (error) {
                 console.error("Error fetching devices:", error);
             }
@@ -44,10 +47,10 @@ export default function Calibration() {
             {/* Header */}
             <div className="text-center space-y-2">
                 <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
-                    SmartHub Calibration
+                    Smarthub Calibrator
                 </h1>
                 <p className="text-gray-600 dark:text-gray-400">
-                    Calibrate your robot's wheel parameters for accurate movement tracking
+                    Calibrate your devices parameters for accurate movement tracking
                 </p>
             </div>
 
