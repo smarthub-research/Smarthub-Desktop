@@ -17,7 +17,7 @@ export default async function DashboardClient() {
     }
 
     return (
-        <div className="mt-12 flex flex-col h-full w-full p-6 lg:p-10 gap-6 bg-surface-200">
+        <div className="mt-12 ml-12 flex flex-col h-full w-full p-6 lg:p-10 gap-6 bg-surface-200">
             {/*<Analytics testFiles={testFiles} />*/}
             <div className=" grid grid-cols-1 lg:grid-cols-3 gap-6 w-full">
                 <div className="flex flex-col gap-4 lg:col-span-2">
