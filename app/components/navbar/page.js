@@ -32,17 +32,14 @@ export default function Navbar() {
     };
 
     return (
-        <div className="absolute top-0 left-0 w-screen h-screen pointer-events-none z-0">
+        <>
             {/* Animated gradient background */}
-            <div
-                className={`absolute top-0 left-0 h-screen bg-gradient-to-r from-surface-200 to-transparent transition-all duration-300 ease-in-out pointer-events-none z-0
-                    ${hovered ? 'w-[50vw] opacity-100' : 'w-0 opacity-0'}`}
-            />
+
             {/* Navbar content */}
             <div
                 onMouseEnter={() => setHovered(true)}
                 onMouseLeave={() => setHovered(false)}
-                className={`group absolute top-0 left-0 flex flex-col w-fit max-w-20 hover:max-w-56 h-screen text-black border-surface-200 p-4 gap-4 transition-all duration-300 ease-in-out shrink-0 z-20`}
+                className={`group fixed top-0 left-0 flex flex-col w-fit max-w-20 hover:max-w-56 h-screen text-black border-surface-200 p-4 gap-4 transition-all duration-300 ease-in-out shrink-0 z-30`}
                 style={{ pointerEvents: 'auto' }}
             >
                 {/* Title */}
@@ -74,6 +71,13 @@ export default function Navbar() {
                     <ProfileTab getItemClasses={getItemClasses} />
                 </div>
             </div>
-        </div>
+            <div className="fixed top-0 left-0 w-screen h-screen pointer-events-none z-10">
+                <div
+                    className={`absolute top-0 left-0 h-screen bg-gradient-to-r from-surface-200 to-transparent transition-all duration-300 ease-in-out pointer-events-none z-10
+                    ${hovered ? 'w-[50vw] opacity-100' : 'w-0 opacity-0'}`}
+                />
+            </div>
+        </>
+
     );
 }

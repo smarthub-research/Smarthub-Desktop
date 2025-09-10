@@ -19,7 +19,9 @@ export default function RootLayout({ children }) {
             <body className={`${montserrat.className} flex flex-row min-h-screen w-screen max-w-screen overflow-x-hidden font-mono bg-surface-200`}>
                 <AuthProvider>
                     <NavbarHandler />
-                    {children}
+                    <div className='grow ml-16'>
+                        {children}
+                    </div>
                 </AuthProvider>
             </body>
         </html>

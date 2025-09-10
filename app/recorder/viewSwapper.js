@@ -3,7 +3,7 @@ import React from "react";
 
 export default function ViewSwapper({boxView, setBoxView}) {
     return (
-        <div className={'flex flex-row gap-4 cursor-pointer px-4 py-2 rounded-lg justify-center items-center'}>
+        <div className={'flex flex-row gap-4 cursor-pointer py-2 rounded-lg justify-center items-center'}>
             {boxView ? (
                 <>
                     <BsViewStacked onClick={(() => setBoxView(!boxView))}/>

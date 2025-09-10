@@ -25,7 +25,7 @@ export default function Recorder() {
         <div className={'flex flex-row grow'}>
             <div className={`h-full grow transition-all duration-300 ease-in-out`}>
                 <NavbarRecording/>
-                <div className="flex flex-col pb-8 px-4 w-full">
+                <div className="flex flex-col pb-8 w-full">
                     <div className={"flex flex-col w-full px-12 self-center gap-4 justify-center"}>
                         {/* Small control header under navbar */}
                         <div className="flex justify-between items-center">
