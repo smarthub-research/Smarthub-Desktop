@@ -1,8 +1,54 @@
+
 const timeManager = require("../../../services/timeManager");
 const constants = require("../../../config/constants");
+const calibration = require("../../../services/calibrationService");
 
-const { DT, WHEEL_RADIUS_M, DIST_WHEELS_M, DIST_WHEELS_IN} = constants;
+/**
+ * Decodes raw sensor data into acceleration and gyroscope arrays.
+ * @param {Array<number>} data - Raw sensor data array.
+ * @param {Array<number>} accelData - Output array for acceleration data.
+ * @param {Array<number>} gyroData - Output array for gyroscope data.
+ *  :param raw_data: raw data as 18 len bytearray
+    :returns  accel_data: list of 4 acceleration data floats
+                gyro_data: list of 4 gyro data floats
 
+    converts raw data from smarthub to true acceleration and gyro data
+    set as @staticmethod so we can call it from other classes
+
+    format of raw data:
+    ┏---┓
+    ┃ 0 ┃ sign bits for accel data  0b00001111 if all 4 negative
+    ┗---┛
+    ┏---┓
+    ┃ 1 ┃ sign bits for gyro data  0b00001111 if all 4 negative
+    ┗---┛
+    ┏---┓┏---┓
+    ┃ 2 ┃┃ 3 ┃ accel data 1 (LSB first) | unsigned value, divide by 1000 to get true accel data
+    ┗---┗┗---┛
+    ┏---┓┏---┓
+    ┃ 4 ┃┃ 5 ┃ accel data 2
+    ┗---┗┗---┛
+    ┏---┓┏---┓
+    ┃ 6 ┃┃ 7 ┃ accel data 3
+    ┗---┗┗---┛
+    ┏---┓┏---┓
+    ┃ 8 ┃┃ 9 ┃ accel data 4
+    ┗---┗┗---┛
+    ┏----┓┏----┓
+    ┃ 10 ┃┃ 11 ┃ gyro data 1 (LSB first) | unsigned value, divide by 100 to get true gyro data
+    ┗----┗┗----┛
+    ┏----┓┏----┓
+    ┃ 12 ┃┃ 13 ┃ gyro data 2
+    ┗----┗┗----┛
+    ┏----┓┏----┓
+    ┃ 14 ┃┃ 15 ┃ gyro data 3
+    ┗----┗┗----┛
+    ┏----┓┏----┓
+    ┃ 16 ┃┃ 17 ┃ gyro data 4
+    ┗----┗┗----┛
+
+    1 refers to oldest data, 4 refers to newest data
+ */
 function decodeSensorData(data, accelData, gyroData) {
     for (let i = 0; i < 4; i++) {
         accelData.push((data[2 * i + 2] + data[2 * i + 3] * 256) / 1000);
@@ -18,94 +64,123 @@ function decodeSensorData(data, accelData, gyroData) {
     }
 }
 
-function calc(accelDataLeft, accelDataRight, gyroDataLeft, gyroDataRight, displacement) {
-    const velocity = getVelocity(gyroDataLeft, gyroDataRight);
-    displacement = getDisplacement(accelDataLeft, accelDataRight, velocity, displacement);
-    const trajectory_y = getTraj(velocity, displacement, gyroDataLeft, gyroDataRight).y;
-    const trajectory_x = getTraj(velocity, displacement, gyroDataLeft, gyroDataRight).x;
-
+/**
+ * Main calculation function to compute velocity, displacement, heading, and trajectory.
+ * @param {Array<number>} time_from_start - Array of timestamps (seconds).
+ * @param {Array<number>} gyroDataLeft - Left wheel gyroscope data (rps).
+ * @param {Array<number>} gyroDataRight - Right wheel gyroscope data (rps).
+ * @param {Array<number>} accelDataLeft - Left wheel acceleration data.
+ * @param {Array<number>} accelDataRight - Right wheel acceleration data.
+ * @param {number} [wheelDiameter=constants.WHEEL_DIAM_IN] - Wheel diameter (inches).
+ * @returns {Object} Calculation results including velocity, displacement, heading, trajectory, and timestamp.
+ */
+function calc(time_from_start, gyroDataLeft, gyroDataRight, accelDataLeft, accelDataRight, wheelDiameter = constants.WHEEL_DIAM_IN) {
+    const velocity = getVelocity(gyroDataLeft, gyroDataRight, wheelDiameter);
+    const displacement = getDisplacement(time_from_start, gyroDataLeft, gyroDataRight, wheelDiameter);
+    const heading = getHeading(time_from_start, gyroDataLeft, gyroDataRight, wheelDiameter);
+    const traj = getTraj(velocity, heading, time_from_start);
     return {
         gyro_left: gyroDataLeft,
         gyro_right: gyroDataRight,
         accel_left: accelDataLeft,
         accel_right: accelDataRight,
-        displacement: displacement,
-        velocity: velocity,
-        heading: getHeading(gyroDataLeft, gyroDataRight),
-        trajectory_y: trajectory_y,
-        trajectory_x: trajectory_x,
+        displacement,
+        velocity,
+        heading,
+        trajectory_y: traj.y,
+        trajectory_x: traj.x,
         timeStamp: timeManager.getRecordingStartTime() ? Date.now() - timeManager.getRecordingStartTime() : null,
+    };
+}
+
+/**
+ * Calculates displacement (meters) at each time step.
+ * @param {Array<number>} time_from_start - Array of timestamps (seconds).
+ * @param {Array<number>} rot_l - Left wheel rotation rates (rps).
+ * @param {Array<number>} rot_r - Right wheel rotation rates (rps).
+ * @param {number} [diameter=constants.WHEEL_DIAM_IN] - Wheel diameter (inches).
+ * @returns {Array<number>} Displacement at each time step (meters).
+ */
+function getDisplacement(time_from_start, rot_l, rot_r, diameter = constants.WHEEL_DIAM_IN) {
+    const IN_TO_M = constants.IN_TO_M || 0.0254;
+    let dist_m = [0];
+    for (let i = 0; i < rot_r.length - 1; i++) {
+        const dx_r = (rot_l[i] + rot_r[i]) / 2 * (time_from_start[i + 1] - time_from_start[i]);
+        const dx_m = dx_r * (diameter * IN_TO_M / 2);
+        dist_m.push(dx_m + dist_m[dist_m.length - 1]);
     }
+    return dist_m;
 }
 
-function getDisplacement(accelDataLeft, accelDataRight, velocity, displacement) {
-    displacement += velocity * DT;
-    return displacement;
+/**
+ * Calculates velocity (m/s) at each time step.
+ * @param {Array<number>} rot_l - Left wheel rotation rates (rad/s).
+ * @param {Array<number>} rot_r - Right wheel rotation rates (rad/s).
+ * @param {number} [diameter=constants.WHEEL_DIAM_IN] - Wheel diameter (inches).
+ * @returns {Array<number>} Velocity at each time step (m/s).
+ */
+function getVelocity(rot_l, rot_r, diameter = constants.WHEEL_DIAM_IN) {
+    const IN_TO_M = constants.IN_TO_M || 0.0254;
+    let vel_ms = [0];
+    for (let i = 0; i < rot_r.length; i++) {
+        const v_r = rot_r[i] * diameter / 2 * IN_TO_M;
+        const v_l = rot_l[i] * diameter / 2 * IN_TO_M;
+        const v_curr = (v_r + v_l) / 2;
+        vel_ms.push(v_curr);
+    }
+    return vel_ms;
 }
 
-function getVelocity(gyroDataLeft, gyroDataRight) {
-    const avgRotationRate = (gyroDataLeft[0] + gyroDataRight[0]) / 2;
-    return avgRotationRate * WHEEL_RADIUS_M;
-}
-
-
-// def get_heading_deg(time_from_start, rot_l, rot_r, diameter=WHEEL_DIAM_IN, dist_wheels=DIST_WHEELS_IN):
-//     rot_l = np.array(rot_l) 
-//     rot_r = np.array(rot_r)
-//     time_from_start = np.array(time_from_start)  # Time (sec)
-
-//     heading_deg = [0]
-//     for i in range(len(rot_r) - 1):
-//         w = ((rot_r[i]-rot_l[i]) * diameter*IN_TO_M/2) / (dist_wheels*IN_TO_M)
-//         dh = w * (time_from_start[i + 1] - time_from_start[i])
-//         dh = dh*180/np.pi
-//         # Append last change to overall heading angle:
-//         heading_deg.append(dh + heading_deg[-1])
-//     return heading_deg
-
-
-function getHeading(time_from_start, gyroDataLeft, gyroDataRight, diameter=WHEEL_DIAM_IN, dist_wheels=DIST_WHEELS_IN) {
-
+/**
+ * Calculates heading (degrees) at each time step.
+ * @param {Array<number>} time_from_start - Array of timestamps (seconds).
+ * @param {Array<number>} rot_l - Left wheel rotation rates (rps).
+ * @param {Array<number>} rot_r - Right wheel rotation rates (rps).
+ * @param {number} [diameter=constants.WHEEL_DIAM_IN] - Wheel diameter (inches).
+ * @returns {Array<number>} Heading at each time step (degrees).
+ */
+function getHeading(time_from_start, rot_l, rot_r, diameter = constants.WHEEL_DIAM_IN) {
     let heading_deg = [0];
-    for (let i = 0; i < gyroDataRight.length - 1; i++) {
+    const wheelDistance = calibration.calibration.wheel_distance
+    for (let i = 0; i < rot_r.length; i++) {
         // Angular velocity (rotating left is positive)
-        let w = ((gyroDataRight[i] - gyroDataLeft[i]) * diameter * IN_TO_M / 2) / (dist_wheels * IN_TO_M);
+        const w = ((rot_r[i] - rot_l[i]) * diameter * constants.IN_TO_M / 2) / (wheelDistance * constants.IN_TO_M);
         // Change in heading angle over time step
-        let dt = time_from_start[i + 1] - time_from_start[i];
+        const dt = time_from_start[i + 1] - time_from_start[i];
         let dh = w * dt;
         // Convert to degrees
         dh = dh * 180 / Math.PI;
-        // Append last change to overall heading angle
         heading_deg.push(dh + heading_deg[heading_deg.length - 1]);
     }
     return heading_deg;
 }
 
+/**
+ * Calculates the trajectory (x, y) over time given velocity and heading.
+ * @param {Array<number>} velocity - Velocity at each time step (m/s).
+ * @param {Array<number>} heading_deg - Heading at each time step (degrees).
+ * @param {Array<number>} time_from_start - Array of timestamps (seconds).
+ * @returns {{x: Array<number>, y: Array<number>}} Object containing arrays for x and y positions.
+ */
 function getTraj(velocity, heading_deg, time_from_start) {
-    var x = [];
-    var y = [];
-    var dx = 0;
-    var dy = 0;
-
-    for (let i = 0; i < velocity.length - 1; i++) {
-        // Calculate change in time
-        var dt = time_from_start[i + 1] - time_from_start[i];
-        // Convert heading to radians
-        var headingRad = heading_deg[i] * Math.PI / 180;
-        // Update dx, dy using velocity and heading
-        dx += velocity[i] * Math.cos(headingRad) * dt;
-        dy += velocity[i] * Math.sin(headingRad) * dt;
-        x.push(dx);
-        y.push(dy);
+    let x = [0];
+    let y = [0];
+    for (let i = 0; i < velocity.length; i++) {
+        const dt = time_from_start[i + 1] - time_from_start[i];
+        const headingRad = heading_deg[i] * Math.PI / 180;
+        const dx = velocity[i] * Math.cos(headingRad) * dt;
+        const dy = velocity[i] * Math.sin(headingRad) * dt;
+        x.push(x[x.length - 1] + dx);
+        y.push(y[y.length - 1] + dy);
     }
-
-    // Return trajectory as array of [x, y] pairs (optional, or just x/y arrays)
-    return {
-        x: x,
-        y: y,
-    };
+    return { x, y };
 }
 
 module.exports = {
-    decodeSensorData, calc
-}
+    decodeSensorData,
+    calc,
+    getDisplacement,
+    getVelocity,
+    getHeading,
+    getTraj
+};

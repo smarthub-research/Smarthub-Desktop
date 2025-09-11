@@ -10,6 +10,7 @@ export default function ChartSection({boxView}) {
     });
 
     function handleData(data) {
+        console.log(data)
         data = data.data
         // Update testData with the new formatted data from BLE service
         setTestData(prevTestData => ({

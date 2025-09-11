@@ -5,6 +5,7 @@ const constants = require('../../../config/constants');
 const downsamplingUtils = require('../utils/downsamplingUtils')
 const calculationUtils = require("../utils/calculationUtils")
 const calibration = require('../../../services/calibrationService')
+const timeManager = require('../../../services/timeManager')
 
 // Global variables for BLE data processing
 let pendingLeftData = null;
@@ -69,8 +70,16 @@ function subscribeToCharacteristics(characteristic, peripheral) {
 
         // Only process data when we have both left and right readings
         if (pendingLeftData && pendingRightData) {
-            const gainData = applyGain(pendingLeftData, pendingRightData);
+            let time_curr = (Date.now() - timeManager.getRecordingStartTime()) / 1000
+            let time_from_start = []
+            // Creates 4 time stamps
+            for (let i = 3; i > -1; i--) {
+                time_from_start.push(time_curr - i * (1/68))
+            }
+
+            applyGain(pendingLeftData, pendingRightData);
             const jsonData = calculationUtils.calc(
+                time_from_start,
                 pendingLeftData.accelData,
                 pendingRightData.accelData,
                 pendingLeftData.gyroData,
@@ -116,8 +125,8 @@ function subscribeToCharacteristics(characteristic, peripheral) {
 // }
 function applyGain(leftData, rightData) {
     for (let i = 0; i < leftData.length; i++) {
-        leftData[i] *= calibration.leftGain
-        rightData[i] *= calibration.rightGain
+        leftData[i].gyroData *= calibration.leftGain
+        rightData[i].gyroData *= calibration.rightGain
     }
 }
 
@@ -131,6 +140,8 @@ function processData(data) {
         gyro_right: [],
         timeStamp: []
     }
+    // We expect 3 points here from downsampling
+    // Data is going to contain 4 separate points so it needs spread
     data.map((item) => {
         returnData.displacement.push({
             time: item.timeStamp,
@@ -151,7 +162,7 @@ function processData(data) {
         })
         returnData.gyro_left.push(...item.gyro_left)
         returnData.gyro_right.push(...item.gyro_right)    
-        returnData.timeStamp.push(item.timeStamp)
+        returnData.timeStamp.push(...item.timeStamp)
     })
     return returnData
 }

@@ -9,6 +9,7 @@ class CalibrationService {
         this.calibration = calibration;
         this.leftGain = calibration.leftGain;
         this.rightGain = calibration.rightGain;
+        this.wheelDistance = calibration.wheel_distance;
     }
 
     getCalibration() {
