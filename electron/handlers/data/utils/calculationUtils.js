@@ -1,5 +1,4 @@
 
-const timeManager = require("../../../services/timeManager");
 const constants = require("../../../config/constants");
 const calibration = require("../../../services/calibrationService");
 
@@ -89,7 +88,7 @@ function calc(time_from_start, gyroDataLeft, gyroDataRight, accelDataLeft, accel
         heading,
         trajectory_y: traj.y,
         trajectory_x: traj.x,
-        timeStamp: timeManager.getRecordingStartTime() ? Date.now() - timeManager.getRecordingStartTime() : null,
+        timeStamp: time_from_start
     };
 }
 
@@ -122,7 +121,7 @@ function getDisplacement(time_from_start, rot_l, rot_r, diameter = constants.WHE
 function getVelocity(rot_l, rot_r, diameter = constants.WHEEL_DIAM_IN) {
     const IN_TO_M = constants.IN_TO_M || 0.0254;
     let vel_ms = [0];
-    for (let i = 0; i < rot_r.length; i++) {
+    for (let i = 0; i < rot_r.length - 1; i++) {
         const v_r = rot_r[i] * diameter / 2 * IN_TO_M;
         const v_l = rot_l[i] * diameter / 2 * IN_TO_M;
         const v_curr = (v_r + v_l) / 2;
@@ -142,7 +141,7 @@ function getVelocity(rot_l, rot_r, diameter = constants.WHEEL_DIAM_IN) {
 function getHeading(time_from_start, rot_l, rot_r, diameter = constants.WHEEL_DIAM_IN) {
     let heading_deg = [0];
     const wheelDistance = calibration.calibration.wheel_distance
-    for (let i = 0; i < rot_r.length; i++) {
+    for (let i = 0; i < rot_r.length - 1; i++) {
         // Angular velocity (rotating left is positive)
         const w = ((rot_r[i] - rot_l[i]) * diameter * constants.IN_TO_M / 2) / (wheelDistance * constants.IN_TO_M);
         // Change in heading angle over time step
@@ -165,7 +164,7 @@ function getHeading(time_from_start, rot_l, rot_r, diameter = constants.WHEEL_DI
 function getTraj(velocity, heading_deg, time_from_start) {
     let x = [0];
     let y = [0];
-    for (let i = 0; i < velocity.length; i++) {
+    for (let i = 0; i < velocity.length - 1; i++) {
         const dt = time_from_start[i + 1] - time_from_start[i];
         const headingRad = heading_deg[i] * Math.PI / 180;
         const dx = velocity[i] * Math.cos(headingRad) * dt;

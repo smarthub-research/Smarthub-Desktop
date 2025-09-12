@@ -50,7 +50,7 @@ export default function ChartSection({boxView}) {
 
     return (
         testData.displacement.length> 0 ? (
-                <div className={`${boxView ? 'grid grid-cols-2 gap-8 grow' : 'flex flex-col gap-8'}`}>
+                <div className={`${boxView ? 'grid grid-cols-2 gap-8 grow h-[80dvh]' : 'flex flex-col gap-8'}`}>
                     <Graph data={testData.displacement}/>
                     <Graph data={testData.heading}/>
                     <Graph data={testData.velocity}/>

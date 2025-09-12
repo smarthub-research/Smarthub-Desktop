@@ -5,7 +5,6 @@ const downsamplingUtils = require('../utils/downsamplingUtils');
 class TestDataService {
     getTestData() {
         if (!this.testData) {
-            console.log("No test data available");
             return null;
         }
         return this.testData
@@ -51,9 +50,6 @@ class TestDataService {
             trajectory_x: dataValues.trajectory_x || [],
             trajectory_y: dataValues.trajectory_y || [],
             timeStamp: dataValues.timeStamp || [],
-            duration: this.calculateDuration(dataValues),
-            maxVelocity: this.calculateMaxVelocity(dataValues.velocity || []),
-            avgHeading: this.calculateAvgHeading(dataValues.heading || [])
         };
 
         // Clear the data buffers

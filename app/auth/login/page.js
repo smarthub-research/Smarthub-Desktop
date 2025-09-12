@@ -88,6 +88,34 @@ export default function Login() {
         }
     };
 
+    const skipAuth = async () => {
+        setFormData({
+            email: "gary.106@osu.edu",
+            password: "123456"
+        })
+        setError('');
+        setLoading(true);
+
+        try {
+            // Use the handleLogin method from AuthContext
+            const success = await handleLogin({
+                email: formData.email,
+                password: formData.password
+            });
+
+            if (success) {
+                console.log("login success");
+                router.push('/');
+            } else {
+                throw new Error('Login failed');
+            }
+        } catch (err) {
+            setError('Failed to sign in. Please check your credentials.');
+        } finally {
+            setLoading(false);
+        }
+    }
+
     return (
         <>
             <div className={'flex flex-col gap-6'}>
@@ -142,6 +170,7 @@ export default function Login() {
                     Sign Up
                 </span>
             </p>
+            <button onClick={skipAuth}>Skip Auth</button>
         </>
     );
 }

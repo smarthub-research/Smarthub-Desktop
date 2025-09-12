@@ -64,7 +64,7 @@ class DataBuffer {
         this.rawBuffer.trajectory_y.push(data.trajectory_y);
 
         // DONT FORGET YOU WROTE THIS SHIT
-        this.rawBuffer.timeStamp.push(data.timeStamp / 1000);
+        this.rawBuffer.timeStamp.push(data.timeStamp);
     }
 
     clearBuffers() {

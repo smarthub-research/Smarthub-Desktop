@@ -107,7 +107,7 @@ function Graph({data}) {
     return (
         <Card ref={containerRef} className="h-full flex flex-col gap-2 py-4">
             {title !== "Data" && (
-                <CardHeader className="flex-shrink-0">
+                <CardHeader>
                     <div className={'flex flex-row justify-between items-center'}>
                         <CardTitle>{title}</CardTitle>
                         <ChartToolbar/>
@@ -133,7 +133,7 @@ function Graph({data}) {
                                     dataKey={"time"}
                                     tickLine={false}
                                     tickMargin={8}
-                                    tickFormatter={(value) => (value / 1000).toFixed(2)} // ms to seconds
+                                    tickFormatter={(value) => value.toFixed(2)}
                                 />
                                 <Label value="Time (s)" position="insideBottom" offset={-5} />
 

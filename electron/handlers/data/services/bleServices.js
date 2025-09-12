@@ -49,10 +49,11 @@ function subscribeToCharacteristics(characteristic, peripheral) {
         }
     });
 
-    characteristic._dataCallback = (data) => {
+    characteristic._dataCallback = async (data) => {
         let accelData = [];
         let gyroData = [];
         calculationUtils.decodeSensorData(data, accelData, gyroData);
+        
     
         if (peripheral === connectionStore.getConnectionOne()) {
             // Store data from left device
@@ -77,14 +78,32 @@ function subscribeToCharacteristics(characteristic, peripheral) {
                 time_from_start.push(time_curr - i * (1/68))
             }
 
+            const response = await fetch("http://localhost:8000/calibrate/smooth", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    gyro_right: pendingRightData.gyroData,
+                    gyro_left: pendingLeftData.gyroData,
+                    time_from_start: time_from_start
+                })
+            });
+
+            const data = await response.json();
+            pendingLeftData.gyroData = data.gyro_left_smoothed;
+            pendingRightData.gyroData = data.gyro_right_smoothed;
+            
+            // apply the left and right gain from the calibration
             applyGain(pendingLeftData, pendingRightData);
+
+            // perform calculations with the data
             const jsonData = calculationUtils.calc(
                 time_from_start,
                 pendingLeftData.accelData,
                 pendingRightData.accelData,
                 pendingLeftData.gyroData,
                 pendingRightData.gyroData,
-                displacement
             );
 
             // Append data to both buffers
@@ -97,8 +116,9 @@ function subscribeToCharacteristics(characteristic, peripheral) {
                 const downSampledData = downsamplingUtils.downsampleData(buffer, DOWNSAMPLE_TO);
 
                 // reformat data for our graphs
-                
                 let finalData = processData(downSampledData);
+
+                // Clear only the current buffer and not the raw buffer
                 dataBuffer.clearBuffers();
 
                 // Send downsampled data to frontend
@@ -139,32 +159,59 @@ function processData(data) {
         gyro_left: [],
         gyro_right: [],
         timeStamp: []
-    }
-    // We expect 3 points here from downsampling
-    // Data is going to contain 4 separate points so it needs spread
-    data.map((item) => {
-        returnData.displacement.push({
-            time: item.timeStamp,
-            displacement: item.displacement,
-        })
-        returnData.heading.push({
-            time: item.timeStamp,
-            heading: item.heading,
-        })
-        returnData.velocity.push({
-            time: item.timeStamp,
-            velocity: item.velocity,
-        })
-        returnData.trajectory.push({
-            time: item.timeStamp,
-            trajectory_x: item.trajectory_x,
-            trajectory_y: item.trajectory_y,
-        })
-        returnData.gyro_left.push(...item.gyro_left)
-        returnData.gyro_right.push(...item.gyro_right)    
-        returnData.timeStamp.push(...item.timeStamp)
-    })
-    return returnData
+    };
+    // Flatten all packets into a single array
+    const flatData = data.flat();
+    flatData.forEach((item) => {
+        // Merge arrays for each property
+        if (Array.isArray(item.timeStamp)) {
+            for (let i = 0; i < item.timeStamp.length; i++) {
+                returnData.displacement.push({
+                    time: item.timeStamp[i],
+                    displacement: item.displacement[i],
+                });
+                returnData.heading.push({
+                    time: item.timeStamp[i],
+                    heading: item.heading[i],
+                });
+                returnData.velocity.push({
+                    time: item.timeStamp[i],
+                    velocity: item.velocity[i],
+                });
+                returnData.trajectory.push({
+                    time: item.timeStamp[i],
+                    trajectory_x: item.trajectory_x[i],
+                    trajectory_y: item.trajectory_y[i],
+                });
+                returnData.gyro_left.push(item.gyro_left[i]);
+                returnData.gyro_right.push(item.gyro_right[i]);
+                returnData.timeStamp.push(item.timeStamp[i]);
+            }
+        } else {
+            // Fallback for non-array (single value) items
+            returnData.displacement.push({
+                time: item.timeStamp,
+                displacement: item.displacement,
+            });
+            returnData.heading.push({
+                time: item.timeStamp,
+                heading: item.heading,
+            });
+            returnData.velocity.push({
+                time: item.timeStamp,
+                velocity: item.velocity,
+            });
+            returnData.trajectory.push({
+                time: item.timeStamp,
+                trajectory_x: item.trajectory_x,
+                trajectory_y: item.trajectory_y,
+            });
+            returnData.gyro_left.push(item.gyro_left);
+            returnData.gyro_right.push(item.gyro_right);
+            returnData.timeStamp.push(item.timeStamp);
+        }
+    });
+    return returnData;
 }
 
 function isDeviceConnected(peripheral) {

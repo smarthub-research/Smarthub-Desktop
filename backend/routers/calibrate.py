@@ -47,6 +47,15 @@ async def get_all_calibrations():
     )
     return response.data
 
+@router.post("/smooth")
+async def smooth_packet(data: dict):
+    calibration = Calibration(data)
+    calibration.smooth_data()
+    return {
+        "gyro_right_smoothed": calibration.data["gyro_right_smoothed"],
+        "gyro_left_smoothed": calibration.data["gyro_left_smoothed"]
+    }
+
 
 # Class that stores all methods needed for calibration
 class Calibration:
