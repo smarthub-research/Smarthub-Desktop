@@ -10,8 +10,8 @@ import ViewSwapper from "./viewSwapper";
 
 // Main RecorderTab component
 export default function Recorder() {
-    const [boxView, setBoxView] = useState(false);
-    const { flagging, handleFlagging, width } = useFlagging();
+    const [boxView, setBoxView] = useState(true);
+    const { flagging, handleFlagging } = useFlagging();
 
     // Handle end of recording
     function handleEndRecording() {

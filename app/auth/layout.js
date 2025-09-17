@@ -19,8 +19,8 @@ export default function Auth({ children }) {
 
     return (
         <>
-            <DraggableNav />
-            <div className="grid md:grid-cols-2 grid-cols-1 w-screen h-screen">
+            {/* <DraggableNav /> */}
+            <div className="m-0 grid md:grid-cols-2 grid-cols-1 w-screen h-screen">
                 {/* Left Side */}
                 <VideoMask />
 

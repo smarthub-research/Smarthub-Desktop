@@ -1,4 +1,3 @@
-
 const constants = require("../../../config/constants");
 const calibration = require("../../../services/calibrationService");
 
@@ -53,15 +52,20 @@ function decodeSensorData(data, accelData, gyroData) {
         accelData.push((data[2 * i + 2] + data[2 * i + 3] * 256) / 1000);
         gyroData.push((data[2 * i + 10] + data[2 * i + 11] * 256) / 100);
 
-        if ((data[0] && (1 << i)) === (1 << i)) {
+        if ((data[0] & (1 << i)) !== 0) {
             accelData[i] *= -1;
         }
 
-        if ((data[1] && (1 << i)) === (1 << i)) {
+        if ((data[1] & (1 << i)) !== 0) {
             gyroData[i] *= -1;
         }
     }
 }
+
+let lastDisplacement = null
+let lastHeading = null
+let lastTrajX = null
+let lastTrajY = null
 
 /**
  * Main calculation function to compute velocity, displacement, heading, and trajectory.
@@ -74,6 +78,7 @@ function decodeSensorData(data, accelData, gyroData) {
  * @returns {Object} Calculation results including velocity, displacement, heading, trajectory, and timestamp.
  */
 function calc(time_from_start, gyroDataLeft, gyroDataRight, accelDataLeft, accelDataRight, wheelDiameter = constants.WHEEL_DIAM_IN) {
+    // Remove 0th index from all relevant arrays
     const velocity = getVelocity(gyroDataLeft, gyroDataRight, wheelDiameter);
     const displacement = getDisplacement(time_from_start, gyroDataLeft, gyroDataRight, wheelDiameter);
     const heading = getHeading(time_from_start, gyroDataLeft, gyroDataRight, wheelDiameter);
@@ -83,9 +88,9 @@ function calc(time_from_start, gyroDataLeft, gyroDataRight, accelDataLeft, accel
         gyro_right: gyroDataRight,
         accel_left: accelDataLeft,
         accel_right: accelDataRight,
-        displacement,
-        velocity,
-        heading,
+        displacement: displacement,
+        velocity: velocity,
+        heading: heading,
         trajectory_y: traj.y,
         trajectory_x: traj.x,
         timeStamp: time_from_start
@@ -102,12 +107,26 @@ function calc(time_from_start, gyroDataLeft, gyroDataRight, accelDataLeft, accel
  */
 function getDisplacement(time_from_start, rot_l, rot_r, diameter = constants.WHEEL_DIAM_IN) {
     const IN_TO_M = constants.IN_TO_M || 0.0254;
-    let dist_m = [0];
+    
+    for (let i = 0; i < rot_l.length; i++) {
+        rot_l[i] = Math.abs(rot_l[i]);
+        rot_r[i] = Math.abs(rot_r[i]);
+    }
+
+    let dist_m = [];
+    if (lastDisplacement == null) {
+        dist_m.push(0);
+    } else {
+        dist_m.push(lastDisplacement);
+    }
+
     for (let i = 0; i < rot_r.length - 1; i++) {
         const dx_r = (rot_l[i] + rot_r[i]) / 2 * (time_from_start[i + 1] - time_from_start[i]);
         const dx_m = dx_r * (diameter * IN_TO_M / 2);
         dist_m.push(dx_m + dist_m[dist_m.length - 1]);
     }
+    lastDisplacement = dist_m[dist_m.length - 1];
+
     return dist_m;
 }
 
@@ -120,8 +139,8 @@ function getDisplacement(time_from_start, rot_l, rot_r, diameter = constants.WHE
  */
 function getVelocity(rot_l, rot_r, diameter = constants.WHEEL_DIAM_IN) {
     const IN_TO_M = constants.IN_TO_M || 0.0254;
-    let vel_ms = [0];
-    for (let i = 0; i < rot_r.length - 1; i++) {
+    let vel_ms = [];
+    for (let i = 0; i < rot_r.length; i++) {
         const v_r = rot_r[i] * diameter / 2 * IN_TO_M;
         const v_l = rot_l[i] * diameter / 2 * IN_TO_M;
         const v_curr = (v_r + v_l) / 2;
@@ -139,18 +158,22 @@ function getVelocity(rot_l, rot_r, diameter = constants.WHEEL_DIAM_IN) {
  * @returns {Array<number>} Heading at each time step (degrees).
  */
 function getHeading(time_from_start, rot_l, rot_r, diameter = constants.WHEEL_DIAM_IN) {
-    let heading_deg = [0];
-    const wheelDistance = calibration.calibration.wheel_distance
+    let heading_deg = [];
+    const wheelDistance = calibration.calibration.wheel_distance || constants.DIST_WHEELS_IN;
+    if (lastHeading == null) {
+        heading_deg.push(0);
+    } else {
+        heading_deg.push(lastHeading);
+    }
     for (let i = 0; i < rot_r.length - 1; i++) {
-        // Angular velocity (rotating left is positive)
+        // Left is positive right is negative
         const w = ((rot_r[i] - rot_l[i]) * diameter * constants.IN_TO_M / 2) / (wheelDistance * constants.IN_TO_M);
-        // Change in heading angle over time step
         const dt = time_from_start[i + 1] - time_from_start[i];
         let dh = w * dt;
-        // Convert to degrees
         dh = dh * 180 / Math.PI;
         heading_deg.push(dh + heading_deg[heading_deg.length - 1]);
     }
+    lastHeading = heading_deg[heading_deg.length - 1];
     return heading_deg;
 }
 
@@ -162,8 +185,18 @@ function getHeading(time_from_start, rot_l, rot_r, diameter = constants.WHEEL_DI
  * @returns {{x: Array<number>, y: Array<number>}} Object containing arrays for x and y positions.
  */
 function getTraj(velocity, heading_deg, time_from_start) {
-    let x = [0];
-    let y = [0];
+    let x = [];
+    let y = [];
+    if (lastTrajX == null) {
+        x.push(0);
+    } else {
+        x.push(lastTrajX);
+    }
+    if (lastTrajY == null) {
+        y.push(0);
+    } else {
+        y.push(lastTrajY);
+    }
     for (let i = 0; i < velocity.length - 1; i++) {
         const dt = time_from_start[i + 1] - time_from_start[i];
         const headingRad = heading_deg[i] * Math.PI / 180;
@@ -172,7 +205,16 @@ function getTraj(velocity, heading_deg, time_from_start) {
         x.push(x[x.length - 1] + dx);
         y.push(y[y.length - 1] + dy);
     }
+    lastTrajX = x[x.length - 1];
+    lastTrajY = y[y.length - 1];
     return { x, y };
+}
+
+function resetState() {
+    lastDisplacement = null;
+    lastHeading = null;
+    lastTrajX = null;
+    lastTrajY = null;
 }
 
 module.exports = {
@@ -181,5 +223,10 @@ module.exports = {
     getDisplacement,
     getVelocity,
     getHeading,
-    getTraj
+    getTraj,
+    lastDisplacement,
+    lastHeading,
+    lastTrajX,
+    lastTrajY,
+    resetState
 };

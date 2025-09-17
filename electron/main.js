@@ -44,10 +44,6 @@ app.on("ready", async () => {
     })
 })
 
-app.commandLine.appendSwitch('force-node-api-uncaught-exceptions-policy', 'true');
-app.commandLine.appendSwitch('trace-uncaught');
-app.commandLine.appendSwitch('trace-warnings');
-
 app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') app.quit();
 })

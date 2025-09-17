@@ -47,6 +47,7 @@
     "start": "concurrently \"cross-env BROWSER=none next dev --turbopack\" \"npm run electron:start\" \"npm run fastapi:start\"",
     "build": "next build",
     "test": "next test",
+    "test:jest": "jest --config jest.config.cjs",
     "eject": "next eject",
     "dev": "next dev",
     "electron:start": "wait-on http://localhost:3000 && electron --trace-deprecation .",

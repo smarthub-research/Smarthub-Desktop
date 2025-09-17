@@ -1,0 +1,58 @@
+% Smarthub Sensor Data Calculations
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage{geometry}
+\geometry{margin=1in}
+\title{Smarthub Sensor Data Calculation Equations}
+\author{Auto-generated}
+\date{\today}
+\begin{document}
+\maketitle
+
+\section*{Sensor Data Decoding}
+Raw sensor data is decoded into acceleration and gyroscope arrays as follows:
+\begin{align*}
+\text{accel}_i &= \frac{\text{data}[2i+2] + 256 \times \text{data}[2i+3]}{1000} \\
+\text{gyro}_i  &= \frac{\text{data}[2i+10] + 256 \times \text{data}[2i+11]}{100}
+\end{align*}
+Sign bits are used to determine the sign of each value.
+
+\section*{Velocity Calculation}
+Velocity at each time step is calculated as:
+\begin{align*}
+\text{v}_r &= \text{rot}_r[i] \times \frac{d}{2} \times \text{IN\_TO\_M} \\
+\text{v}_l &= \text{rot}_l[i] \times \frac{d}{2} \times \text{IN\_TO\_M} \\
+\text{velocity}[i] &= \frac{\text{v}_r + \text{v}_l}{2}
+\end{align*}
+where $d$ is the wheel diameter in inches, and IN\_TO\_M is the conversion factor from inches to meters.
+
+\section*{Displacement Calculation}
+Displacement at each time step is:
+\begin{align*}
+\Delta x_r &= \frac{\text{rot}_l[i] + \text{rot}_r[i]}{2} \times (t_{i+1} - t_i) \\
+\Delta x_m &= \Delta x_r \times \frac{d \times \text{IN\_TO\_M}}{2} \\
+\text{displacement}[i+1] &= \Delta x_m + \text{displacement}[i]
+\end{align*}
+
+\section*{Heading Calculation}
+Heading (in degrees) at each time step is:
+\begin{align*}
+\omega &= \frac{(\text{rot}_r[i] - \text{rot}_l[i]) \times d \times \text{IN\_TO\_M} / 2}{\text{wheelDistance} \times \text{IN\_TO\_M}} \\
+\Delta t &= t_{i+1} - t_i \\
+\Delta h &= \omega \times \Delta t \\
+\Delta h_{deg} &= \Delta h \times \frac{180}{\pi} \\
+\text{heading}[i+1] &= \Delta h_{deg} + \text{heading}[i]
+\end{align*}
+
+\section*{Trajectory Calculation}
+Trajectory $(x, y)$ over time is:
+\begin{align*}
+\Delta t &= t_{i+1} - t_i \\
+\theta &= \text{heading}[i] \times \frac{\pi}{180} \\
+\Delta x &= \text{velocity}[i] \times \cos(\theta) \times \Delta t \\
+\Delta y &= \text{velocity}[i] \times \sin(\theta) \times \Delta t \\
+\text{x}[i+1] &= \text{x}[i] + \Delta x \\
+\text{y}[i+1] &= \text{y}[i] + \Delta y
+\end{align*}
+
+\end{document}

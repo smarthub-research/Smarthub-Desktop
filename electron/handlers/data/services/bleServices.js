@@ -53,7 +53,8 @@ function subscribeToCharacteristics(characteristic, peripheral) {
         let accelData = [];
         let gyroData = [];
         calculationUtils.decodeSensorData(data, accelData, gyroData);
-        
+        // console.log("GYRO: ", gyroData)
+        // console.log("ACCEL: ", accelData)
     
         if (peripheral === connectionStore.getConnectionOne()) {
             // Store data from left device
@@ -78,6 +79,12 @@ function subscribeToCharacteristics(characteristic, peripheral) {
                 time_from_start.push(time_curr - i * (1/68))
             }
 
+            // console.log("PRE")
+            // console.log("________________________________________")
+            // console.log("TIME: ", time_from_start)
+            // console.log("LEFT: ", pendingLeftData)
+            // console.log("RIGHT: ", pendingRightData)
+
             const response = await fetch("http://localhost:8000/calibrate/smooth", {
                 method: "POST",
                 headers: {
@@ -93,9 +100,19 @@ function subscribeToCharacteristics(characteristic, peripheral) {
             const data = await response.json();
             pendingLeftData.gyroData = data.gyro_left_smoothed;
             pendingRightData.gyroData = data.gyro_right_smoothed;
+
+            // console.log("SMOOTHED")
+            // console.log("________________________________________")
+            // console.log("LEFT: ", pendingLeftData)
+            // console.log("RIGHT: ", pendingRightData)
             
             // apply the left and right gain from the calibration
             applyGain(pendingLeftData, pendingRightData);
+
+            // console.log("GAIN")
+            // console.log("________________________________________")
+            // console.log("LEFT: ", pendingLeftData)
+            // console.log("RIGHT: ", pendingRightData)
 
             // perform calculations with the data
             const jsonData = calculationUtils.calc(
@@ -105,6 +122,14 @@ function subscribeToCharacteristics(characteristic, peripheral) {
                 pendingLeftData.gyroData,
                 pendingRightData.gyroData,
             );
+
+            // console.log("POST CALC")
+            // console.log("________________________________________")
+            // console.log("LEFT: ", pendingLeftData)
+            // console.log("RIGHT: ", pendingRightData)
+            // console.log("DATA: ", jsonData)
+            // console.log()
+            // console.log()
 
             // Append data to both buffers
             dataBuffer.appendToBuffer(jsonData);
