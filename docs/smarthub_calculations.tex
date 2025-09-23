@@ -2,22 +2,87 @@
 \documentclass{article}
 \usepackage{amsmath}
 \usepackage{geometry}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{multicol}
 \geometry{margin=1in}
-\title{Smarthub Sensor Data Calculation Equations}
-\author{Auto-generated}
+
+% Python code styling
+\lstset{
+    language=Python,
+    basicstyle=\ttfamily\small,
+    keywordstyle=\color{blue},
+    commentstyle=\color{gray},
+    stringstyle=\color{red},
+    numbers=left,
+    numberstyle=\tiny,
+    breaklines=true,
+    showstringspaces=false,
+    frame=single,
+    rulecolor=\color{black}
+}
+
+\title{Smarthub Sensor Data Calculation Functions \& Equations}
+\author{Kellen Gary}
 \date{\today}
 \begin{document}
 \maketitle
 
-\section*{Sensor Data Decoding}
-Raw sensor data is decoded into acceleration and gyroscope arrays as follows:
-\begin{align*}
-\text{accel}_i &= \frac{\text{data}[2i+2] + 256 \times \text{data}[2i+3]}{1000} \\
-\text{gyro}_i  &= \frac{\text{data}[2i+10] + 256 \times \text{data}[2i+11]}{100}
-\end{align*}
-Sign bits are used to determine the sign of each value.
+\section*{Problem}
+When we go to calculate all time step based calculations (displacement, heading, trajectory), we lose a point of data due to us passing an array of length 4 into the function causing the resulting point length to be n-1 or 3. With this we are losing data that we need to preserve. Is there a way to update these equations so that this doesn't happen? Or is the velocity equation potentially wrong in that it shouldn't result in an array of length 4?
 
-\section*{Velocity Calculation}
+\section{Displacement Calculation}
+
+\subsection{Python Function}
+\begin{lstlisting}
+def get_displacement_m(time_from_start, rot_l, rot_r, diameter=WHEEL_DIAM_IN, dist_wheels=DIST_WHEELS_IN):
+    rot_l = np.array(rot_l)  # Rotation of left wheel rps
+    rot_r = np.array(rot_r)  # Rotation of right wheel rps
+    time_from_start = np.array(time_from_start)  # Time (sec)
+
+    dist_m = [0]
+    for i in range(len(rot_r) - 1):
+        # Wheel rotation in time step:
+        dx_r = (rot_l[i]+rot_r[i])/2 * (time_from_start[i + 1] - time_from_start[i])
+        # Change in displacement over time step:
+        dx_m = dx_r * (diameter * IN_TO_M / 2)
+        # Append last change to overall Displacement:
+        dist_m.append(dx_m + dist_m[-1])
+    return dist_m
+\end{lstlisting}
+
+\subsection{Mathematical Equations}
+Displacement at each time step is calculated as:
+\begin{align*}
+\Delta x_r &= \frac{\text{rot}_l[i] + \text{rot}_r[i]}{2} \times (t_{i+1} - t_i) \\
+\Delta x_m &= \Delta x_r \times \frac{d \times \text{IN\_TO\_M}}{2} \\
+\text{displacement}[i+1] &= \Delta x_m + \text{displacement}[i]
+\end{align*}
+where $d$ is the wheel diameter and IN\_TO\_M converts inches to meters.
+
+\section{Velocity Calculation}
+
+\subsection{Python Function}
+\begin{lstlisting}
+def get_velocity_m_s(time_from_start, rot_l, rot_r, diameter=WHEEL_DIAM_IN, dist_wheels=DIST_WHEELS_IN):
+    rot_l = np.array(rot_l)  # Rotation of left wheel (converted to rps by Arduino)
+    rot_r = np.array(rot_r)  # Rotation of right wheel (converted to rps by Arduino)
+    time_from_start = np.array(time_from_start)  # Time (sec)
+
+    vel_ms = [0]
+    for i in range(len(rot_r) - 1):
+        # Right wheel velocity:
+        v_r = (rot_r[i]) * diameter/2*IN_TO_M
+        # Left wheel velocity:
+        v_l = (rot_l[i]) * diameter/2*IN_TO_M
+        # Velocity of wheelchair over time:
+        v_curr = (v_r+v_l)/2
+        # Append last change to overall Displacement:
+        vel_ms.append(v_curr)
+    return vel_ms
+\end{lstlisting}
+
+\subsection{Mathematical Equations}
 Velocity at each time step is calculated as:
 \begin{align*}
 \text{v}_r &= \text{rot}_r[i] \times \frac{d}{2} \times \text{IN\_TO\_M} \\
@@ -26,25 +91,62 @@ Velocity at each time step is calculated as:
 \end{align*}
 where $d$ is the wheel diameter in inches, and IN\_TO\_M is the conversion factor from inches to meters.
 
-\section*{Displacement Calculation}
-Displacement at each time step is:
-\begin{align*}
-\Delta x_r &= \frac{\text{rot}_l[i] + \text{rot}_r[i]}{2} \times (t_{i+1} - t_i) \\
-\Delta x_m &= \Delta x_r \times \frac{d \times \text{IN\_TO\_M}}{2} \\
-\text{displacement}[i+1] &= \Delta x_m + \text{displacement}[i]
-\end{align*}
+\section{Heading Calculation}
 
-\section*{Heading Calculation}
+\subsection{Python Function}
+\begin{lstlisting}
+def get_heading_deg(time_from_start, rot_l, rot_r, diameter=WHEEL_DIAM_IN, dist_wheels=DIST_WHEELS_IN):
+    rot_l = np.array(rot_l)  # Rotation of left wheel (converted to rps by Arduino)
+    rot_r = np.array(rot_r)  # Rotation of right wheel (converted to rps by Arduino)
+    time_from_start = np.array(time_from_start)  # Time (sec)
+
+    heading_deg = [0]
+    for i in range(len(rot_r) - 1):
+        # Angular Velocity in time step (rotating left is positive):
+        w = ((rot_r[i]-rot_l[i]) * diameter*IN_TO_M/2) / (dist_wheels*IN_TO_M)
+        # Change in heading angle over time step:
+        dh = w * (time_from_start[i + 1] - time_from_start[i])
+        # convert to degrees:
+        dh = dh*180/np.pi
+        # Append last change to overall heading angle:
+        heading_deg.append(dh + heading_deg[-1])
+    return heading_deg
+\end{lstlisting}
+
+\subsection{Mathematical Equations}
 Heading (in degrees) at each time step is:
 \begin{align*}
 \omega &= \frac{(\text{rot}_r[i] - \text{rot}_l[i]) \times d \times \text{IN\_TO\_M} / 2}{\text{wheelDistance} \times \text{IN\_TO\_M}} \\
 \Delta t &= t_{i+1} - t_i \\
 \Delta h &= \omega \times \Delta t \\
-\Delta h_{deg} &= \Delta h \times \frac{180}{\pi} \\
-\text{heading}[i+1] &= \Delta h_{deg} + \text{heading}[i]
+\Delta h_{\text{deg}} &= \Delta h \times \frac{180}{\pi} \\
+\text{heading}[i+1] &= \Delta h_{\text{deg}} + \text{heading}[i]
 \end{align*}
 
-\section*{Trajectory Calculation}
+\section{Trajectory Calculation}
+
+\subsection{Python Function}
+\begin{lstlisting}
+def get_top_traj(disp_m, vel_ms, heading_deg, time_from_start, diameter=WHEEL_DIAM_IN, dist_wheels=DIST_WHEELS_IN):
+    x, y = [], []
+    dx, dy = 0, 0
+
+    for i in range(len(disp_m) - 1):
+        '''
+        dr = disp_m[i + 1] - disp_m[i]
+        dh = heading_deg[i] * np.pi / 180  # radian
+        dx += dr * np.cos(dh)
+        dy += dr * np.sin(dh)
+        '''
+        dx += vel_ms[i]*np.cos(heading_deg[i]*np.pi/180) * (time_from_start[i + 1] - time_from_start[i])
+        dy += vel_ms[i]*np.sin(heading_deg[i]*np.pi/180) * (time_from_start[i + 1] - time_from_start[i])
+        x.append(dx)
+        y.append(dy)
+    traj = [[x[i], y[i]] for i in range(len(x))]
+    return traj
+\end{lstlisting}
+
+\subsection{Mathematical Equations}
 Trajectory $(x, y)$ over time is:
 \begin{align*}
 \Delta t &= t_{i+1} - t_i \\
@@ -54,5 +156,16 @@ Trajectory $(x, y)$ over time is:
 \text{x}[i+1] &= \text{x}[i] + \Delta x \\
 \text{y}[i+1] &= \text{y}[i] + \Delta y
 \end{align*}
+
+\section{Data Length Analysis \& Solutions}
+
+\subsection{The n-1 Problem}
+The current implementation results in arrays of length $n-1$ because:
+\begin{itemize}
+\item Input arrays have length $n = 4$ (4 time stamps and gyro values)
+\item Loop runs from $i = 0$ to $len(rot\_r) - 1 = 3$, so only 3 iterations
+\item Each iteration appends one calculated value
+\item Result: 3 calculated values + 1 initial value = 4 total values for some functions
+\end{itemize}
 
 \end{document}

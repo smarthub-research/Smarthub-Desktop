@@ -11,7 +11,7 @@ export default function DataDivider({testData}) {
             </div>
             <div className={'px-6'}>
                 <p className={'opacity-75 text-sm'}>Flags</p>
-                <p className={'font-semibold text-xl'}>{testData.flags.length}</p>
+                <p className={'font-semibold text-xl'}>{testData.flags ? testData.flags.length : 0}</p>
             </div>
             <div className={'px-6'}>
                 <p className={'opacity-75 text-sm'}>Data Points</p>

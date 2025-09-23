@@ -10,7 +10,9 @@ const timeManager = require('../../../services/timeManager')
 // Global variables for BLE data processing
 let pendingLeftData = null;
 let pendingRightData = null;
-let displacement = 0;
+
+// Configuration for calculation method
+let calculationMethod = 'nate'; // 'kellen' or 'nate'
 
 const { TARGET_POINTS, DOWNSAMPLE_TO } = constants;
 
@@ -53,83 +55,39 @@ function subscribeToCharacteristics(characteristic, peripheral) {
         let accelData = [];
         let gyroData = [];
         calculationUtils.decodeSensorData(data, accelData, gyroData);
-        // console.log("GYRO: ", gyroData)
-        // console.log("ACCEL: ", accelData)
     
         if (peripheral === connectionStore.getConnectionOne()) {
             // Store data from left device
             pendingLeftData = {
                 accelData: accelData,
-                gyroData: gyroData
+                gyroData: gyroData,
+                timeStamp: Date.now()
             };
         } else if (peripheral === connectionStore.getConnectionTwo()) {
             // Store data from right device
             pendingRightData = {
                 accelData: accelData,
-                gyroData: gyroData
+                gyroData: gyroData,
+                timeStamp: Date.now()
             };
         }
 
-        // Only process data when we have both left and right readings
+        // Only process data when we have both left and right readings and the difference in their arrival times is within 1 message interval
         if (pendingLeftData && pendingRightData) {
             let time_curr = (Date.now() - timeManager.getRecordingStartTime()) / 1000
             let time_from_start = []
-            // Creates 4 time stamps
+            // Creates 4 time stamps at sensor intervals
             for (let i = 3; i > -1; i--) {
                 time_from_start.push(time_curr - i * (1/68))
             }
-
-            // console.log("PRE")
-            // console.log("________________________________________")
-            // console.log("TIME: ", time_from_start)
-            // console.log("LEFT: ", pendingLeftData)
-            // console.log("RIGHT: ", pendingRightData)
-
-            const response = await fetch("http://localhost:8000/calibrate/smooth", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    gyro_right: pendingRightData.gyroData,
-                    gyro_left: pendingLeftData.gyroData,
-                    time_from_start: time_from_start
-                })
-            });
-
-            const data = await response.json();
-            pendingLeftData.gyroData = data.gyro_left_smoothed;
-            pendingRightData.gyroData = data.gyro_right_smoothed;
-
-            // console.log("SMOOTHED")
-            // console.log("________________________________________")
-            // console.log("LEFT: ", pendingLeftData)
-            // console.log("RIGHT: ", pendingRightData)
             
-            // apply the left and right gain from the calibration
-            applyGain(pendingLeftData, pendingRightData);
-
-            // console.log("GAIN")
-            // console.log("________________________________________")
-            // console.log("LEFT: ", pendingLeftData)
-            // console.log("RIGHT: ", pendingRightData)
-
-            // perform calculations with the data
-            const jsonData = calculationUtils.calc(
-                time_from_start,
-                pendingLeftData.accelData,
-                pendingRightData.accelData,
-                pendingLeftData.gyroData,
-                pendingRightData.gyroData,
-            );
-
-            // console.log("POST CALC")
-            // console.log("________________________________________")
-            // console.log("LEFT: ", pendingLeftData)
-            // console.log("RIGHT: ", pendingRightData)
-            // console.log("DATA: ", jsonData)
-            // console.log()
-            // console.log()
+            // Use configurable calculation method
+            let jsonData;
+            if (calculationMethod === 'nate') {
+                jsonData = await nateCalculate(pendingRightData, pendingLeftData, time_from_start);
+            } else {
+                jsonData = await kellenCalculate(pendingRightData, pendingLeftData, time_from_start);
+            }
 
             // Append data to both buffers
             dataBuffer.appendToBuffer(jsonData);
@@ -162,6 +120,58 @@ function subscribeToCharacteristics(characteristic, peripheral) {
     }
 
     characteristic.on('data', characteristic._dataCallback);
+}
+
+async function nateCalculate(pendingRightData, pendingLeftData, time_from_start) {
+    const response = await fetch("http://localhost:8000/calculate/", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            gyro_right: pendingRightData.gyroData,
+            gyro_left: pendingLeftData.gyroData,
+            time_from_start: time_from_start,
+            calibration: {
+                right_gain: calibration.rightGain,
+                left_gain: calibration.leftGain,
+                wheel_distance: calibration.wheelDistance
+            }
+        })
+    });
+
+    return await response.json();
+}
+
+async function kellenCalculate(pendingRightData, pendingLeftData, time_from_start) {
+    const smoothedData = smoothData(pendingRightData, pendingLeftData, time_from_start)
+    pendingLeftData.gyroData = smoothedData.gyro_left_smoothed;
+    pendingRightData.gyroData = smoothedData.gyro_right_smoothed;
+
+    applyGain(pendingLeftData, pendingRightData)
+
+    return calculationUtils.calc(
+        time_from_start,
+        pendingLeftData.accelData,
+        pendingRightData.accelData,
+        pendingLeftData.gyroData,
+        pendingRightData.gyroData,
+    );
+}
+
+async function smoothData(pendingRightData, pendingLeftData, time_from_start) {
+    const response = await fetch("http://localhost:8000/calibrate/smooth", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            gyro_right: pendingRightData.gyroData,
+            gyro_left: pendingLeftData.gyroData,
+            time_from_start: time_from_start
+        })
+    });
+    return await response.json();
 }
 
 // Both data comes in the form of {

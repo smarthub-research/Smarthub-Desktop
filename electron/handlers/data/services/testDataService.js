@@ -49,7 +49,7 @@ class TestDataService {
             heading: dataValues.heading || [],
             trajectory_x: dataValues.trajectory_x || [],
             trajectory_y: dataValues.trajectory_y || [],
-            timeStamp: dataValues.timeStamp || [],
+            timeStamp: dataValues.time_from_start || [],
         };
 
         // Clear the data buffers

@@ -4,7 +4,7 @@ import Services from "./components/services";
 export default async function DashboardClient() {
     let testFiles = []
     try {
-        const response = await fetch("http://localhost:8000/db/tests", {
+        const response = await fetch(`http://localhost:8000/db/tests?page=1&limit=10`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json'

@@ -3,7 +3,7 @@
 import {CartesianGrid, Label, Line, LineChart, XAxis, YAxis} from "recharts"
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card"
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "../ui/chart"
-import { memo, useEffect, useRef, useState } from "react";
+import { memo, useEffect, useRef, useState, useMemo } from "react";
 import ChartToolbar from "../../recorder/chartToolbar";
 import {usePathname} from "next/navigation";
 
@@ -59,21 +59,45 @@ const CHART_COLORS = {
     purple: '#8884d8'
 }
 
-function Graph({data}) {
+function Graph({data, graphId}) {
     // Only animate if not on recorder page
     const pathName = usePathname();
     const animate = pathName !== '/recorder';
 
     const [containerRef, containerSize] = useDebouncedResize(100);
+    
+    // State for ChartToolbar integration
+    const [dataPointCount, setDataPointCount] = useState(0); // 0 means show all data
+    const [scrollPosition, setScrollPosition] = useState(0);
+
+    // Generate a fallback graphId if none provided
+    const effectiveGraphId = graphId || `graph-${Math.random().toString(36).substr(2, 9)}`;
+
+    // Calculate the data slice to display based on toolbar controls
+    const displayData = useMemo(() => {
+        if (!data || data.length === 0) return [];
+        
+        // If dataPointCount is 0, show all data
+        if (dataPointCount === 0) {
+            return data;
+        }
+        
+        // Calculate start and end positions for slicing
+        const totalDataPoints = data.length;
+        const endIndex = totalDataPoints - scrollPosition;
+        const startIndex = Math.max(0, endIndex - dataPointCount);
+        
+        return data.slice(startIndex, endIndex);
+    }, [data, dataPointCount, scrollPosition]);
 
     // Find first non-time key
-    const dataKey = data && data.length > 0
-        ? Object.keys(data[0]).find(key => key !== "time")
+    const dataKey = displayData && displayData.length > 0
+        ? Object.keys(displayData[0]).find(key => key !== "time")
         : "data";
 
     // Find a second non-time key (if there are 3+ keys total)
-    const dataKeys = data && data.length > 0
-        ? Object.keys(data[0]).filter(key => key !== "time")
+    const dataKeys = displayData && displayData.length > 0
+        ? Object.keys(displayData[0]).filter(key => key !== "time")
         : [];
 
     // Only define dataKey2 if we have more than one non-time key
@@ -98,7 +122,7 @@ function Graph({data}) {
     };
 
     // Y Axis domain calculation
-    const yValues = data?.map(d => d[dataKey]).filter(v => typeof v === "number");
+    const yValues = displayData?.map(d => d[dataKey]).filter(v => typeof v === "number");
     const yMin = yValues && yValues.length ? Math.min(...yValues) : 0;
     const yMax = yValues && yValues.length ? Math.max(...yValues) : 1;
     const yPadding = (yMax - yMin) * 0.3 || 1;
@@ -109,8 +133,15 @@ function Graph({data}) {
             {title !== "Data" && (
                 <CardHeader>
                     <div className={'flex flex-row justify-between items-center'}>
-                        <CardTitle>{title}</CardTitle>
-                        <ChartToolbar/>
+                        <div className="font-medium text-sm">{title}</div>
+                        <ChartToolbar
+                            dataPointCount={dataPointCount}
+                            setDataPointCount={setDataPointCount}
+                            scrollPosition={scrollPosition}
+                            setScrollPosition={setScrollPosition}
+                            data={data}
+                            graphId={effectiveGraphId}
+                        />
                     </div>
                 </CardHeader>
             )}
@@ -120,7 +151,7 @@ function Graph({data}) {
                         <ChartContainer config={chartConfig} className={'h-full w-full min-h-0'}>
                             <LineChart
                                 accessibilityLayer
-                                data={data}
+                                data={displayData}
                                 margin={{
                                     top: 16,
                                     right: 36,

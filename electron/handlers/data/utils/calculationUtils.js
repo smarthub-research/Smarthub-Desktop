@@ -120,12 +120,17 @@ function getDisplacement(time_from_start, rot_l, rot_r, diameter = constants.WHE
         dist_m.push(lastDisplacement);
     }
 
+    // Calculate displacement using wheel circumference and average rotation rate
+    const wheelCircumference = diameter * IN_TO_M * Math.PI;
     for (let i = 0; i < rot_r.length - 1; i++) {
-        const dx_r = (rot_l[i] + rot_r[i]) / 2 * (time_from_start[i + 1] - time_from_start[i]);
-        const dx_m = dx_r * (diameter * IN_TO_M / 2);
+        // Average rotation rate (rps)
+        const avg_rps = (rot_l[i] + rot_r[i]) / 2;
+        // Time interval
+        const dt = time_from_start[i + 1] - time_from_start[i];
+        // Distance traveled in this interval
+        const dx_m = avg_rps * wheelCircumference * dt * (Math.PI / 180);
         dist_m.push(dx_m + dist_m[dist_m.length - 1]);
     }
-    lastDisplacement = dist_m[dist_m.length - 1];
 
     return dist_m;
 }
@@ -140,7 +145,7 @@ function getDisplacement(time_from_start, rot_l, rot_r, diameter = constants.WHE
 function getVelocity(rot_l, rot_r, diameter = constants.WHEEL_DIAM_IN) {
     const IN_TO_M = constants.IN_TO_M || 0.0254;
     let vel_ms = [];
-    for (let i = 0; i < rot_r.length; i++) {
+    for (let i = 0; i < rot_r.length - 1; i++) {
         const v_r = rot_r[i] * diameter / 2 * IN_TO_M;
         const v_l = rot_l[i] * diameter / 2 * IN_TO_M;
         const v_curr = (v_r + v_l) / 2;

@@ -44,15 +44,45 @@ async def write_test(data: dict):
     )
     return {"test_file_id": test_file_id, "test_info": test_info_response.data[0]}
 
-# Fetches all tests
+# Fetches all tests with pagination
 @router.get("/tests")
-async def get_tests():
+async def get_tests(page: int = 1, limit: int = 25):
+    # Calculate offset for pagination
+    offset = (page - 1) * limit
+    
+    # Get total count for pagination info
+    count_response = (
+        supabase.table("test_info")
+        .select("id", count="exact")
+        .execute()
+    )
+    total_count = count_response.count
+    
+    # Get paginated tests
     response = (
         supabase.table("test_info")
         .select("*, test_files(*)")
+        .order("id", desc=True)  # Order by newest first
+        .range(offset, offset + limit - 1)
         .execute()
     )
-    return response
+    
+    # Calculate pagination metadata
+    total_pages = (total_count + limit - 1) // limit  # Ceiling division
+    has_next = page < total_pages
+    has_previous = page > 1
+    
+    return {
+        "data": response.data,
+        "pagination": {
+            "current_page": page,
+            "total_pages": total_pages,
+            "total_count": total_count,
+            "limit": limit,
+            "has_next": has_next,
+            "has_previous": has_previous
+        }
+    }
 
 # Converts the response from supabase into the format:
 #   "displacement" : {"displacement": [], "timeStamp": []},
