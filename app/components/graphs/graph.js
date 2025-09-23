@@ -156,24 +156,35 @@ function Graph({data, graphId}) {
                                     top: 16,
                                     right: 36,
                                     bottom: 16,
-                                    left: 0,
+                                    left: 16,
                                 }}
                             >
                                 <CartesianGrid vertical={false} />
                                 <XAxis
-                                    dataKey={"time"}
-                                    tickLine={false}
+                                    dataKey={dataKey2 ? dataKey2 : "time"}
+                                    // tickLine={false}
                                     tickMargin={8}
                                     tickFormatter={(value) => value.toFixed(2)}
+                                    label={{
+                                        value: dataKey2 ? "Trajectory Y" : "Time (sec)",
+                                        position: "insideBottom",
+                                        offset: -10, // Negative value moves label up, positive moves down
+                                        textAnchor: "middle"
+                                    }}
                                 />
-                                <Label value="Time (s)" position="insideBottom" offset={-5} />
-
                                 <YAxis
                                     dataKey={dataKey}
                                     tickLine={false}
                                     tickMargin={8}
                                     tickFormatter={(value) => value.toFixed(2)}
                                     domain={domain}
+                                    label={{
+                                        value: dataKey,
+                                        angle: -90,
+                                        position: "insideLeft",
+                                        offset: 0, // Adjust horizontal spacing from axis
+                                        textAnchor: "middle"
+                                    }}
                                 />
                                 <ChartTooltip
                                     cursor={false}
@@ -181,22 +192,13 @@ function Graph({data, graphId}) {
                                 />
                                 <Line
                                     dataKey={dataKey}
-                                    type="natural"
+                                    type={dataKey2 ? "linear" : "natural"}
                                     stroke={chartColor}
                                     strokeWidth={2}
                                     dot={false}
                                     isAnimationActive={animate}
                                 />
-                                { dataKey2 && (
-                                    <Line
-                                        dataKey={dataKey2}
-                                        type="natural"
-                                        stroke={CHART_COLORS.purple}
-                                        strokeWidth={2}
-                                        dot={false}
-                                        isAnimationActive={animate}
-                                    />
-                                )}
+
                             </LineChart>
                         </ChartContainer>
                     ) : (
