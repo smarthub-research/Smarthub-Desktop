@@ -12,7 +12,7 @@ export default async function ReviewerHomePage({ searchParams }) {
     const searchTerm = (await searchParams)?.search || "";
 
     return (
-        <div className=" min-h-screen grow p-6 mt-16">
+        <div className="ml-16 min-h-screen grow p-6 mt-16">
             <div className="flex flex-col md:flex-row gap-6">
 
                 {/* FILTERS SIDEBAR */}
