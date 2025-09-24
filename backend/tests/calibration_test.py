@@ -1,6 +1,5 @@
 from routers.calibrate import Calibration, minimize_turnaround, compute_net_loss, largest_consecutive_group
 import numpy as np
-import pytest
 
 def test_full():
     data = {

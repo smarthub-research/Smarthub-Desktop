@@ -12,7 +12,7 @@ let pendingLeftData = null;
 let pendingRightData = null;
 
 // Configuration for calculation method
-let calculationMethod = 'nate'; // 'kellen' or 'nate'
+let calculationMethod = 'kellen'; // 'kellen' or 'nate'
 
 const { TARGET_POINTS, DOWNSAMPLE_TO } = constants;
 
@@ -144,9 +144,9 @@ async function nateCalculate(pendingRightData, pendingLeftData, time_from_start)
 }
 
 async function kellenCalculate(pendingRightData, pendingLeftData, time_from_start) {
-    const smoothedData = smoothData(pendingRightData, pendingLeftData, time_from_start)
-    pendingLeftData.gyroData = smoothedData.gyro_left_smoothed;
-    pendingRightData.gyroData = smoothedData.gyro_right_smoothed;
+    // const smoothedData = smoothData(pendingRightData, pendingLeftData, time_from_start)
+    // pendingLeftData.gyroData = smoothedData.gyro_left_smoothed;
+    // pendingRightData.gyroData = smoothedData.gyro_right_smoothed;
 
     applyGain(pendingLeftData, pendingRightData)
 

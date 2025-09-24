@@ -1,5 +1,5 @@
-# Imports:
 import numpy as np
+from scipy.fftpack import fftfreq, irfft, rfft
 
 # Load Wheelchair Measurements:
 from params import (
@@ -8,6 +8,33 @@ from params import (
     IN_TO_M
 )
 
+def smooth_data(data):
+    response = {}
+    # Filtering with low pass filter
+    filter_freq =  6
+    # Calculate fourier transform of right gyroscope data to convert to frequency domain
+    W_right = fftfreq(len(data['gyro_right']), d=data['time_from_start'][1]-data['time_from_start'][0])
+    f_gyro_right = rfft(data['gyro_right'])
+    # Filter out right gyroscope signal above 6 Hz
+    f_right_filtered = f_gyro_right.copy()
+    f_right_filtered[(np.abs(W_right)>filter_freq)] = 0
+    # convert filtered signal back to time domain
+    gyro_right_smoothed = irfft(f_right_filtered)
+
+    response['gyro_right_smoothed'] = list(gyro_right_smoothed)
+
+    # Calculate fourier transform of left gyroscope data to convert to frequency domain
+    W_left = fftfreq(len(data['gyro_left']), d=data['time_from_start'][1]-data['time_from_start'][0])
+    f_gyro_left = rfft(d=data['gyro_left'])
+    # Filter out left gyroscope signal above 6 Hz
+    f_left_filtered = f_gyro_left.copy()
+    f_left_filtered[(np.abs(W_left)>filter_freq)] = 0
+    # convert filtered signal back to time domain
+    gyro_left_smoothed = irfft(f_left_filtered)
+
+    response['gyro_left_smoothed'] = list(gyro_left_smoothed)
+
+    return response
 
 def get_displacement_m(time_from_start, rot_l, rot_r, diameter=WHEEL_DIAM_IN, dist_wheels=DIST_WHEELS_IN):
     rot_l = np.array(rot_l)  # Rotation of left wheel (converted to rps by Arduino)

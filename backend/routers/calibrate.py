@@ -6,10 +6,12 @@ from calc import (
     get_top_traj,
     get_velocity_m_s,
     get_heading_deg,
-    get_displacement_m
+    get_displacement_m,
+    smooth_data
 )
 from scipy.spatial import cKDTree
 from constants import supabase
+
 
 router = APIRouter(
     prefix="/calibrate",
@@ -49,11 +51,10 @@ async def get_all_calibrations():
 
 @router.post("/smooth")
 async def smooth_packet(data: dict):
-    calibration = Calibration(data)
-    calibration.smooth_data()
+    response = smooth_data(data=data)
     return {
-        "gyro_right_smoothed": calibration.data["gyro_right_smoothed"],
-        "gyro_left_smoothed": calibration.data["gyro_left_smoothed"]
+        "gyro_right_smoothed": response["gyro_right_smoothed"],
+        "gyro_left_smoothed": response["gyro_left_smoothed"]
     }
 
 
@@ -69,36 +70,11 @@ class Calibration:
         }
 
     def perform_calibration(self):
-        self.smooth_data()
+        response = smooth_data(self.data)
+        self.data["gyro_right_smoothed"] = response["gyro_right_smoothed"]
+        self.data["gyro_left_smoothed"] = response["gyro_left_smoothed"]
 
         self.left_gain, self.right_gain, self.wheel_dist = fsolve(minimize_turnaround, [20,20,20], args=self.data)
-
-    def smooth_data(self):
-        
-        # Filtering with low pass filter
-        filter_freq =  6
-        # Calculate fourier transform of right gyroscope data to convert to frequency domain
-        W_right = fftfreq(len(self.data['gyro_right']), d=self.data['time_from_start'][1]-self.data['time_from_start'][0])
-        f_gyro_right = rfft(self.data['gyro_right'])
-        # Filter out right gyroscope signal above 6 Hz
-        f_right_filtered = f_gyro_right.copy()
-        f_right_filtered[(np.abs(W_right)>filter_freq)] = 0
-        # convert filtered signal back to time domain
-        gyro_right_smoothed = irfft(f_right_filtered)
-
-        self.data['gyro_right_smoothed'] = list(gyro_right_smoothed)
-
-        # Calculate fourier transform of left gyroscope data to convert to frequency domain
-        W_left = fftfreq(len(self.data['gyro_left']), d=self.data['time_from_start'][1]-self.data['time_from_start'][0])
-        f_gyro_left = rfft(self.data['gyro_left'])
-        # Filter out left gyroscope signal above 6 Hz
-        f_left_filtered = f_gyro_left.copy()
-        f_left_filtered[(np.abs(W_left)>filter_freq)] = 0
-        # convert filtered signal back to time domain
-        gyro_left_smoothed = irfft(f_left_filtered)
-
-        self.data['gyro_left_smoothed'] = list(gyro_left_smoothed)
-
 
 def minimize_turnaround(params, test):
     ml, mr, W = params
