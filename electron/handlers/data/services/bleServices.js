@@ -11,9 +11,6 @@ const timeManager = require('../../../services/timeManager')
 let pendingLeftData = null;
 let pendingRightData = null;
 
-// Configuration for calculation method
-let calculationMethod = 'kellen'; // 'kellen' or 'nate'
-
 const { TARGET_POINTS, DOWNSAMPLE_TO } = constants;
 
 async function findCharacteristics(shouldRecord, peripheral) {
@@ -82,36 +79,34 @@ function subscribeToCharacteristics(characteristic, peripheral) {
             }
             
             // Use configurable calculation method
-            let jsonData;
-            if (calculationMethod === 'nate') {
-                jsonData = await nateCalculate(pendingRightData, pendingLeftData, time_from_start);
-            } else {
-                jsonData = await kellenCalculate(pendingRightData, pendingLeftData, time_from_start);
-            }
+            // const smoothedData = smoothData(pendingRightData, pendingLeftData, time_from_start)
+            // pendingLeftData.gyroData = smoothedData.gyro_left_smoothed;
+            // pendingRightData.gyroData = smoothedData.gyro_right_smoothed;
+
+            applyGain(pendingLeftData, pendingRightData)
+            applyThreshold(pendingLeftData, pendingRightData)
+            let jsonData = calculationUtils.calc(time_from_start, pendingLeftData.gyroData, pendingRightData.gyroData, pendingLeftData.accelData, pendingRightData.accelData);
+            console.log(jsonData)
 
             // Append data to both buffers
             dataBuffer.appendToBuffer(jsonData);
-            const buffer = dataBuffer.getDataBuffer()
+            const buffer = dataBuffer.getDataBuffer();
+            
+            // Transform buffer structure to match processData expectations
+            const transformedBuffer = transformBufferForProcessing(buffer);
+            
+            // reformat data for our graphs
+            let finalData = processData(transformedBuffer);
 
-            // When we have enough data points, downsample and send to frontend
-            // or we send on the first point received.
-            if (buffer.timeStamp.length >= TARGET_POINTS || dataBuffer.rawBuffer.length === 1) {
-                const downSampledData = downsamplingUtils.downsampleData(buffer, DOWNSAMPLE_TO);
+            // Clear only the current buffer and not the raw buffer
+            dataBuffer.clearBuffer();
 
-                // reformat data for our graphs
-                let finalData = processData(downSampledData);
-
-                // Clear only the current buffer and not the raw buffer
-                dataBuffer.clearBuffers();
-
-                // Send downsampled data to frontend
-                BrowserWindow.getAllWindows().forEach((win) => {
-                    if (win && !win.isDestroyed()) {
-                        win.webContents.send('new-ble-data', {data: finalData});
-                    }
-                });
-                // Reset buffer after sending
-            }
+            // Send downsampled data to frontend
+            BrowserWindow.getAllWindows().forEach((win) => {
+                if (win && !win.isDestroyed()) {
+                    win.webContents.send('new-ble-data', {data: finalData});
+                }
+            });
 
             // Clear the pending data after processing
             pendingLeftData = null;
@@ -120,43 +115,6 @@ function subscribeToCharacteristics(characteristic, peripheral) {
     }
 
     characteristic.on('data', characteristic._dataCallback);
-}
-
-async function nateCalculate(pendingRightData, pendingLeftData, time_from_start) {
-    const response = await fetch("http://localhost:8000/calculate/", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-            gyro_right: pendingRightData.gyroData,
-            gyro_left: pendingLeftData.gyroData,
-            time_from_start: time_from_start,
-            calibration: {
-                right_gain: calibration.rightGain,
-                left_gain: calibration.leftGain,
-                wheel_distance: calibration.wheelDistance
-            }
-        })
-    });
-
-    return await response.json();
-}
-
-async function kellenCalculate(pendingRightData, pendingLeftData, time_from_start) {
-    // const smoothedData = smoothData(pendingRightData, pendingLeftData, time_from_start)
-    // pendingLeftData.gyroData = smoothedData.gyro_left_smoothed;
-    // pendingRightData.gyroData = smoothedData.gyro_right_smoothed;
-
-    applyGain(pendingLeftData, pendingRightData)
-
-    return calculationUtils.calc(
-        time_from_start,
-        pendingLeftData.accelData,
-        pendingRightData.accelData,
-        pendingLeftData.gyroData,
-        pendingRightData.gyroData,
-    );
 }
 
 async function smoothData(pendingRightData, pendingLeftData, time_from_start) {
@@ -179,10 +137,44 @@ async function smoothData(pendingRightData, pendingLeftData, time_from_start) {
 //  gyroData:
 // }
 function applyGain(leftData, rightData) {
-    for (let i = 0; i < leftData.length; i++) {
-        leftData[i].gyroData *= calibration.leftGain
-        rightData[i].gyroData *= calibration.rightGain
+    for (let i = 0; i < leftData.gyroData.length; i++) {
+        leftData.gyroData[i] *= calibration.leftGain;
+        rightData.gyroData[i] *= calibration.rightGain;
     }
+}
+
+// Both data comes in the form of {
+//  accelData:
+//  gyroData:
+// }
+const THRESHOLD = 0.04
+function applyThreshold(leftData, rightData) {
+    for (let i = 0; i < leftData.gyroData.length; i++) {
+        leftData.gyroData[i] = (leftData.gyroData[i] > THRESHOLD ? leftData.gyroData[i] : 0) 
+        rightData.gyroData[i] = (rightData.gyroData[i] > THRESHOLD ? rightData.gyroData[i] : 0)
+    }
+}
+
+function transformBufferForProcessing(buffer) {
+    // Transform buffer structure from {prop: [array1, array2, ...]} 
+    // to [{prop: array1}, {prop: array2}, ...]
+    const transformed = [];
+    const numEntries = buffer.displacement.length;
+    
+    for (let i = 0; i < numEntries; i++) {
+        transformed.push({
+            displacement: buffer.displacement[i],
+            heading: buffer.heading[i],
+            velocity: buffer.velocity[i],
+            trajectory_x: buffer.trajectory_x[i],
+            trajectory_y: buffer.trajectory_y[i],
+            gyro_left: buffer.gyro_left[i],
+            gyro_right: buffer.gyro_right[i],
+            timeStamp: buffer.timeStamp[i]
+        });
+    }
+    
+    return transformed;
 }
 
 function processData(data) {

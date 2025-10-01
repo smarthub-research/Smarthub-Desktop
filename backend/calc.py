@@ -41,9 +41,6 @@ def get_displacement_m(time_from_start, rot_l, rot_r, diameter=WHEEL_DIAM_IN, di
     rot_r = np.array(rot_r)  # Rotation of right wheel (converted to rps by Arduino)
     time_from_start = np.array(time_from_start)  # Time (sec)
 
-    rot_l = abs(rot_l)
-    rot_r = abs(rot_r)
-
     # remove spikes
     # gyro_data[gyro_data > 20] = 0
 

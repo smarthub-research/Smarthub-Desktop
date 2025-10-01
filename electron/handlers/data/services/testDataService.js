@@ -53,7 +53,7 @@ class TestDataService {
         };
 
         // Clear the data buffers
-        if (data && dataBuffer.clearBuffers()) {
+        if (data && dataBuffer.clearBuffer()) {
             dataBuffer.initializeBuffer();
         }
 

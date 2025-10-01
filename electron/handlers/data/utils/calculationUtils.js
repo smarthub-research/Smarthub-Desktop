@@ -87,12 +87,12 @@ function calc(time_from_start, gyroDataLeft, gyroDataRight, accelDataLeft, accel
         gyro_right: gyroDataRight,
         accel_left: accelDataLeft,
         accel_right: accelDataRight,
-        displacement: displacement.slice(0),
-        velocity: velocity.slice(0),
-        heading: heading.slice(0),
-        trajectory_y: traj.y.slice(0),
-        trajectory_x: traj.x.slice(0),
-        timeStamp: time_from_start.slice(0)
+        displacement: displacement.slice(1),
+        velocity: velocity.slice(1),
+        heading: heading.slice(1),
+        trajectory_y: traj.y.slice(1),
+        trajectory_x: traj.x.slice(1),
+        timeStamp: time_from_start.slice(1)
     };
 }
 
@@ -112,7 +112,8 @@ function getDisplacement(time_from_start, rot_l, rot_r, diameter = constants.WHE
         rot_r[i] = Math.abs(rot_r[i]);
     }
 
-    let dist_m = [0];
+    // Initialize with the last displacement value or 0 if this is the first calculation
+    let dist_m = [lastDisplacement || 0];
 
     // Calculate displacement using wheel circumference and average rotation rate
     for (let i = 0; i < rot_r.length - 1; i++) {
@@ -120,6 +121,9 @@ function getDisplacement(time_from_start, rot_l, rot_r, diameter = constants.WHE
         const dx_m = dx_r * (diameter * IN_TO_M / 2);
         dist_m.push(dx_m + dist_m[dist_m.length - 1]);
     }
+
+    // Update the last displacement for the next calculation
+    lastDisplacement = dist_m[dist_m.length - 1];
 
     return dist_m;
 }
@@ -152,7 +156,8 @@ function getVelocity(rot_l, rot_r, diameter = constants.WHEEL_DIAM_IN) {
  * @returns {Array<number>} Heading at each time step (degrees).
  */
 function getHeading(time_from_start, rot_l, rot_r, diameter = constants.WHEEL_DIAM_IN) {
-    let heading_deg = [0];
+    // Initialize with the last heading value or 0 if this is the first calculation
+    let heading_deg = [lastHeading || 0];
     const wheelDistance = calibration.calibration.wheel_distance || constants.DIST_WHEELS_IN;
     for (let i = 0; i < rot_r.length - 1; i++) {
         // Left is positive right is negative
@@ -162,6 +167,10 @@ function getHeading(time_from_start, rot_l, rot_r, diameter = constants.WHEEL_DI
         dh = dh * 180 / Math.PI;
         heading_deg.push(dh + heading_deg[heading_deg.length - 1]);
     }
+    
+    // Update the last heading for the next calculation
+    lastHeading = heading_deg[heading_deg.length - 1];
+    
     return heading_deg;
 }
 
@@ -173,8 +182,9 @@ function getHeading(time_from_start, rot_l, rot_r, diameter = constants.WHEEL_DI
  * @returns {{x: Array<number>, y: Array<number>}} Object containing arrays for x and y positions.
  */
 function getTraj(velocity, heading_deg, time_from_start) {
-    let x = [0];
-    let y = [0];
+    // Initialize with the last trajectory positions or 0 if this is the first calculation
+    let x = [lastTrajX || 0];
+    let y = [lastTrajY || 0];
     for (let i = 0; i < velocity.length - 1; i++) {
         const dt = time_from_start[i + 1] - time_from_start[i];
         const headingRad = heading_deg[i] * Math.PI / 180;
@@ -183,6 +193,11 @@ function getTraj(velocity, heading_deg, time_from_start) {
         x.push(x[x.length - 1] + dx);
         y.push(y[y.length - 1] + dy);
     }
+    
+    // Update the last trajectory positions for the next calculation
+    lastTrajX = x[x.length - 1];
+    lastTrajY = y[y.length - 1];
+    
     return { x, y };
 }
 

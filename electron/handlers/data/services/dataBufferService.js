@@ -67,7 +67,7 @@ class DataBuffer {
         this.rawBuffer.timeStamp.push(data.timeStamp);
     }
 
-    clearBuffers() {
+    clearBuffer() {
         this.dataBuffer = this.initializeBuffer();
     }
 
