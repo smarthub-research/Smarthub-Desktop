@@ -83,10 +83,14 @@ function subscribeToCharacteristics(characteristic, peripheral) {
             // pendingLeftData.gyroData = smoothedData.gyro_left_smoothed;
             // pendingRightData.gyroData = smoothedData.gyro_right_smoothed;
 
-            applyGain(pendingLeftData, pendingRightData)
-            applyThreshold(pendingLeftData, pendingRightData)
+            // We only want to do this when we have a calibration set
+            if (calibration.getCalibration()) {
+                applyGain(pendingLeftData, pendingRightData)
+                applyThreshold(pendingLeftData, pendingRightData)
+            }
+
+            console.log(pendingLeftData)
             let jsonData = calculationUtils.calc(time_from_start, pendingLeftData.gyroData, pendingRightData.gyroData, pendingLeftData.accelData, pendingRightData.accelData);
-            console.log(jsonData)
 
             // Append data to both buffers
             dataBuffer.appendToBuffer(jsonData);
@@ -150,8 +154,8 @@ function applyGain(leftData, rightData) {
 const THRESHOLD = 0.04
 function applyThreshold(leftData, rightData) {
     for (let i = 0; i < leftData.gyroData.length; i++) {
-        leftData.gyroData[i] = (leftData.gyroData[i] > THRESHOLD ? leftData.gyroData[i] : 0) 
-        rightData.gyroData[i] = (rightData.gyroData[i] > THRESHOLD ? rightData.gyroData[i] : 0)
+        leftData.gyroData[i] = (Math.abs(leftData.gyroData[i]) > THRESHOLD ? leftData.gyroData[i] : 0) 
+        rightData.gyroData[i] = (Math.abs(rightData.gyroData[i]) > THRESHOLD ? rightData.gyroData[i] : 0)
     }
 }
 

@@ -10,10 +10,22 @@ from params import (
 
 def smooth_data(data):
     response = {}
+    
+    # Check if we have enough data points
+    if len(data['time_from_start']) < 2 or len(data['gyro_right']) == 0 or len(data['gyro_left']) == 0:
+        # Return empty smoothed data if insufficient data
+        response['gyro_right_smoothed'] = []
+        response['gyro_left_smoothed'] = []
+        return response
+    
     # Filtering with low pass filter
     filter_freq =  6
+    
+    # Calculate time step
+    dt = data['time_from_start'][1] - data['time_from_start'][0]
+    
     # Calculate fourier transform of right gyroscope data to convert to frequency domain
-    W_right = fftfreq(len(data['gyro_right']), d=data['time_from_start'][1]-data['time_from_start'][0])
+    W_right = fftfreq(len(data['gyro_right']), d=dt)
     f_gyro_right = rfft(data['gyro_right'])
     # Filter out right gyroscope signal above 6 Hz
     f_right_filtered = f_gyro_right.copy()
@@ -24,8 +36,8 @@ def smooth_data(data):
     response['gyro_right_smoothed'] = list(gyro_right_smoothed)
 
     # Calculate fourier transform of left gyroscope data to convert to frequency domain
-    W_left = fftfreq(len(data['gyro_left']), d=data['time_from_start'][1]-data['time_from_start'][0])
-    f_gyro_left = rfft(d=data['gyro_left'])
+    W_left = fftfreq(len(data['gyro_left']), d=dt)
+    f_gyro_left = rfft(data['gyro_left'])
     # Filter out left gyroscope signal above 6 Hz
     f_left_filtered = f_gyro_left.copy()
     f_left_filtered[(np.abs(W_left)>filter_freq)] = 0

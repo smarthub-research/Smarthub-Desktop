@@ -5,7 +5,7 @@ import {Clock} from "lucide-react";
 import Link from "next/link";
 
 // Displays 10 of the most recent tests
-export default function RecentTests({testFiles}) {
+export default function RecentTests({testFiles, loading = false}) {
     return (
         <Card>
             <CardHeader>
@@ -15,7 +15,9 @@ export default function RecentTests({testFiles}) {
                 </div>
             </CardHeader>
             <CardContent className="space-y-3">
-                {testFiles.length === 0 ? (
+                {loading ? (
+                    <div className="p-6 text-center opacity-50">Loading tests...</div>
+                ) : testFiles.length === 0 ? (
                     <div className="p-6 text-center opacity-50">No recent tests found</div>
                 ) : (
                     testFiles.slice(0, 10).map((test) => (

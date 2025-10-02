@@ -158,7 +158,7 @@ function getVelocity(rot_l, rot_r, diameter = constants.WHEEL_DIAM_IN) {
 function getHeading(time_from_start, rot_l, rot_r, diameter = constants.WHEEL_DIAM_IN) {
     // Initialize with the last heading value or 0 if this is the first calculation
     let heading_deg = [lastHeading || 0];
-    const wheelDistance = calibration.calibration.wheel_distance || constants.DIST_WHEELS_IN;
+    const wheelDistance = calibration.getCalibration() ? calibration.wheelDistance : constants.DIST_WHEELS_IN;
     for (let i = 0; i < rot_r.length - 1; i++) {
         // Left is positive right is negative
         const w = ((rot_r[i] - rot_l[i]) * diameter * constants.IN_TO_M / 2) / (wheelDistance * constants.IN_TO_M);

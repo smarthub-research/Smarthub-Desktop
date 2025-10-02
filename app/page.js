@@ -1,19 +1,45 @@
+'use client';
+import { useState, useEffect } from 'react';
 import RecentTests from "./components/recentTests";
 import Services from "./components/services";
+import { useAuth } from "./auth/authContext";
 
-export default async function DashboardClient() {
-    let testFiles = []
-    try {
-        const response = await fetch(`http://localhost:8000/db/tests?page=1&limit=10`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        });
-        const data = await response.json();
-        testFiles = data.data || []
-    } catch (error) {
-        console.log(error);
+export default function DashboardClient() {
+    const { user, loading } = useAuth();
+    const [testFiles, setTestFiles] = useState([]);
+    const [testsLoading, setTestsLoading] = useState(false);
+
+    useEffect(() => {
+        // Only fetch tests if user is authenticated and not loading
+        if (user && !loading) {
+            const fetchTests = async () => {
+                setTestsLoading(true);
+                try {
+                    const token = localStorage.getItem('access_token');
+                    const response = await fetch(`http://localhost:8000/db/tests?page=1&limit=10`, {
+                        method: 'GET',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        }
+                    });
+                    const data = await response.json();
+                    setTestFiles(data.data || []);
+                } catch (error) {
+                    console.log(error);
+                    setTestFiles([]);
+                } finally {
+                    setTestsLoading(false);
+                }
+            };
+
+            fetchTests();
+        }
+    }, [user, loading]);
+
+    // Don't render anything while auth is loading or user is not authenticated
+    if (loading || !user) {
+        return null;
     }
 
     return (
@@ -24,7 +50,7 @@ export default async function DashboardClient() {
                     <Services/>
                 </div>
                 <div className="flex flex-col gap-6 lg:col-span-1">
-                    <RecentTests testFiles={testFiles}/>
+                    <RecentTests testFiles={testFiles} loading={testsLoading}/>
                     {/*<Announcements/>*/}
                 </div>
             </div>
