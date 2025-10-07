@@ -35,15 +35,15 @@ When we go to calculate all time step based calculations (displacement, heading,
 
 \subsection{Python Function}
 \begin{lstlisting}
-def get_displacement_m(time_from_start, rot_l, rot_r, diameter=WHEEL_DIAM_IN, dist_wheels=DIST_WHEELS_IN):
-    rot_l = np.array(rot_l)  # Rotation of left wheel rps
-    rot_r = np.array(rot_r)  # Rotation of right wheel rps
-    time_from_start = np.array(time_from_start)  # Time (sec)
+def get_displacement_m(timeStamps, gyroLeft, gyroRight, diameter=WHEEL_DIAM_IN, dist_wheels=DIST_WHEELS_IN):
+    gyroLeft = np.array(gyroLeft)  # Rotation of left wheel rps
+    gyroRight = np.array(gyroRight)  # Rotation of right wheel rps
+    timeStamps = np.array(timeStamps)  # Time (sec)
 
     dist_m = [0]
-    for i in range(len(rot_r) - 1):
+    for i in range(len(gyroRight) - 1):
         # Wheel rotation in time step:
-        dx_r = (rot_l[i]+rot_r[i])/2 * (time_from_start[i + 1] - time_from_start[i])
+        dx_r = (gyroLeft[i]+gyroRight[i])/2 * (timeStamps[i + 1] - timeStamps[i])
         # Change in displacement over time step:
         dx_m = dx_r * (diameter * IN_TO_M / 2)
         # Append last change to overall Displacement:
@@ -64,17 +64,17 @@ where $d$ is the wheel diameter and IN\_TO\_M converts inches to meters.
 
 \subsection{Python Function}
 \begin{lstlisting}
-def get_velocity_m_s(time_from_start, rot_l, rot_r, diameter=WHEEL_DIAM_IN, dist_wheels=DIST_WHEELS_IN):
-    rot_l = np.array(rot_l)  # Rotation of left wheel (converted to rps by Arduino)
-    rot_r = np.array(rot_r)  # Rotation of right wheel (converted to rps by Arduino)
-    time_from_start = np.array(time_from_start)  # Time (sec)
+def get_velocity_m_s(timeStamps, gyroLeft, gyroRight, diameter=WHEEL_DIAM_IN, dist_wheels=DIST_WHEELS_IN):
+    gyroLeft = np.array(gyroLeft)  # Rotation of left wheel (converted to rps by Arduino)
+    gyroRight = np.array(gyroRight)  # Rotation of right wheel (converted to rps by Arduino)
+    timeStamps = np.array(timeStamps)  # Time (sec)
 
     vel_ms = [0]
-    for i in range(len(rot_r) - 1):
+    for i in range(len(gyroRight) - 1):
         # Right wheel velocity:
-        v_r = (rot_r[i]) * diameter/2*IN_TO_M
+        v_r = (gyroRight[i]) * diameter/2*IN_TO_M
         # Left wheel velocity:
-        v_l = (rot_l[i]) * diameter/2*IN_TO_M
+        v_l = (gyroLeft[i]) * diameter/2*IN_TO_M
         # Velocity of wheelchair over time:
         v_curr = (v_r+v_l)/2
         # Append last change to overall Displacement:
@@ -95,17 +95,17 @@ where $d$ is the wheel diameter in inches, and IN\_TO\_M is the conversion facto
 
 \subsection{Python Function}
 \begin{lstlisting}
-def get_heading_deg(time_from_start, rot_l, rot_r, diameter=WHEEL_DIAM_IN, dist_wheels=DIST_WHEELS_IN):
-    rot_l = np.array(rot_l)  # Rotation of left wheel (converted to rps by Arduino)
-    rot_r = np.array(rot_r)  # Rotation of right wheel (converted to rps by Arduino)
-    time_from_start = np.array(time_from_start)  # Time (sec)
+def get_heading_deg(timeStamps, gyroLeft, gyroRight, diameter=WHEEL_DIAM_IN, dist_wheels=DIST_WHEELS_IN):
+    gyroLeft = np.array(gyroLeft)  # Rotation of left wheel (converted to rps by Arduino)
+    gyroRight = np.array(gyroRight)  # Rotation of right wheel (converted to rps by Arduino)
+    timeStamps = np.array(timeStamps)  # Time (sec)
 
     heading_deg = [0]
-    for i in range(len(rot_r) - 1):
+    for i in range(len(gyroRight) - 1):
         # Angular Velocity in time step (rotating left is positive):
-        w = ((rot_r[i]-rot_l[i]) * diameter*IN_TO_M/2) / (dist_wheels*IN_TO_M)
+        w = ((gyroRight[i]-gyroLeft[i]) * diameter*IN_TO_M/2) / (dist_wheels*IN_TO_M)
         # Change in heading angle over time step:
-        dh = w * (time_from_start[i + 1] - time_from_start[i])
+        dh = w * (timeStamps[i + 1] - timeStamps[i])
         # convert to degrees:
         dh = dh*180/np.pi
         # Append last change to overall heading angle:
@@ -127,7 +127,7 @@ Heading (in degrees) at each time step is:
 
 \subsection{Python Function}
 \begin{lstlisting}
-def get_top_traj(disp_m, vel_ms, heading_deg, time_from_start, diameter=WHEEL_DIAM_IN, dist_wheels=DIST_WHEELS_IN):
+def get_top_traj(disp_m, vel_ms, heading_deg, timeStamps, diameter=WHEEL_DIAM_IN, dist_wheels=DIST_WHEELS_IN):
     x, y = [], []
     dx, dy = 0, 0
 
@@ -138,8 +138,8 @@ def get_top_traj(disp_m, vel_ms, heading_deg, time_from_start, diameter=WHEEL_DI
         dx += dr * np.cos(dh)
         dy += dr * np.sin(dh)
         '''
-        dx += vel_ms[i]*np.cos(heading_deg[i]*np.pi/180) * (time_from_start[i + 1] - time_from_start[i])
-        dy += vel_ms[i]*np.sin(heading_deg[i]*np.pi/180) * (time_from_start[i + 1] - time_from_start[i])
+        dx += vel_ms[i]*np.cos(heading_deg[i]*np.pi/180) * (timeStamps[i + 1] - timeStamps[i])
+        dy += vel_ms[i]*np.sin(heading_deg[i]*np.pi/180) * (timeStamps[i + 1] - timeStamps[i])
         x.append(dx)
         y.append(dy)
     traj = [[x[i], y[i]] for i in range(len(x))]

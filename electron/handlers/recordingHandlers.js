@@ -1,8 +1,7 @@
 const { ipcMain } = require('electron');
-const recordingService = require('./services/recordingService');
+const recordingService = require('../services/recordingService');
 
-function setupRecordingHandlers() {
-
+function recordingHandlers() {
     ipcMain.handle('restart-recording', async () => {
         return await recordingService.restartRecording();
     });
@@ -17,5 +16,5 @@ function setupRecordingHandlers() {
 }
 
 module.exports = {
-    setupRecordingHandlers
+    recordingHandlers
 };

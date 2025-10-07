@@ -277,26 +277,26 @@ describe('calculationUtils', () => {
   describe('getDisplacement', () => {
     test('integrates velocity from rotations over time', () => {
       const t = [0, 1];
-      const rot_l = [1, 2];
-      const rot_r = [1, 2];
-      const dist = getDisplacement(t, rot_l, rot_r);
+      const gyroLeft = [1, 2];
+      const gyroRight = [1, 2];
+      const dist = getDisplacement(t, gyroLeft, gyroRight);
       expect(dist[0]).toBe(0);
       expect(dist[1]).toBeCloseTo(0.3048);
     });
 
     test('if only 1 point of data', () => {
       const t = [0];
-      const rot_l = [1];
-      const rot_r = [1];
-      const dist = getDisplacement(t, rot_l, rot_r);
+      const gyroLeft = [1];
+      const gyroRight = [1];
+      const dist = getDisplacement(t, gyroLeft, gyroRight);
       expect(dist[0]).toBe(0);
     });
 
     test('if only 4 point of data', () => {
       const t = [0, 1, 2, 3];
-      const rot_l = [1, 2, -1, 12];
-      const rot_r = [1, 2, 3, 8];
-      const dist = getDisplacement(t, rot_l, rot_r);
+      const gyroLeft = [1, 2, -1, 12];
+      const gyroRight = [1, 2, 3, 8];
+      const dist = getDisplacement(t, gyroLeft, gyroRight);
       expect(dist[0]).toBe(0);
       expect(dist[1]).toBeCloseTo(0.3048);
       expect(dist[2]).toBeCloseTo(0.9144);
@@ -306,9 +306,9 @@ describe('calculationUtils', () => {
 
   describe('getVelocity', () => {
     test('computes average wheel linear velocity', () => {
-      const rot_l = [1, 2, -1, 12];
-      const rot_r = [1, 2, 3, 8];
-      const vel = getVelocity(rot_l, rot_r);
+      const gyroLeft = [1, 2, -1, 12];
+      const gyroRight = [1, 2, 3, 8];
+      const vel = getVelocity(gyroLeft, gyroRight);
       expect(vel[0]).toBeCloseTo(0.3048);
       expect(vel[1]).toBeCloseTo(0.6096);
       expect(vel[2]).toBeCloseTo(0.3048);
@@ -319,9 +319,9 @@ describe('calculationUtils', () => {
   describe('getHeading', () => {
     test('integrates heading based on differential velocity', () => {
       const t = [0, 1, 2, 3];
-      const rot_l = [1, 2, 1, 5];
-      const rot_r = [2, 2, 4, 5];
-      const heading = getHeading(t, rot_l, rot_r);
+      const gyroLeft = [1, 2, 1, 5];
+      const gyroRight = [2, 2, 4, 5];
+      const heading = getHeading(t, gyroLeft, gyroRight);
       expect(heading[0]).toBe(0);
       expect(heading[1]).toBeCloseTo(26.4442, 4);
       expect(heading[2]).toBeCloseTo(26.4442, 4);
@@ -373,15 +373,15 @@ describe('calculationUtils', () => {
   describe('calc', () => {
     test('produces all outputs with sliced first sample', () => {
       const t = [0, 1, 2];
-      const rot_l = [1, 1, 1];
-      const rot_r = [1, 1, 1];
+      const gyroLeft = [1, 1, 1];
+      const gyroRight = [1, 1, 1];
       const acc_l = [0, 0, 0];
       const acc_r = [0, 0, 0];
-      const res = calc(t, rot_l, rot_r, acc_l, acc_r);
-      expect(res.gyro_left).toEqual([1,1, 1]);
-      expect(res.gyro_right).toEqual([1,1, 1]);
-      expect(res.accel_left).toEqual([0,0, 0]);
-      expect(res.accel_right).toEqual([0,0, 0]);
+      const res = calc(t, gyroLeft, gyroRight, acc_l, acc_r);
+      expect(res.gyroLeft).toEqual([1,1, 1]);
+      expect(res.gyroRight).toEqual([1,1, 1]);
+      expect(res.accelLeft).toEqual([0,0, 0]);
+      expect(res.accelRight).toEqual([0,0, 0]);
       expect(res.velocity.length).toBe(3);
       expect(res.displacement.length).toBe(3);
       expect(res.heading.length).toBe(3);

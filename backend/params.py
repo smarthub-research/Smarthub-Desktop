@@ -1,9 +1,9 @@
 import os
 from datetime import datetime
 
-left_gain = 1.13
+leftGain = 1.13
 left_offset = -0.049
-right_gain = 1.12
+rightGain = 1.12
 right_offset = -0.0357
 
 D_EULER_THRESH = 25

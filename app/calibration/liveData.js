@@ -20,19 +20,19 @@ export default function LiveData({calibrationStep, calibrationData}) {
                                 <div className="flex justify-between">
                                     <span>Left Gyro:</span>
                                     <span className="font-mono">
-                                        {calibrationData.gyro_left?.slice(-1)[0]?.toFixed(2) || '0.00'}
+                                        {calibrationData.gyroLeft?.slice(-1)[0]?.toFixed(2) || '0.00'}
                                     </span>
                                 </div>
                                 <div className="flex justify-between">
                                     <span>Right Gyro:</span>
                                     <span className="font-mono">
-                                        {calibrationData.gyro_right?.slice(-1)[0]?.toFixed(2) || '0.00'}
+                                        {calibrationData.gyroRight?.slice(-1)[0]?.toFixed(2) || '0.00'}
                                     </span>
                                 </div>
                                 <div className="flex justify-between">
                                     <span>Data Points:</span>
                                     <span className="font-mono">
-                                        {calibrationData.gyro_left?.length || 0}
+                                        {calibrationData.gyroLeft?.length || 0}
                                     </span>
                                 </div>
                             </>

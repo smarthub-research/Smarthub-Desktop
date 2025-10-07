@@ -12,7 +12,7 @@ router = APIRouter(
 class AuthRequest(BaseModel):
     email: str
     password: str
-    full_name: str = None
+    full_name: str = ""
 
 # Logs a user in and sends the JWT for the session
 @router.post("/login")

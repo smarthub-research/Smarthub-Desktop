@@ -13,10 +13,10 @@ function downsampleData(buffer, targetPoints) {
         const result = [];
         for (let i = 0; i < dataLength; i++) {
             result.push({
-                gyro_left: buffer.gyro_left[i],
-                gyro_right: buffer.gyro_right[i],
-                accel_left: buffer.accel_left[i],
-                accel_right: buffer.accel_right[i],
+                gyroLeft: buffer.gyroLeft[i],
+                gyroRight: buffer.gyroRight[i],
+                accelLeft: buffer.accelLeft[i],
+                accelRight: buffer.accelRight[i],
                 displacement: buffer.displacement[i],
                 velocity: buffer.velocity[i],
                 heading: buffer.heading[i],
@@ -32,10 +32,10 @@ function downsampleData(buffer, targetPoints) {
     if (targetPoints === 3) {
         // First point is always included
         const result = [{
-            gyro_left: buffer.gyro_left[0],
-            gyro_right: buffer.gyro_right[0],
-            accel_left: buffer.accel_left[0],
-            accel_right: buffer.accel_right[0],
+            gyroLeft: buffer.gyroLeft[0],
+            gyroRight: buffer.gyroRight[0],
+            accelLeft: buffer.accelLeft[0],
+            accelRight: buffer.accelRight[0],
             displacement: buffer.displacement[0],
             velocity: buffer.velocity[0],
             heading: buffer.heading[0],
@@ -74,10 +74,10 @@ function downsampleData(buffer, targetPoints) {
 
         // Add the point that creates largest triangle
         result.push({
-            gyro_left: buffer.gyro_left[maxAreaIndex],
-            gyro_right: buffer.gyro_right[maxAreaIndex],
-            accel_left: buffer.accel_left[maxAreaIndex],
-            accel_right: buffer.accel_right[maxAreaIndex],
+            gyroLeft: buffer.gyroLeft[maxAreaIndex],
+            gyroRight: buffer.gyroRight[maxAreaIndex],
+            accelLeft: buffer.accelLeft[maxAreaIndex],
+            accelRight: buffer.accelRight[maxAreaIndex],
             displacement: buffer.displacement[maxAreaIndex],
             velocity: buffer.velocity[maxAreaIndex],
             heading: buffer.heading[maxAreaIndex],
@@ -88,10 +88,10 @@ function downsampleData(buffer, targetPoints) {
 
         // Add the last point
         result.push({
-            gyro_left: buffer.gyro_left[dataLength - 1],
-            gyro_right: buffer.gyro_right[dataLength - 1],
-            accel_left: buffer.accel_left[dataLength - 1],
-            accel_right: buffer.accel_right[dataLength - 1],
+            gyroLeft: buffer.gyroLeft[dataLength - 1],
+            gyroRight: buffer.gyroRight[dataLength - 1],
+            accelLeft: buffer.accelLeft[dataLength - 1],
+            accelRight: buffer.accelRight[dataLength - 1],
             displacement: buffer.displacement[dataLength - 1],
             velocity: buffer.velocity[dataLength - 1],
             heading: buffer.heading[dataLength - 1],
@@ -105,10 +105,10 @@ function downsampleData(buffer, targetPoints) {
 
     // For other target sizes, use the general LTTB algorithm
     const sampled = [{
-        gyro_left: buffer.gyro_left[0],
-        gyro_right: buffer.gyro_right[0],
-        accel_left: buffer.accel_left[0],
-        accel_right: buffer.accel_right[0],
+        gyroLeft: buffer.gyroLeft[0],
+        gyroRight: buffer.gyroRight[0],
+        accelLeft: buffer.accelLeft[0],
+        accelRight: buffer.accelRight[0],
         displacement: buffer.displacement[0],
         velocity: buffer.velocity[0],
         heading: buffer.heading[0],
@@ -133,10 +133,10 @@ function downsampleData(buffer, targetPoints) {
         const maxAreaIndex = getMaxAreaIndex(buffer, startIdx, endIdx, lastPoint, nextPoint);
 
         sampled.push({
-            gyro_left: buffer.gyro_left[maxAreaIndex],
-            gyro_right: buffer.gyro_right[maxAreaIndex],
-            accel_left: buffer.accel_left[maxAreaIndex],
-            accel_right: buffer.accel_right[maxAreaIndex],
+            gyroLeft: buffer.gyroLeft[maxAreaIndex],
+            gyroRight: buffer.gyroRight[maxAreaIndex],
+            accelLeft: buffer.accelLeft[maxAreaIndex],
+            accelRight: buffer.accelRight[maxAreaIndex],
             displacement: buffer.displacement[maxAreaIndex],
             velocity: buffer.velocity[maxAreaIndex],
             heading: buffer.heading[maxAreaIndex],
@@ -148,10 +148,10 @@ function downsampleData(buffer, targetPoints) {
 
     if (dataLength > 1) {
         sampled.push({
-            gyro_left: buffer.gyro_left[dataLength - 1],
-            gyro_right: buffer.gyro_right[dataLength - 1],
-            accel_left: buffer.accel_left[dataLength - 1],
-            accel_right: buffer.accel_right[dataLength - 1],
+            gyroLeft: buffer.gyroLeft[dataLength - 1],
+            gyroRight: buffer.gyroRight[dataLength - 1],
+            accelLeft: buffer.accelLeft[dataLength - 1],
+            accelRight: buffer.accelRight[dataLength - 1],
             displacement: buffer.displacement[dataLength - 1],
             velocity: buffer.velocity[dataLength - 1],
             heading: buffer.heading[dataLength - 1],

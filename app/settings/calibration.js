@@ -65,7 +65,7 @@ export default function Calibration() {
                         >
                             {calibrations.map((calibration, index) => (
                                 <option className="bg-card text-foreground dark:bg-card dark:text-card-foreground" key={calibration.id} value={calibration.id}>
-                                    {calibration.calibration_name || `Calibration ${index+1}`}
+                                    {calibration.calibrationName || `Calibration ${index+1}`}
                                 </option>
                             ))}
                         </select>

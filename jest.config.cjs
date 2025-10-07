@@ -7,6 +7,7 @@ module.exports = {
   clearMocks: true,
   resetMocks: true,
   restoreMocks: true,
+  setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
   // Keep default transform off for CommonJS files in electron folder
   transform: {},
 };

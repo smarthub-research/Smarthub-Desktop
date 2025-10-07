@@ -1,6 +1,12 @@
+/*
+
+This file contains the IPC functions to be invoked by the electron API.
+It is split into sections based on each handler file necessary.
+
+*/
+
 const { contextBridge, ipcRenderer } = require('electron');
 
-// This is our Electron 'API' where we create our endpoints
 contextBridge.exposeInMainWorld('electronAPI', {
 
     // Device management functions
@@ -11,8 +17,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
         return () => ipcRenderer.removeListener('new-device-found', listener);
     },
     searchForDevices: () => ipcRenderer.invoke('search-for-devices'),
-
-    // Connection functions
     connectBle: (device) => ipcRenderer.invoke('connect-ble', { device }),
     disconnectBle: (device) => ipcRenderer.invoke('disconnect-ble', { device }),
     resetDevices: () => ipcRenderer.invoke('reset-devices'),
@@ -43,15 +47,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
         return () => ipcRenderer.removeListener('new-ble-data', listener);
     },
 
-    addFlag: (flag) => ipcRenderer.invoke('add-flag', { flag }),
-    getFlags: () => ipcRenderer.invoke('get-flags'),
-    onNewFlag: (callback) => {
-        const listener = (_, flag) => callback(flag);
-        ipcRenderer.on('new-flag', listener);
-        return () => ipcRenderer.removeListener('new-flag', listener);
-    },
-    clearFlags: () => ipcRenderer.invoke('clear-flags'),
-
+    // Recording functions
     restartRecording: () => ipcRenderer.invoke('restart-recording'),
     getRecordingState: () => ipcRenderer.invoke('get-recording-state'),
     onRestartRecording: (callback) => {
@@ -59,25 +55,20 @@ contextBridge.exposeInMainWorld('electronAPI', {
         ipcRenderer.on('restart-recording', listener);
         return () => ipcRenderer.removeListener('restart-recording', listener);
     },
-
     endTest: () => ipcRenderer.invoke('end-test'),
 
+    // Test functions
     setTestData: (testData) => ipcRenderer.invoke('set-test-data', testData),
     getTestData: () => ipcRenderer.invoke('get-test-data'),
 
+    // Review Functions
     setReviewData: (reviewData) => ipcRenderer.invoke('set-review-data', reviewData),
     getReviewData: () => ipcRenderer.invoke('get-review-data'),
     clearReviewData: () => ipcRenderer.invoke('clear-review-data'),
 
-    downloadCSV: (testName) => ipcRenderer.invoke('download-csv', testName),
-
-    submitTestData: (metadata) => ipcRenderer.invoke('submit-test-data', metadata),
-    fetchTestFiles: () => ipcRenderer.invoke('fetch-test-files'),
-    updateTestName: (id, testName) => ipcRenderer.invoke('update-test-name', id, testName),
-
+    // Calibration functions
     setCalibration: (calibration) => ipcRenderer.invoke("set-calibration", calibration),
 
-    // Add a general removeListener method for backward compatibility
     removeListener: (channel, callback) => {
         if (callback && typeof callback === 'function') {
             ipcRenderer.removeListener(channel, callback);

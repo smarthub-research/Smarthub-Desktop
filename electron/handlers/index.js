@@ -1,15 +1,15 @@
-const { setupDiscoveryHandlers } = require('./deviceDiscovery');
-const { setupConnectionHandlers } = require('./connectionHandlers');
-const { setupDataHandlers } = require('./data/dataHandler');
-const {setupFlagHandlers} = require("./flagHandlers");
-const { setupCalibrationHandlers } = require("./calibrationHandler");
+const { dataHandlers } = require('./dataHandlers');
+const { calibrationHandlers } = require("./calibrationHandler");
+const { deviceManagementHandlers } = require("./deviceManagementHandlers")
+const { recordingHandlers } = require("./recordingHandlers")
+const { testDataHandlers } = require("./testDataHandler")
 
 function initializeAllHandlers() {
-    setupDiscoveryHandlers();
-    setupConnectionHandlers();
-    setupDataHandlers();
-    setupFlagHandlers();
-    setupCalibrationHandlers();
+    dataHandlers();
+    calibrationHandlers();
+    deviceManagementHandlers();
+    recordingHandlers();
+    testDataHandlers();
 }
 
 module.exports = {

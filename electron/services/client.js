@@ -2,7 +2,7 @@ const { createClient } = require('@supabase/supabase-js');
 require('dotenv').config();
 const { getSession } = require('./authManager');
 
-const supabaseUrl = 'https://meebiiezbbboxzknbcyj.supabase.co';
+const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_KEY;
 
 if (!supabaseKey) {

@@ -33,7 +33,7 @@ export default function Login() {
     const searchParams = useSearchParams();
     const message = searchParams.get('message');
 
-    const { getUser, handleLogin } = useAuth();
+    const { handleLogin } = useAuth();
 
     // State management
     const [error, setError] = useState('');

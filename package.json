@@ -48,6 +48,12 @@
     "build": "next build",
     "test": "next test",
     "test:jest": "jest --config jest.config.cjs",
+    "test:calculations": "./test-calculations.sh",
+    "test:calculations-simple": "jest --config jest.config.cjs --testPathPattern=calculationUtils.simple.test.js",
+    "test:calculations-integration": "jest --config jest.config.cjs --testPathPattern=calculationUtils.integration.test.js",
+    "test:calculations-realbackend": "jest --config jest.config.cjs --testPathPattern=calculationUtils.realbackend.test.js",
+    "test:calculations-comprehensive": "./test-comprehensive.sh",
+    "backend:start": "cd backend && source ../.venv/bin/activate && python -m main",
     "eject": "next eject",
     "dev": "next dev",
     "electron:start": "wait-on http://localhost:3000 && electron --trace-deprecation .",
@@ -79,6 +85,7 @@
     ]
   },
   "devDependencies": {
+    "node-fetch": "^2.7.0",
     "prettier": "^3.5.3",
     "prettier-plugin-tailwindcss": "^0.6.12",
     "tailwindcss": "^4.1.8",
