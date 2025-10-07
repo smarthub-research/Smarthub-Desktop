@@ -42,16 +42,16 @@ class DataBuffer {
      * }
      */
     appendToBuffer(data) {
-        this.dataBuffer.gyro_left.push(data.gyro_left);
-        this.dataBuffer.gyro_right.push(data.gyro_right);
-        this.dataBuffer.accel_left.push(data.accel_left);
-        this.dataBuffer.accel_right.push(data.accel_right);
-        this.dataBuffer.displacement.push(data.displacement);
-        this.dataBuffer.velocity.push(data.velocity);
-        this.dataBuffer.heading.push(data.heading);
-        this.dataBuffer.trajectory_x.push(data.trajectory_x);
-        this.dataBuffer.trajectory_y.push(data.trajectory_y);
-        this.dataBuffer.timeStamp.push(data.timeStamp);
+        // this.dataBuffer.gyro_left.push(data.gyro_left);
+        // this.dataBuffer.gyro_right.push(data.gyro_right);
+        // this.dataBuffer.accel_left.push(data.accel_left);
+        // this.dataBuffer.accel_right.push(data.accel_right);
+        // this.dataBuffer.displacement.push(data.displacement);
+        // this.dataBuffer.velocity.push(data.velocity);
+        // this.dataBuffer.heading.push(data.heading);
+        // this.dataBuffer.trajectory_x.push(data.trajectory_x);
+        // this.dataBuffer.trajectory_y.push(data.trajectory_y);
+        // this.dataBuffer.timeStamp.push(data.timeStamp);
 
         this.rawBuffer.gyro_left.push(data.gyro_left);
         this.rawBuffer.gyro_right.push(data.gyro_right);

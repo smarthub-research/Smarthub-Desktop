@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "../ui/card"
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "../ui/chart"
 import { memo, useMemo, useState } from "react";
 import ChartToolbar from "../../recorder/chartToolbar";
+import {usePathname} from "next/navigation";
 
 // Constants for chart colors
 const CHART_COLORS = {
@@ -25,6 +26,8 @@ function TrajectoryGraph({data, graphId}) {
     };
 
     const effectiveGraphId = graphId || `graph-${Math.random().toString(36).substr(2, 9)}`;
+    const pathName = usePathname();
+    const animate = pathName !== '/recorder';
 
     // Calculate axis domains for better scaling
     const xValues = data?.map(d => d.trajectory_x).filter(v => typeof v === "number");
@@ -112,6 +115,7 @@ function TrajectoryGraph({data, graphId}) {
                                 fill="transparent"
                                 line={{ stroke: CHART_COLORS.purple, strokeWidth: 2 }}
                                 shape={"circle"}
+                                isAnimationActive={false}
                             />
                         </ScatterChart>
                     </ChartContainer>

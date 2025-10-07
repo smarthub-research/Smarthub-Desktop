@@ -19,7 +19,7 @@ function deviceManagementHandlers() {
     });
 
     // Connects to a selected BLE device
-    ipcMain.handle('connect-ble', async (event, data) => {
+    ipcMain.handle('connect-ble', async (_, data) => {
         if (data.device) {
             return await deviceManagementService.handleConnection(data.device);
         } 
@@ -29,7 +29,7 @@ function deviceManagementHandlers() {
     });
 
     // Disconnects from a selected BLE device
-    ipcMain.handle('disconnect-ble', async (event, data) => {
+    ipcMain.handle('disconnect-ble', async (_, data) => {
         const device = data.device;
         if (!device || !device.name || !device.UUID) {
             return { success: false, message: "Invalid device data" };

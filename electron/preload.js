@@ -7,7 +7,6 @@ It is split into sections based on each handler file necessary.
 
 const { contextBridge, ipcRenderer } = require('electron');
 
-// This is our Electron 'API' where we create our endpoints
 contextBridge.exposeInMainWorld('electronAPI', {
 
     // Device management functions
@@ -66,14 +65,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
     setReviewData: (reviewData) => ipcRenderer.invoke('set-review-data', reviewData),
     getReviewData: () => ipcRenderer.invoke('get-review-data'),
     clearReviewData: () => ipcRenderer.invoke('clear-review-data'),
-
-    // Export functions
-    downloadCSV: (testName) => ipcRenderer.invoke('download-csv', testName),
-
-    // Supabase functions
-    submitTestData: (metadata) => ipcRenderer.invoke('submit-test-data', metadata),
-    fetchTestFiles: () => ipcRenderer.invoke('fetch-test-files'),
-    updateTestName: (id, testName) => ipcRenderer.invoke('update-test-name', id, testName),
 
     // Calibration functions
     setCalibration: (calibration) => ipcRenderer.invoke("set-calibration", calibration),

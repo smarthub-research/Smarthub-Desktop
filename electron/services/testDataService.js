@@ -1,6 +1,4 @@
-const dataBuffer = require('./dataBufferService');
-const calculationUtils = require('../utils/calculationUtils');
-const downsamplingUtils = require('../utils/downsamplingUtils');
+const dataBuffer = require('../utils/dataBuffer');
 
 class TestDataService {
     getTestData() {
@@ -73,39 +71,7 @@ class TestDataService {
         this.reviewData = null;
     }
 
-    calculateMetrics(data) {
-        return {
-            // Use calculation utils for various metrics
-            averageSpeed: calculationUtils.calculateAverage(data.speed),
-            maxSpeed: calculationUtils.calculateMax(data.speed),
-            // Other metrics...
-        };
-    }
-
-    calculateMaxVelocity(data) {
-        if (!data.velocity) { return 0 }
-        return data.velocity.max
-    }
-
-    calculateAvgHeading(data) {
-        if (!data.heading) { return 0 }
-        let avg = 0
-        data.heading.map((val) => {
-            avg += val
-        })
-        return avg /= data.heading.length
-    }
-
-    calculateDuration(data) {
-        const timeData = data.displacement || data;
-        if (!timeData || timeData.length === 0) return 0;
-
-        // Find the last timestamp
-        const lastItem = timeData[timeData.length - 1];
-        return lastItem.timeStamp ? (lastItem.timeStamp / 1000).toFixed(1) : 0;
-    }
-
-    formatTestData(data, dataType) {
+    _formatTestData(data, dataType) {
         return data.timeStamp.map((time, index) => ({
             time: (Number(time) / 1000).toFixed(2),
             [dataType]: data[dataType][index]
@@ -113,7 +79,7 @@ class TestDataService {
     }
 
     // Pairs trajectories with time stamps for trajectory graph
-    formatTrajectoryData(data) {
+    _formatTrajectoryData(data) {
         return data.timeStamp.map((time, index) => ({
             time: (Number(time) / 1000).toFixed(2),
             trajectory_x: data.trajectory_x[index],
@@ -124,12 +90,11 @@ class TestDataService {
     _prepareForReview(data) {
         let testData = {
             ...data,
-            displacement: this.formatTestData(data, "displacement"),
-            heading: this.formatTestData(data, "heading"),
-            velocity: this.formatTestData(data, "velocity"),
-            trajectory: this.formatTrajectoryData(data)
+            displacement: this._formatTestData(data, "displacement"),
+            heading: this._formatTestData(data, "heading"),
+            velocity: this._formatTestData(data, "velocity"),
+            trajectory: this._formatTrajectoryData(data)
         }
-        console.log(testData)
         return testData
     }
 }

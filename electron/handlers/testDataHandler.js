@@ -1,37 +1,29 @@
 const { ipcMain } = require('electron');
 const testDataService = require('../services/testDataService');
 
-// options = filter
-
-function setupTestDataHandlers() {
-    ipcMain.handle('get-test-data', (event, options) => {
+function testDataHandlers() {
+    ipcMain.handle('get-test-data', (_, options) => {
         return testDataService.getTestData(options);
     });
 
-    ipcMain.handle('set-test-data', (event, data) => {
+    ipcMain.handle('set-test-data', (_, data) => {
         testDataService.setTestData(data)
     });
 
-    ipcMain.handle('get-review-data', (event, options) => {
+    ipcMain.handle('get-review-data', (_, options) => {
         return testDataService.getReviewData(options);
     });
 
-    ipcMain.handle('set-review-data', (event, data) => {
+    ipcMain.handle('set-review-data', (_, data) => {
         testDataService.setReviewData(data);
     })
 
     ipcMain.handle('clear-review-data', async () => {
         testDataService.clearReviewData();
     })
-
-    ipcMain.handle('calculate-metrics', (event, data) => {
-        return testDataService.calculateMetrics(data);
-    });
 }
 
 // Export setup function and any methods needed by dataHandler.js
 module.exports = {
-    setupTestDataHandlers,
-    getTestData: (options) => testDataService.getTestData(options),
-    getReviewData: (options) => testDataService.getReviewData(options)
+    testDataHandlers
 };
