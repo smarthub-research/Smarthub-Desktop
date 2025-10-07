@@ -30,15 +30,13 @@ export default function Controls({calibrationStep, setCalibrationStep, calibrati
                 // Prepare calibration data for API
                 const calibrationData = {
                     // Get the number from the device name. Both numbers should be the same for both devices.
-                    smarthub_id: "8888",
-                    calibration_name: calibrationName,
-                    gyro_left: testData.gyro_left || [],
-                    gyro_right: testData.gyro_right || [],
-                    time_from_start: testData.timeStamp || []
+                    smarthubId: "8888",
+                    calibrationName: calibrationName,
+                    gyroLeft: testData.gyroLeft || [],
+                    gyroRight: testData.gyroRight || [],
+                    timeStamps: testData.timeStamp || []
                 };
 
-                console.log(calibrationData)
-                
                 // Call your calibration API
                 const response = await fetch("http://localhost:8000/calibrate/", {
                     method: "POST",

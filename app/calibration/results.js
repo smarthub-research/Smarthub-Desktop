@@ -15,11 +15,11 @@ export default function Results() {
                 <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
                         <span>Left Gain:</span>
-                        <span className="font-mono">{results.left_gain?.toFixed(3)}</span>
+                        <span className="font-mono">{results.leftGain?.toFixed(3)}</span>
                     </div>
                     <div className="flex justify-between">
                         <span>Right Gain:</span>
-                        <span className="font-mono">{results.right_gain?.toFixed(3)}</span>
+                        <span className="font-mono">{results.rightGain?.toFixed(3)}</span>
                     </div>
                     <div className="flex justify-between">
                         <span>Wheel Distance:</span>

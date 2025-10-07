@@ -23,10 +23,10 @@ async def write_test(data: dict):
             "heading": data["testData"]["heading"],
             "trajectory_x": data["testData"]["trajectory_x"],
             "trajectory_y": data["testData"]["trajectory_y"],
-            "gyro_left": data["testData"]["gyro_left"],
-            "gyro_right": data["testData"]["gyro_right"],
-            "accel_right": data["testData"]["accel_right"],
-            "accel_left": data["testData"]["accel_left"],
+            "gyroLeft": data["testData"]["gyroLeft"],
+            "gyroRight": data["testData"]["gyroRight"],
+            "accelRight": data["testData"]["accelRight"],
+            "accelLeft": data["testData"]["accelLeft"],
         })
         .execute()
     )

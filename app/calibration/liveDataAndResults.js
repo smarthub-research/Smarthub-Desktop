@@ -6,11 +6,11 @@ import Results from './results';
 export default function LiveDataAndResults({calibrationStep}) {
     const [results, setResults] = useState("");
     const [calibrationData, setCalibrationData] = useState({
-        smarthub_id: "",
-        calibration_name: "",
-        gyro_left: [],
-        gyro_right: [],
-        time_from_start: []
+        smarthubId: "",
+        calibrationName: "",
+        gyroLeft: [],
+        gyroRight: [],
+        timeStamps: []
     })
 
     const handleData = useCallback((data) => {
@@ -18,9 +18,9 @@ export default function LiveDataAndResults({calibrationStep}) {
         // Update testData with the new formatted data from BLE service
         setCalibrationData(prevCalibrationData => ({
             ...prevCalibrationData,
-            gyro_left: [...prevCalibrationData.gyro_left, ...data.gyro_left.flat()],
-            gyro_right: [...prevCalibrationData.gyro_right, ...data.gyro_right.flat()],
-            time_from_start: [...prevCalibrationData.time_from_start, ...data.timeStamp],
+            gyroLeft: [...prevCalibrationData.gyroLeft, ...data.gyroLeft.flat()],
+            gyroRight: [...prevCalibrationData.gyroRight, ...data.gyroRight.flat()],
+            timeStamps: [...prevCalibrationData.timeStamps, ...data.timeStamp],
         }));
     })
 

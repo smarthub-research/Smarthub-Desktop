@@ -16,8 +16,8 @@ if (typeof fetch === 'undefined') {
           heading: [],
           trajectory_x: [],
           trajectory_y: [],
-          gyro_left: [],
-          gyro_right: [],
+          gyroLeft: [],
+          gyroRight: [],
           timeStamp: []
         })
       })

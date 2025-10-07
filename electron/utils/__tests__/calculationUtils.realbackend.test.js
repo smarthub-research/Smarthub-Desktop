@@ -52,8 +52,8 @@ describe('Real Python Backend Integration Tests', () => {
     expect(pyResults.trajectory_y).toBeDefined();
 
     // Data preservation
-    expect(pyResults.gyro_left).toEqual(gyroLeft);
-    expect(pyResults.gyro_right).toEqual(gyroRight);
+    expect(pyResults.gyroLeft).toEqual(gyroLeft);
+    expect(pyResults.gyroRight).toEqual(gyroRight);
     expect(pyResults.timeStamp).toEqual(timeFromStart);
 
     // Length validation

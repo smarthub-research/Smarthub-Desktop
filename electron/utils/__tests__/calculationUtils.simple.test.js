@@ -23,8 +23,8 @@ describe('Calculation Comparison Tests', () => {
     expect(results.heading).toHaveLength(timeFromStart.length);
     expect(results.trajectory_x).toHaveLength(timeFromStart.length);
     expect(results.trajectory_y).toHaveLength(timeFromStart.length);
-    expect(results.gyro_left).toEqual(gyroLeft);
-    expect(results.gyro_right).toEqual(gyroRight);
+    expect(results.gyroLeft).toEqual(gyroLeft);
+    expect(results.gyroRight).toEqual(gyroRight);
     expect(results.timeStamp).toEqual(timeFromStart);
 
     // Verify all values are numbers and not NaN
@@ -54,8 +54,8 @@ describe('Calculation Comparison Tests', () => {
             heading: [0, 1.2, 2.8, 4.1, 5.0],
             trajectory_x: [0, 0.01, 0.029, 0.058, 0.078],
             trajectory_y: [0, 0.0002, 0.0005, 0.0012, 0.002],
-            gyro_left: gyroLeft,
-            gyro_right: gyroRight,
+            gyroLeft: gyroLeft,
+            gyroRight: gyroRight,
             timeStamp: timeFromStart
           })
         })
@@ -70,8 +70,8 @@ describe('Calculation Comparison Tests', () => {
       expect(results.heading).toBeDefined();
       expect(results.trajectory_x).toBeDefined();
       expect(results.trajectory_y).toBeDefined();
-      expect(results.gyro_left).toEqual(gyroLeft);
-      expect(results.gyro_right).toEqual(gyroRight);
+      expect(results.gyroLeft).toEqual(gyroLeft);
+      expect(results.gyroRight).toEqual(gyroRight);
 
       console.log('✅ Python backend simulation working correctly!');
     } catch (error) {

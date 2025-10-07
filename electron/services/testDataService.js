@@ -38,16 +38,16 @@ class TestDataService {
         }
 
         this.testData = {
-            gyro_left: this._spreadData(dataValues.gyro_left) || [],
-            gyro_right: this._spreadData(dataValues.gyro_right) || [],
-            accel_left: dataValues.accel_left || [],
-            accel_right: dataValues.accel_right || [],
+            gyroLeft: this._spreadData(dataValues.gyroLeft) || [],
+            gyroRight: this._spreadData(dataValues.gyroRight) || [],
+            accelLeft: dataValues.accelLeft || [],
+            accelRight: dataValues.accelRight || [],
             displacement: dataValues.displacement || [],
             velocity: dataValues.velocity || [],
             heading: dataValues.heading || [],
             trajectory_x: dataValues.trajectory_x || [],
             trajectory_y: dataValues.trajectory_y || [],
-            timeStamp: dataValues.time_from_start || [],
+            timeStamp: dataValues.timeStamps || [],
         };
 
         // Clear the data buffers

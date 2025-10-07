@@ -12,14 +12,14 @@ describe("CalculationUtils Integration Tests - Real Data Template", () => {
       const data = await fetchTestData(SENSOR_DATA_URL);
       expectedResults = extractSensorData(data);
       
-      if (expectedResults?.gyro_left && expectedResults?.gyro_right) {
+      if (expectedResults?.gyroLeft && expectedResults?.gyroRight) {
         testDataAvailable = true;
         console.log("✅ Using real sensor data from server");
         console.log("Data lengths:", {
-          gyro_left: expectedResults.gyro_left.length,
-          gyro_right: expectedResults.gyro_right.length,
-          accel_left: expectedResults.accel_left?.length,
-          accel_right: expectedResults.accel_right?.length,
+          gyroLeft: expectedResults.gyroLeft.length,
+          gyroRight: expectedResults.gyroRight.length,
+          accelLeft: expectedResults.accelLeft?.length,
+          accelRight: expectedResults.accelRight?.length,
           timeStamp: expectedResults.timeStamp?.length
         });
       } else {
@@ -94,10 +94,10 @@ describe("CalculationUtils Integration Tests - Real Data Template", () => {
       return;
     }
 
-    const { gyro_left, gyro_right, accel_left, accel_right, timeStamp } = expectedResults;
+    const { gyroLeft, gyroRight, accelLeft, accelRight, timeStamp } = expectedResults;
     
     // Run the calculation
-    const results = calc(timeStamp, gyro_left, gyro_right, accel_left, accel_right);
+    const results = calc(timeStamp, gyroLeft, gyroRight, accelLeft, accelRight);
 
     // Basic structure validation
     expect(results).toBeDefined();
@@ -167,12 +167,12 @@ describe("CalculationUtils Integration Tests - Real Data Template", () => {
       return;
     }
 
-    const { gyro_left, gyro_right, accel_left, accel_right, timeStamp } = expectedResults;
+    const { gyroLeft, gyroRight, accelLeft, accelRight, timeStamp } = expectedResults;
 
     // Run calculation twice
-    const results1 = calc(timeStamp, gyro_left, gyro_right, accel_left, accel_right);
+    const results1 = calc(timeStamp, gyroLeft, gyroRight, accelLeft, accelRight);
     resetState();
-    const results2 = calc(timeStamp, gyro_left, gyro_right, accel_left, accel_right);
+    const results2 = calc(timeStamp, gyroLeft, gyroRight, accelLeft, accelRight);
 
     // Results should be identical
     expect(results1.displacement).toEqual(results2.displacement);

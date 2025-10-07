@@ -32,7 +32,7 @@ describe('CalculationUtils Integration Tests', () => {
       }
       
       // Validate we have all required fields
-      const requiredFields = ['gyro_left', 'gyro_right', 'accel_left', 'accel_right', 'timeStamp', 'displacement', 'velocity'];
+      const requiredFields = ['gyroLeft', 'gyroRight', 'accelLeft', 'accelRight', 'timeStamp', 'displacement', 'velocity'];
       const missingFields = requiredFields.filter(field => !rawData[field]);
       
       if (missingFields.length === 0) {
@@ -53,17 +53,17 @@ describe('CalculationUtils Integration Tests', () => {
   function createMockTestData() {
     const dataLength = 100;
     const timeStamp = Array.from({ length: dataLength }, (_, i) => i * 0.1);
-    const gyro_left = Array.from({ length: dataLength }, (_, i) => Math.sin(i * 0.1) * 0.1);
-    const gyro_right = Array.from({ length: dataLength }, (_, i) => Math.cos(i * 0.1) * 0.1);
-    const accel_left = Array.from({ length: dataLength }, (_, i) => Math.sin(i * 0.05) * 0.5);
-    const accel_right = Array.from({ length: dataLength }, (_, i) => Math.cos(i * 0.05) * 0.5);
+    const gyroLeft = Array.from({ length: dataLength }, (_, i) => Math.sin(i * 0.1) * 0.1);
+    const gyroRight = Array.from({ length: dataLength }, (_, i) => Math.cos(i * 0.1) * 0.1);
+    const accelLeft = Array.from({ length: dataLength }, (_, i) => Math.sin(i * 0.05) * 0.5);
+    const accelRight = Array.from({ length: dataLength }, (_, i) => Math.cos(i * 0.05) * 0.5);
 
     return {
       timeStamp,
-      gyro_left,
-      gyro_right,
-      accel_left,
-      accel_right,
+      gyroLeft,
+      gyroRight,
+      accelLeft,
+      accelRight,
       // Expected results would be calculated by a known-good implementation
       displacement: null, // Will be calculated and compared
       velocity: null,
@@ -110,10 +110,10 @@ describe('CalculationUtils Integration Tests', () => {
     const firstTime = rawTimeStamp[0];
     const timeFromStart = rawTimeStamp.map(t => (t - firstTime) / 1000);
     
-    const gyroLeft =  data.gyro_left;
-    const gyroRight = data.gyro_right;
-    const accelLeft = data.accel_left;
-    const accelRight = data.accel_right;
+    const gyroLeft =  data.gyroLeft;
+    const gyroRight = data.gyroRight;
+    const accelLeft = data.accelLeft;
+    const accelRight = data.accelRight;
     
     // The calc() function returns arrays that are 1 element shorter than the input (due to slicing)
     // So we need to align the expected results to match this
@@ -138,10 +138,10 @@ describe('CalculationUtils Integration Tests', () => {
   function processMockData(data) {
     return {
       timeFromStart: data.timeStamp,
-      gyroLeft: data.gyro_left,
-      gyroRight: data.gyro_right,
-      accelLeft: data.accel_left,
-      accelRight: data.accel_right
+      gyroLeft: data.gyroLeft,
+      gyroRight: data.gyroRight,
+      accelLeft: data.accelLeft,
+      accelRight: data.accelRight
     };
   }
 
@@ -210,10 +210,10 @@ describe('CalculationUtils Integration Tests', () => {
     }
 
     // Verify input data preservation
-    expect(results.gyro_left).toEqual(gyroLeft);
-    expect(results.gyro_right).toEqual(gyroRight);
-    expect(results.accel_left).toEqual(accelLeft);
-    expect(results.accel_right).toEqual(accelRight);
+    expect(results.gyroLeft).toEqual(gyroLeft);
+    expect(results.gyroRight).toEqual(gyroRight);
+    expect(results.accelLeft).toEqual(accelLeft);
+    expect(results.accelRight).toEqual(accelRight);
   });
 
   test("should maintain calculation consistency across multiple runs", () => {
@@ -313,10 +313,10 @@ describe('CalculationUtils Integration Tests', () => {
       trajectory_x,
       trajectory_y,
       timeStamp,
-      gyro_left: gyroLeft,
-      gyro_right: gyroRight,
-      accel_left: accelLeft,
-      accel_right: accelRight
+      gyroLeft: gyroLeft,
+      gyroRight: gyroRight,
+      accelLeft: accelLeft,
+      accelRight: accelRight
     };
 
     // Validate results structure
@@ -331,8 +331,8 @@ describe('CalculationUtils Integration Tests', () => {
     }
 
     // Verify input data preservation
-    expect(finalResults.gyro_left).toEqual(gyroLeft);
-    expect(finalResults.gyro_right).toEqual(gyroRight);
+    expect(finalResults.gyroLeft).toEqual(gyroLeft);
+    expect(finalResults.gyroRight).toEqual(gyroRight);
   });
 });
 

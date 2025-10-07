@@ -1,6 +1,6 @@
 # Fdb version 4
-["pdflatex"] 1758127324.12013 "/Users/Kellen/IdeaProjects/smarthub-desktop/docs/smarthub_calculations.tex" "smarthub_calculations.pdf" "smarthub_calculations" 1758127324.58314 0
-  "/Users/Kellen/IdeaProjects/smarthub-desktop/docs/smarthub_calculations.tex" 1758127323.3194 6560 a34ce67111ed9b33b2f67279a90b1ae8 ""
+["pdflatex"] 1759869784.46117 "/Users/Kellen/IdeaProjects/Smarthub-Desktop/docs/smarthub_calculations.tex" "smarthub_calculations.pdf" "smarthub_calculations" 1759869785.00057 0
+  "/Users/Kellen/IdeaProjects/Smarthub-Desktop/docs/smarthub_calculations.tex" 1759869784.24039 6566 38f752a1b0e8c57e906521f9324d31f8 ""
   "/usr/local/texlive/2025/texmf-dist/fonts/enc/dvips/cm-super/cm-super-ts1.enc" 1136849721 2900 1537cc8184ad1792082cd229ecc269f4 ""
   "/usr/local/texlive/2025/texmf-dist/fonts/map/fontname/texfonts.map" 1577235249 3524 cb3e574dea2d1052e39280babc910dc8 ""
   "/usr/local/texlive/2025/texmf-dist/fonts/tfm/jknappen/ec/tcrm1000.tfm" 1136768653 1536 e07581a4bb3136ece9eeb4c3ffab8233 ""
@@ -59,8 +59,8 @@
   "/usr/local/texlive/2025/texmf-var/fonts/map/pdftex/updmap/pdftex.map" 1757982208 5467155 19efa205003f9ecad95fbbaa6ff24da1 ""
   "/usr/local/texlive/2025/texmf-var/web2c/pdftex/pdflatex.fmt" 1741450574 3345740 46b66fdb0378f7bf5921b5eabf1762b8 ""
   "/usr/local/texlive/2025/texmf.cnf" 1741450484 577 418a7058ec8e006d8704f60ecd22c938 ""
-  "smarthub_calculations.aux" 1758127324.53537 1590 4afaa6751a6761c7b992fa26c70d2730 "pdflatex"
-  "smarthub_calculations.tex" 1758127323.3194 6560 a34ce67111ed9b33b2f67279a90b1ae8 ""
+  "smarthub_calculations.aux" 1759869784.95009 1590 4afaa6751a6761c7b992fa26c70d2730 "pdflatex"
+  "smarthub_calculations.tex" 1759869784.24039 6566 38f752a1b0e8c57e906521f9324d31f8 ""
   (generated)
   "smarthub_calculations.aux"
   "smarthub_calculations.log"

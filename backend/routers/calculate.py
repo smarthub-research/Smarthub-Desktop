@@ -32,46 +32,46 @@ def smooth(data):
     # Filtering with low pass filter
     filter_freq =  6
     # Calculate fourier transform of right gyroscope data to convert to frequency domain
-    W_right = fftfreq(len(data['gyro_right']), d=data['time_from_start'][1]-data['time_from_start'][0])
-    f_gyro_right = rfft(data['gyro_right'])
+    W_right = fftfreq(len(data['gyroRight']), d=data['timeStamps'][1]-data['timeStamps'][0])
+    f_gyroRight = rfft(data['gyroRight'])
     # Filter out right gyroscope signal above 6 Hz
-    f_right_filtered = f_gyro_right.copy()
+    f_right_filtered = f_gyroRight.copy()
     f_right_filtered[(np.abs(W_right)>filter_freq)] = 0
     # convert filtered signal back to time domain
-    gyro_right_smoothed = irfft(f_right_filtered)
+    gyroRight_smoothed = irfft(f_right_filtered)
 
-    result['gyro_right_smoothed'] = gyro_right_smoothed
+    result['gyroRight_smoothed'] = gyroRight_smoothed
 
     # Calculate fourier transform of right gyroscope data to convert to frequency domain
-    W_left = fftfreq(len(data['gyro_left']), d=data['time_from_start'][1]-data['time_from_start'][0])
-    f_gyro_left = rfft(data['gyro_left'])
+    W_left = fftfreq(len(data['gyroLeft']), d=data['timeStamps'][1]-data['timeStamps'][0])
+    f_gyroLeft = rfft(data['gyroLeft'])
     # Filter out right gyroscope signal above 6 Hz
-    f_left_filtered = f_gyro_left.copy()
+    f_left_filtered = f_gyroLeft.copy()
     f_left_filtered[(np.abs(W_left)>filter_freq)] = 0
     # convert filtered signal back to time domain
-    gyro_left_smoothed = irfft(f_left_filtered)
+    gyroLeft_smoothed = irfft(f_left_filtered)
 
-    result['gyro_left_smoothed'] = gyro_left_smoothed
+    result['gyroLeft_smoothed'] = gyroLeft_smoothed
     return result
 
 # Expected input 
 @router.post("/")
 async def calc(data: dict):
     
-    right_gain = 1.12
-    left_gain = 1.13
+    rightGain = 1.12
+    leftGain = 1.13
 
     # Apply gain to each element in the smoothed arrays
-    data["gyro_right"] = [x * right_gain for x in data["gyro_right"]]
-    data["gyro_left"] = [x * left_gain for x in data["gyro_left"]]
+    data["gyroRight"] = [x * rightGain for x in data["gyroRight"]]
+    data["gyroLeft"] = [x * leftGain for x in data["gyroLeft"]]
 
     # Default wheel_distance if not present
     wheel_distance = 26
 
-    displacement = get_displacement_m(data["time_from_start"], data["gyro_left"], data["gyro_right"], 24, wheel_distance)
-    velocity = get_velocity_m_s(data["time_from_start"], data["gyro_left"], data["gyro_right"], 24, wheel_distance)
-    heading = get_heading_deg(data["time_from_start"], data["gyro_left"], data["gyro_right"], 24, wheel_distance)
-    trajectory = get_top_traj(disp_m=displacement, vel_ms=velocity, heading_deg=heading, time_from_start=data["time_from_start"])
+    displacement = get_displacement_m(data["timeStamps"], data["gyroLeft"], data["gyroRight"], 24, wheel_distance)
+    velocity = get_velocity_m_s(data["timeStamps"], data["gyroLeft"], data["gyroRight"], 24, wheel_distance)
+    heading = get_heading_deg(data["timeStamps"], data["gyroLeft"], data["gyroRight"], 24, wheel_distance)
+    trajectory = get_top_traj(disp_m=displacement, vel_ms=velocity, heading_deg=heading, timeStamps=data["timeStamps"])
 
     # Transform trajectory data to separate x,y arrays to match frontend expectations
     trajectory_x = [point[0] for point in trajectory] if trajectory else []
@@ -83,65 +83,65 @@ async def calc(data: dict):
         "heading": heading,
         "trajectory_x": trajectory_x,
         "trajectory_y": trajectory_y,
-        "gyro_left": data["gyro_left"],
-        "gyro_right": data["gyro_right"],
-        "timeStamp": data["time_from_start"]
+        "gyroLeft": data["gyroLeft"],
+        "gyroRight": data["gyroRight"],
+        "timeStamp": data["timeStamps"]
     }
 
 @router.post("/1")
 async def calc2(data: dict):
     # set value of time and gyros so we don't get a race condition, other data is being updated in real time
-    time_from_start = copy.deepcopy(data['time_from_start'])
-    gyro_left = copy.deepcopy(data['gyro_left'])
-    gyro_right = copy.deepcopy(data['gyro_right'])
+    timeStamps = copy.deepcopy(data['timeStamps'])
+    gyroLeft = copy.deepcopy(data['gyroLeft'])
+    gyroRight = copy.deepcopy(data['gyroRight'])
 
     try:
         # Filtering with low pass filter
         filter_freq = 6
         # Calculate fourier transform of right gyroscope data to convert to frequency domain
-        W_right = fftfreq(len(gyro_right), d=time_from_start[1]-time_from_start[0])
-        f_gyro_right = rfft(gyro_right)
+        W_right = fftfreq(len(gyroRight), d=timeStamps[1]-timeStamps[0])
+        f_gyroRight = rfft(gyroRight)
         # Filter out right gyroscope signal above 6 Hz
-        f_right_filtered = f_gyro_right.copy()
+        f_right_filtered = f_gyroRight.copy()
         f_right_filtered[(np.abs(W_right)>filter_freq)] = 0
         # convert filtered signal back to time domain
-        gyro_right_smoothed = irfft(f_right_filtered)
+        gyroRight_smoothed = irfft(f_right_filtered)
 
         # Calculate fourier transform of left gyroscope data to convert to frequency domain
-        W_left = fftfreq(len(gyro_left), d=time_from_start[1]-time_from_start[0])
-        f_gyro_left = rfft(gyro_left)
+        W_left = fftfreq(len(gyroLeft), d=timeStamps[1]-timeStamps[0])
+        f_gyroLeft = rfft(gyroLeft)
         # Filter out left gyroscope signal above 6 Hz
-        f_left_filtered = f_gyro_left.copy()
+        f_left_filtered = f_gyroLeft.copy()
         f_left_filtered[(np.abs(W_left)>filter_freq)] = 0
         # convert filtered signal back to time domain
-        gyro_left_smoothed = irfft(f_left_filtered)
+        gyroLeft_smoothed = irfft(f_left_filtered)
     except Exception as e:
         print(f"Smoothing error: {e}")
         # Fallback to unsmoothed data
 
-    left_gain = 1.13
-    right_gain = 1.12
+    leftGain = 1.13
+    rightGain = 1.12
 
     WHEEL_DIAM_IN = 24
     DIST_WHEELS_IN = 26
 
-    gyro_left_smoothed = []
-    gyro_right_smoothed = []
+    gyroLeft_smoothed = []
+    gyroRight_smoothed = []
     # Apply gains
-    for i in range(len(gyro_left)):
-        gyro_left_smoothed.append(gyro_left[i] * left_gain)
-        gyro_right_smoothed.append(gyro_right[i] * right_gain)
+    for i in range(len(gyroLeft)):
+        gyroLeft_smoothed.append(gyroLeft[i] * leftGain)
+        gyroRight_smoothed.append(gyroRight[i] * rightGain)
 
     # Calculate displacement, heading, velocity, and trajectory
-    displacement = get_displacement_m(time_from_start, gyro_left_smoothed,
-                                     gyro_right_smoothed, diameter=WHEEL_DIAM_IN, dist_wheels=DIST_WHEELS_IN)
+    displacement = get_displacement_m(timeStamps, gyroLeft_smoothed,
+                                     gyroRight_smoothed, diameter=WHEEL_DIAM_IN, dist_wheels=DIST_WHEELS_IN)
     print(displacement)
-    heading = get_heading_deg(time_from_start, gyro_left_smoothed,
-                             gyro_right_smoothed, diameter=WHEEL_DIAM_IN, dist_wheels=DIST_WHEELS_IN)
-    velocity = get_velocity_m_s(time_from_start, gyro_left_smoothed,
-                               gyro_right_smoothed, diameter=WHEEL_DIAM_IN, dist_wheels=DIST_WHEELS_IN)
+    heading = get_heading_deg(timeStamps, gyroLeft_smoothed,
+                             gyroRight_smoothed, diameter=WHEEL_DIAM_IN, dist_wheels=DIST_WHEELS_IN)
+    velocity = get_velocity_m_s(timeStamps, gyroLeft_smoothed,
+                               gyroRight_smoothed, diameter=WHEEL_DIAM_IN, dist_wheels=DIST_WHEELS_IN)
     trajectory = get_top_traj(displacement, velocity, heading,
-                             time_from_start, diameter=WHEEL_DIAM_IN, dist_wheels=DIST_WHEELS_IN)
+                             timeStamps, diameter=WHEEL_DIAM_IN, dist_wheels=DIST_WHEELS_IN)
     
     # Transform trajectory data to separate x,y arrays to match frontend expectations
     # Convert numpy types to native Python types for JSON serialization
@@ -154,9 +154,9 @@ async def calc2(data: dict):
         "heading": convert_to_native_types(heading),
         "trajectory_x": trajectory_x,
         "trajectory_y": trajectory_y,
-        "gyro_left": convert_to_native_types(gyro_left),
-        "gyro_right": convert_to_native_types(gyro_right),
-        "timeStamp": convert_to_native_types(time_from_start)
+        "gyroLeft": convert_to_native_types(gyroLeft),
+        "gyroRight": convert_to_native_types(gyroRight),
+        "timeStamp": convert_to_native_types(timeStamps)
     }
     
     return result

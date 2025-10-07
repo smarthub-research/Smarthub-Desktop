@@ -1,8 +1,8 @@
-PWD /Users/Kellen/IdeaProjects/smarthub-desktop/docs
+PWD /Users/Kellen/IdeaProjects/Smarthub-Desktop/docs
 INPUT /usr/local/texlive/2025/texmf.cnf
 INPUT /usr/local/texlive/2025/texmf-dist/web2c/texmf.cnf
 INPUT /usr/local/texlive/2025/texmf-var/web2c/pdftex/pdflatex.fmt
-INPUT /Users/Kellen/IdeaProjects/smarthub-desktop/docs/smarthub_calculations.tex
+INPUT /Users/Kellen/IdeaProjects/Smarthub-Desktop/docs/smarthub_calculations.tex
 OUTPUT smarthub_calculations.log
 INPUT /usr/local/texlive/2025/texmf-dist/tex/latex/base/article.cls
 INPUT /usr/local/texlive/2025/texmf-dist/tex/latex/base/article.cls

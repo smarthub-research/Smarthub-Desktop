@@ -119,21 +119,21 @@ class DataService {
 
     processPackets() {
         let time_curr = (Date.now() - timeManager.getRecordingStartTime()) / 1000
-        let time_from_start = []
+        let timeStamps = []
         // Creates 4 time stamps at sensor intervals
         for (let i = 3; i > -1; i--) {
-            time_from_start.push(time_curr - i * (1/68))
+            timeStamps.push(time_curr - i * (1/68))
         }
         
         // // Use configurable calculation method
-        // const smoothedData = this.smoothData(this.pendingRightData, this.pendingLeftData, time_from_start)
-        // this.pendingLeftData.gyroData = smoothedData.gyro_left_smoothed;
-        // this.pendingRightData.gyroData = smoothedData.gyro_right_smoothed;
+        // const smoothedData = this.smoothData(this.pendingRightData, this.pendingLeftData, timeStamps)
+        // this.pendingLeftData.gyroData = smoothedData.gyroLeft_smoothed;
+        // this.pendingRightData.gyroData = smoothedData.gyroRight_smoothed;
 
         this.applyGain(this.pendingLeftData.gyroData, this.pendingRightData.gyroData)
         this.applyThreshold(this.pendingLeftData.gyroData, this.pendingRightData.gyroData)
 
-        let calculationData = calculationUtils.calc(time_from_start, this.pendingLeftData.gyroData, this.pendingRightData.gyroData, this.pendingLeftData.accelData, this.pendingRightData.accelData);
+        let calculationData = calculationUtils.calc(timeStamps, this.pendingLeftData.gyroData, this.pendingRightData.gyroData, this.pendingLeftData.accelData, this.pendingRightData.accelData);
 
         // Append data to both buffers
         dataBuffer.appendToBuffer(calculationData);
@@ -153,16 +153,16 @@ class DataService {
         this.pendingRightData = null;
     }
 
-    async smoothData(pendingRightData, pendingLeftData, time_from_start) {
+    async smoothData(pendingRightData, pendingLeftData, timeStamps) {
         const response = await fetch("http://localhost:8000/calibrate/smooth", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
             },
             body: JSON.stringify({
-                gyro_right: pendingRightData.gyroData,
-                gyro_left: pendingLeftData.gyroData,
-                time_from_start: time_from_start
+                gyroRight: pendingRightData.gyroData,
+                gyroLeft: pendingLeftData.gyroData,
+                timeStamps: timeStamps
             })
         });
         return await response.json();
@@ -196,8 +196,8 @@ class DataService {
             heading: [],
             velocity: [],
             trajectory: [],
-            gyro_left: [],
-            gyro_right: [],
+            gyroLeft: [],
+            gyroRight: [],
             timeStamp: []
         };
         for (let i = 0; i < data.timeStamp.length; i++) {
@@ -218,8 +218,8 @@ class DataService {
                 trajectory_y: data.trajectory_y[i],
             });
         }
-        returnData.gyro_left.push(data.gyro_left);
-        returnData.gyro_right.push(data.gyro_right);
+        returnData.gyroLeft.push(data.gyroLeft);
+        returnData.gyroRight.push(data.gyroRight);
         returnData.timeStamp.push(data.timeStamp);
         return returnData;
     }

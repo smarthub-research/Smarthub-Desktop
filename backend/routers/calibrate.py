@@ -21,20 +21,20 @@ router = APIRouter(
 
 # JSON payload expected:
 # {
-#	"smarthub_id": string,
-#	"calibration_name" : string,
-#	"gyro_right": [integers],
-#   "gyro_left": [integers],
-#   "time_from_start": [integers]
+#	"smarthubId": string,
+#	"calibrationName" : string,
+#	"gyroRight": [integers],
+#   "gyroLeft": [integers],
+#   "timeStamps": [integers]
 # }
 @router.post("/")
 async def perform_calibration(data: dict):
-    smarthub_id = data["smarthub_id"]
-    calibration_name = data["calibration_name"]
+    smarthubId = data["smarthubId"]
+    calibrationName = data["calibrationName"]
     calibration = Calibration(data)
 
     calibration.perform_calibration()
-    response = await save_calibration(smarthub_id, calibration.data, calibration.wheel_dist, calibration.left_gain, calibration.right_gain, calibration_name)
+    response = await save_calibration(smarthubId, calibration.data, calibration.wheel_dist, calibration.leftGain, calibration.rightGain, calibrationName)
 
     return response.data
 
@@ -53,8 +53,8 @@ async def get_all_calibrations():
 async def smooth_packet(data: dict):
     response = smooth_data(data=data)
     return {
-        "gyro_right_smoothed": response["gyro_right_smoothed"],
-        "gyro_left_smoothed": response["gyro_left_smoothed"]
+        "gyroRight_smoothed": response["gyroRight_smoothed"],
+        "gyroLeft_smoothed": response["gyroLeft_smoothed"]
     }
 
 
@@ -62,34 +62,34 @@ async def smooth_packet(data: dict):
 class Calibration:
     def __init__(self, data):
         self.data = {
-            'gyro_right': data['gyro_right'],
-            'gyro_left': data['gyro_left'],
-            'time_from_start': data['time_from_start'],
-            'gyro_right_smoothed': [],
-            'gyro_left_smoothed': [],
+            'gyroRight': data['gyroRight'],
+            'gyroLeft': data['gyroLeft'],
+            'timeStamps': data['timeStamps'],
+            'gyroRight_smoothed': [],
+            'gyroLeft_smoothed': [],
         }
 
     def perform_calibration(self):
         response = smooth_data(self.data)
-        self.data["gyro_right_smoothed"] = response["gyro_right_smoothed"]
-        self.data["gyro_left_smoothed"] = response["gyro_left_smoothed"]
+        self.data["gyroRight_smoothed"] = response["gyroRight_smoothed"]
+        self.data["gyroLeft_smoothed"] = response["gyroLeft_smoothed"]
 
-        self.left_gain, self.right_gain, self.wheel_dist = fsolve(minimize_turnaround, [20,20,20], args=self.data)
+        self.leftGain, self.rightGain, self.wheel_dist = fsolve(minimize_turnaround, [20,20,20], args=self.data)
 
 def minimize_turnaround(params, test):
     ml, mr, W = params
-    time_from_start = np.array(test['time_from_start'])
+    timeStamps = np.array(test['timeStamps'])
     
-    min_len = min(len(time_from_start), len(test['gyro_left_smoothed']), len(test['gyro_right_smoothed']))
+    min_len = min(len(timeStamps), len(test['gyroLeft_smoothed']), len(test['gyroRight_smoothed']))
 
-    time_from_start = time_from_start[:min_len]
-    rot_l = np.array(test['gyro_left_smoothed'])[:min_len]
-    rot_r = np.array(test['gyro_right_smoothed'])[:min_len]
+    timeStamps = timeStamps[:min_len]
+    gyroLeft = np.array(test['gyroLeft_smoothed'])[:min_len]
+    gyroRight = np.array(test['gyroRight_smoothed'])[:min_len]
 
-    disp_m = np.array(get_displacement_m(time_from_start, rot_l*ml, rot_r*mr, dist_wheels=W, diameter=1))
-    heading = np.array(get_heading_deg(time_from_start, rot_l*ml, rot_r*mr, dist_wheels=W, diameter=1))
-    velocity = np.array(get_velocity_m_s(time_from_start, rot_l*ml, rot_r*mr, dist_wheels=W, diameter=1))
-    traj = np.array(get_top_traj(disp_m, velocity, heading, time_from_start, dist_wheels=W, diameter=1))
+    disp_m = np.array(get_displacement_m(timeStamps, gyroLeft*ml, gyroRight*mr, dist_wheels=W, diameter=1))
+    heading = np.array(get_heading_deg(timeStamps, gyroLeft*ml, gyroRight*mr, dist_wheels=W, diameter=1))
+    velocity = np.array(get_velocity_m_s(timeStamps, gyroLeft*ml, gyroRight*mr, dist_wheels=W, diameter=1))
+    traj = np.array(get_top_traj(disp_m, velocity, heading, timeStamps, dist_wheels=W, diameter=1))
 
     # finds the start and end of the turnaround, make it constant between runs
     if not hasattr(minimize_turnaround, "start_turn"):
@@ -162,16 +162,16 @@ def compute_net_loss(points1, points2):
 
 
 # Writes to the database the calculated calibration
-async def save_calibration(smarthub_id, data, wheel_dist, left_gain, right_gain, calibration_name):
+async def save_calibration(smarthubId, data, wheel_dist, leftGain, rightGain, calibrationName):
     # save dictionary to json
     response = (
         supabase.table("calibrations")
         .insert({
-            'smarthub_id': smarthub_id,
-            'calibration_name': calibration_name,
+            'smarthubId': smarthubId,
+            'calibrationName': calibrationName,
             'wheel_distance': wheel_dist,
-            'left_gain': left_gain,
-            'right_gain': right_gain,
+            'leftGain': leftGain,
+            'rightGain': rightGain,
             'raw_data': data
         })
         .execute()
