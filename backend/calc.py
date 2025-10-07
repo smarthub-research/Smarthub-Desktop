@@ -48,6 +48,8 @@ def smooth_data(data):
 
     return response
 
+
+lastDisplacement = None
 def get_displacement_m(time_from_start, rot_l, rot_r, diameter=WHEEL_DIAM_IN, dist_wheels=DIST_WHEELS_IN):
     rot_l = np.array(rot_l)  # Rotation of left wheel (converted to rps by Arduino)
     rot_r = np.array(rot_r)  # Rotation of right wheel (converted to rps by Arduino)
@@ -56,7 +58,14 @@ def get_displacement_m(time_from_start, rot_l, rot_r, diameter=WHEEL_DIAM_IN, di
     # remove spikes
     # gyro_data[gyro_data > 20] = 0
 
-    dist_m = [0]
+    rot_l = abs(rot_l)
+    rot_r = abs(rot_r)
+
+    if lastDisplacement:
+        dist_m = [lastDisplacement]
+    else:
+        dist_m = [0]
+        
     for i in range(len(rot_r) - 1):
         # Wheel rotation in time step:
         dx_r = (rot_l[i]+rot_r[i])/2 * (time_from_start[i + 1] - time_from_start[i])
@@ -64,30 +73,8 @@ def get_displacement_m(time_from_start, rot_l, rot_r, diameter=WHEEL_DIAM_IN, di
         dx_m = dx_r * (diameter * IN_TO_M / 2)
         # Append last change to overall Displacement:
         dist_m.append(dx_m + dist_m[-1])
+    lastDisplacement = dist_m[-1]
     return dist_m
-
-
-def get_distance_m(time_from_start, rot_l, rot_r, diameter=WHEEL_DIAM_IN, dist_wheels=DIST_WHEELS_IN):
-    rot_l = np.array(rot_l)  # Rotation of left wheel (converted to rps by Arduino)
-    rot_r = np.array(rot_r)  # Rotation of right wheel (converted to rps by Arduino)
-    time_from_start = np.array(time_from_start)  # Time (sec)
-    # Remove direction to just get distance travelled:
-    rot_l = abs(rot_l)
-    rot_r = abs(rot_r)
-
-    # remove spikes
-    # gyro_data[gyro_data > 20] = 0
-
-    dist_m = [0]
-    for i in range(len(rot_r) - 1):
-        # Wheel rotation in time step:
-        dx_r = (rot_l[i]+rot_r[i])/2 * (time_from_start[i + 1] - time_from_start[i])
-        # Change in distance over time step:
-        dx_m = dx_r * (diameter * IN_TO_M / 2)
-        # Append last change to overall distance travelled:
-        dist_m.append(dx_m + dist_m[-1])
-    return dist_m
-
 
 def get_velocity_m_s(time_from_start, rot_l, rot_r, diameter=WHEEL_DIAM_IN, dist_wheels=DIST_WHEELS_IN):
     rot_l = np.array(rot_l)  # Rotation of left wheel (converted to rps by Arduino)

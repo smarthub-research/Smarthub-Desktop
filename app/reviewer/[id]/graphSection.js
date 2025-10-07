@@ -1,4 +1,5 @@
 import Graph from "../../components/graphs/graph";
+import TrajectoryGraph from "../../components/graphs/trajectoryGraph";
 
 export default function GraphSection({testData}) {
     return (
@@ -6,7 +7,7 @@ export default function GraphSection({testData}) {
             <Graph data={testData.displacement}/>
             <Graph data={testData.heading}/>
             <Graph data={testData.velocity}/>
-            <Graph data={testData.trajectory}/>
+            <TrajectoryGraph data={testData.trajectory}/>
         </div>
     )
 }

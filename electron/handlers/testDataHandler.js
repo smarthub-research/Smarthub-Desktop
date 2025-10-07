@@ -1,5 +1,5 @@
 const { ipcMain } = require('electron');
-const testDataService = require('./services/testDataService');
+const testDataService = require('../services/testDataService');
 
 // options = filter
 

@@ -1,4 +1,4 @@
-const { getSupabaseWithAuth } = require('../../../services/client');
+const { getSupabaseWithAuth } = require('./client');
 
 async function submitTestData(metadata) {
     try {

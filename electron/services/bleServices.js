@@ -1,11 +1,9 @@
 const BrowserWindow = require('electron').BrowserWindow;
-const connectionStore = require('../../../services/connectionStore');
-const dataBuffer = require('./dataBufferService');
-const constants = require('../../../config/constants');
-const downsamplingUtils = require('../utils/downsamplingUtils')
+const connectionStore = require('./connectionStore');
+const dataBuffer = require('../services/dataBufferService');
+const constants = require('../config/constants');
 const calculationUtils = require("../utils/calculationUtils")
-const calibration = require('../../../services/calibrationService')
-const timeManager = require('../../../services/timeManager')
+const timeManager = require('./timeManager')
 
 // Global variables for BLE data processing
 let pendingLeftData = null;
@@ -84,12 +82,12 @@ function subscribeToCharacteristics(characteristic, peripheral) {
             // pendingRightData.gyroData = smoothedData.gyro_right_smoothed;
 
             // We only want to do this when we have a calibration set
-            if (calibration.getCalibration()) {
-                applyGain(pendingLeftData, pendingRightData)
-                applyThreshold(pendingLeftData, pendingRightData)
-            }
+            // if (calibration.getCalibration()) {
+            //     applyGain(pendingLeftData, pendingRightData)
+            // }
+            // applyThreshold(pendingLeftData, pendingRightData)
+            applyGain(pendingLeftData, pendingRightData)
 
-            console.log(pendingLeftData)
             let jsonData = calculationUtils.calc(time_from_start, pendingLeftData.gyroData, pendingRightData.gyroData, pendingLeftData.accelData, pendingRightData.accelData);
 
             // Append data to both buffers
@@ -142,8 +140,8 @@ async function smoothData(pendingRightData, pendingLeftData, time_from_start) {
 // }
 function applyGain(leftData, rightData) {
     for (let i = 0; i < leftData.gyroData.length; i++) {
-        leftData.gyroData[i] *= calibration.leftGain;
-        rightData.gyroData[i] *= calibration.rightGain;
+        leftData.gyroData[i] *= 1.13;
+        rightData.gyroData[i] *= 1.12;
     }
 }
 
@@ -151,7 +149,7 @@ function applyGain(leftData, rightData) {
 //  accelData:
 //  gyroData:
 // }
-const THRESHOLD = 0.04
+const THRESHOLD = 0.05
 function applyThreshold(leftData, rightData) {
     for (let i = 0; i < leftData.gyroData.length; i++) {
         leftData.gyroData[i] = (Math.abs(leftData.gyroData[i]) > THRESHOLD ? leftData.gyroData[i] : 0) 
@@ -243,45 +241,6 @@ function processData(data) {
         }
     });
     return returnData;
-}
-
-function isDeviceConnected(peripheral) {
-    if (!peripheral) return false;
-    return peripheral.state === 'connected';
-}
-
-function checkConnectionStatus() {
-    const conn1 = connectionStore.getConnectionOne();
-    const conn2 = connectionStore.getConnectionTwo();
-
-    const isConn1Connected = conn1 ? isDeviceConnected(conn1) : false;
-    const isConn2Connected = conn2 ? isDeviceConnected(conn2) : false;
-
-    return {
-        deviceOne: isConn1Connected,
-        deviceTwo: isConn2Connected
-    };
-}
-
-function setupDisconnectionListeners() {
-    const conn1 = connectionStore.getConnectionOne();
-    const conn2 = connectionStore.getConnectionTwo();
-
-    if (conn1) {
-        conn1.on('disconnect', () => {
-            BrowserWindow.getAllWindows().forEach((win) => {
-                win.webContents.send('device-disconnected', { device: 'one' });
-            });
-        });
-    }
-
-    if (conn2) {
-        conn2.on('disconnect', () => {
-            BrowserWindow.getAllWindows().forEach((win) => {
-                win.webContents.send('device-disconnected', { device: 'two' });
-            });
-        });
-    }
 }
 
 function unsubscribeToCharacteristics(characteristic) {

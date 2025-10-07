@@ -1,3 +1,4 @@
+
 function formatDataForCSV(data) {
     // Initialize CSV string
     let csvString = '';
@@ -43,6 +44,13 @@ function formatDataForCSV(data) {
     return csvString;
 }
 
+// Helper method to get app paths
+function getAppPath(type) {
+    const { app } = require('electron');
+    return app.getPath(type);
+}
+
 module.exports = {
-    formatDataForCSV
+    formatDataForCSV,
+    getAppPath
 }

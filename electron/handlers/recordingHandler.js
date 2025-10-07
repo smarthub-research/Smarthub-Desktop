@@ -1,5 +1,5 @@
 const { ipcMain } = require('electron');
-const recordingService = require('./services/recordingService');
+const recordingService = require('../services/recordingService');
 
 function setupRecordingHandlers() {
 

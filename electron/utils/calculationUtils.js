@@ -1,5 +1,5 @@
-const constants = require("../../../config/constants");
-const calibration = require("../../../services/calibrationService");
+const constants = require("../config/constants");
+const calibration = require("../services/calibrationService");
 
 /**
  * Decodes raw sensor data into acceleration and gyroscope arrays.
@@ -87,12 +87,12 @@ function calc(time_from_start, gyroDataLeft, gyroDataRight, accelDataLeft, accel
         gyro_right: gyroDataRight,
         accel_left: accelDataLeft,
         accel_right: accelDataRight,
-        displacement: displacement.slice(1),
-        velocity: velocity.slice(1),
-        heading: heading.slice(1),
-        trajectory_y: traj.y.slice(1),
-        trajectory_x: traj.x.slice(1),
-        timeStamp: time_from_start.slice(1)
+        displacement: displacement,
+        velocity: velocity,
+        heading: heading,
+        trajectory_y: traj.y,
+        trajectory_x: traj.x,
+        timeStamp: time_from_start
     };
 }
 
@@ -107,11 +107,6 @@ function calc(time_from_start, gyroDataLeft, gyroDataRight, accelDataLeft, accel
 function getDisplacement(time_from_start, rot_l, rot_r, diameter = constants.WHEEL_DIAM_IN) {
     const IN_TO_M = constants.IN_TO_M || 0.0254;
     
-    for (let i = 0; i < rot_l.length; i++) {
-        rot_l[i] = Math.abs(rot_l[i]);
-        rot_r[i] = Math.abs(rot_r[i]);
-    }
-
     // Initialize with the last displacement value or 0 if this is the first calculation
     let dist_m = [lastDisplacement || 0];
 
@@ -130,8 +125,8 @@ function getDisplacement(time_from_start, rot_l, rot_r, diameter = constants.WHE
 
 /**
  * Calculates velocity (m/s) at each time step.
- * @param {Array<number>} rot_l - Left wheel rotation rates (rad/s).
- * @param {Array<number>} rot_r - Right wheel rotation rates (rad/s).
+ * @param {Array<number>} rot_l - Left wheel rotation rates (rps).
+ * @param {Array<number>} rot_r - Right wheel rotation rates (rps).
  * @param {number} [diameter=constants.WHEEL_DIAM_IN] - Wheel diameter (inches).
  * @returns {Array<number>} Velocity at each time step (m/s).
  */
@@ -201,6 +196,21 @@ function getTraj(velocity, heading_deg, time_from_start) {
     return { x, y };
 }
 
+async function nateCalculate(time_from_start, gyroDataLeft, gyroDataRight, accelDataLeft, accelDataRight, wheelDiameter = constants.WHEEL_DIAM_IN) {
+    const response = await fetch("http://0.0.0.0:8000/calculate/1", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            gyro_right: gyroDataRight,
+            gyro_left: gyroDataLeft,
+            time_from_start: time_from_start
+        })
+    });
+    return await response.json();
+}
+
 function resetState() {
     lastDisplacement = null;
     lastHeading = null;
@@ -219,5 +229,6 @@ module.exports = {
     lastHeading,
     lastTrajX,
     lastTrajY,
-    resetState
+    resetState,
+    nateCalculate
 };

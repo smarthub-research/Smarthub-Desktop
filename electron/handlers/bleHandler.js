@@ -1,9 +1,9 @@
 const {BrowserWindow, ipcMain} = require("electron");
 
-const {noble} = require("../deviceDiscovery");
-const connectionStore = require("../../services/connectionStore");
-const timeManager = require("../../services/timeManager");
-const bleServices = require('./services/bleServices')
+const {noble} = require("../services/deviceManagementService")
+const connectionStore = require("../services/connectionStore");
+const timeManager = require("../services/timeManager");
+const bleServices = require('../services/bleServices')
 
 function setupBleHandler() {
     ipcMain.handle('begin-reading-data', async () => {
@@ -67,13 +67,7 @@ function setupBleHandler() {
         return { success: true, elapsedTime: timeManager.getPausedElapsedTime() };
     });
 
-    ipcMain.handle('check-connection-status', async () => {
-        return bleServices.checkConnectionStatus();
-    })
 
-    ipcMain.handle('setup-disconnection-listeners', () => {
-        bleServices.setupDisconnectionListeners();
-    })
 }
 
 module.exports = {

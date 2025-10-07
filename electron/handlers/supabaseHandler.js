@@ -1,6 +1,6 @@
 const { ipcMain } = require('electron');
-const supabaseHandlers = require("./services/supabaseService");
-const {setSession} = require("../../services/authManager");
+const supabaseHandlers = require("../services/supabaseService");
+const {setSession} = require("../services/authManager");
 
 function setupSupabaseHandlers() {
     ipcMain.handle('submit-test-data', (event, metadata) => {
