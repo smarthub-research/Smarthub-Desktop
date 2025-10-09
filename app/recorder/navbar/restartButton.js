@@ -6,7 +6,6 @@ export default function RestartButton({ enabled }) {
         try {
             if (window.electronAPI) {
                 await window.electronAPI.restartRecording();
-                await window.electronAPI.clearFlags();
             }
         } catch (error) {
             console.error("Error restarting recording:", error);

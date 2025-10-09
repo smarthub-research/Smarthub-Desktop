@@ -1,5 +1,4 @@
 from fastapi import APIRouter
-from scipy.fftpack import fftfreq, irfft, rfft
 from scipy.optimize import fsolve
 import numpy as np
 from calc import (
@@ -11,7 +10,6 @@ from calc import (
 )
 from scipy.spatial import cKDTree
 from constants import supabase
-
 
 router = APIRouter(
     prefix="/calibrate",
@@ -51,10 +49,10 @@ async def get_all_calibrations():
 
 @router.post("/smooth")
 async def smooth_packet(data: dict):
-    response = smooth_data(data=data)
+    response = smooth_data(data)
     return {
-        "gyroRight_smoothed": response["gyroRight_smoothed"],
-        "gyroLeft_smoothed": response["gyroLeft_smoothed"]
+        "gyro_right_smoothed": response["gyro_right_smoothed"],
+        "gyro_left_smoothed": response["gyro_left_smoothed"]
     }
 
 

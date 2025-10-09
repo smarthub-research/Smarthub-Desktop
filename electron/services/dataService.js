@@ -126,9 +126,9 @@ class DataService {
         }
         
         // // Use configurable calculation method
-        // const smoothedData = this.smoothData(this.pendingRightData, this.pendingLeftData, timeStamps)
-        // this.pendingLeftData.gyroData = smoothedData.gyroLeft_smoothed;
-        // this.pendingRightData.gyroData = smoothedData.gyroRight_smoothed;
+        const smoothedData = this.smoothData(this.pendingRightData, this.pendingLeftData, timeStamps)
+        this.pendingLeftData.gyroData = smoothedData.gyroLeft_smoothed;
+        this.pendingRightData.gyroData = smoothedData.gyroRight_smoothed;
 
         this.applyGain(this.pendingLeftData.gyroData, this.pendingRightData.gyroData)
         this.applyThreshold(this.pendingLeftData.gyroData, this.pendingRightData.gyroData)
@@ -176,6 +176,10 @@ class DataService {
         for (let i = 0; i < gyroLeft.length; i++) {
             gyroLeft[i] *= 1.13;
             gyroRight[i] *= 1.12;
+        }
+        return {
+            "left": gyroLeft,
+            "right": gyroRight
         }
     }
 

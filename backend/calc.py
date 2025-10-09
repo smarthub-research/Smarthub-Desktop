@@ -1,4 +1,5 @@
 import numpy as np
+import copy
 from scipy.fftpack import fftfreq, irfft, rfft
 
 # Load Wheelchair Measurements:
@@ -8,48 +9,45 @@ from params import (
     IN_TO_M
 )
 
-def smooth_data(data):
+def smooth_data(dataValues):
     response = {}
-    
-    # Check if we have enough data points
-    if len(data['timeStamps']) < 2 or len(data['gyroRight']) == 0 or len(data['gyroLeft']) == 0:
-        # Return empty smoothed data if insufficient data
-        response['gyroRight_smoothed'] = []
-        response['gyroLeft_smoothed'] = []
-        return response
-    
-    # Filtering with low pass filter
-    filter_freq =  6
-    
-    # Calculate time step
-    dt = data['timeStamps'][1] - data['timeStamps'][0]
-    
-    # Calculate fourier transform of right gyroscope data to convert to frequency domain
-    W_right = fftfreq(len(data['gyroRight']), d=dt)
-    f_gyroRight = rfft(data['gyroRight'])
-    # Filter out right gyroscope signal above 6 Hz
-    f_right_filtered = f_gyroRight.copy()
-    f_right_filtered[(np.abs(W_right)>filter_freq)] = 0
-    # convert filtered signal back to time domain
-    gyroRight_smoothed = irfft(f_right_filtered)
+    data = {'timeStamps': copy.deepcopy(dataValues['timeStamps']),
+        'gyroLeft': copy.deepcopy(dataValues['gyroLeft']),
+        'gyroRight': copy.deepcopy(dataValues['gyroRight'])}
 
-    response['gyroRight_smoothed'] = list(gyroRight_smoothed)
+    try:
+        # Filtering with low pass filter
+        filter_freq =  6
+        # Calculate fourier transform of right gyroscope data to convert to frequency domain
+        W_right = fftfreq(len(data['gyroRight']), d=data['timeStamps'][1]-data['timeStamps'][0])
+        f_gyro_right = rfft(data['gyroRight'])
+        # Filter out right gyroscope signal above 6 Hz
+        f_right_filtered = f_gyro_right.copy()
+        f_right_filtered[(np.abs(W_right)>filter_freq)] = 0
+        # convert filtered signal back to time domain
+        gyro_right_smoothed = irfft(f_right_filtered)
 
-    # Calculate fourier transform of left gyroscope data to convert to frequency domain
-    W_left = fftfreq(len(data['gyroLeft']), d=dt)
-    f_gyroLeft = rfft(data['gyroLeft'])
-    # Filter out left gyroscope signal above 6 Hz
-    f_left_filtered = f_gyroLeft.copy()
-    f_left_filtered[(np.abs(W_left)>filter_freq)] = 0
-    # convert filtered signal back to time domain
-    gyroLeft_smoothed = irfft(f_left_filtered)
+        response['gyro_right_smoothed'] = list(gyro_right_smoothed)
 
-    response['gyroLeft_smoothed'] = list(gyroLeft_smoothed)
+        # Calculate fourier transform of right gyroscope data to convert to frequency domain
+        W_left = fftfreq(len(data['gyroLeft']), d=data['timeStamps'][1]-data['timeStamps'][0])
+        f_gyro_left = rfft(data['gyroLeft'])
+        # Filter out right gyroscope signal above 6 Hz
+        f_left_filtered = f_gyro_left.copy()
+        f_left_filtered[(np.abs(W_left)>filter_freq)] = 0
+        # convert filtered signal back to time domain
+        gyro_left_smoothed = irfft(f_left_filtered)
+
+        data['gyro_left_smoothed'] = gyro_left_smoothed
+
+        response['gyro_left_smoothed'] = list(gyro_left_smoothed)
+    except ValueError:
+        print('Value error in filtering, retrying')
+        return
 
     return response
 
 
-lastDisplacement = None
 def get_displacement_m(timeStamps, gyroLeft, gyroRight, diameter=WHEEL_DIAM_IN, dist_wheels=DIST_WHEELS_IN):
     gyroLeft = np.array(gyroLeft)  # Rotation of left wheel (converted to rps by Arduino)
     gyroRight = np.array(gyroRight)  # Rotation of right wheel (converted to rps by Arduino)
@@ -61,10 +59,7 @@ def get_displacement_m(timeStamps, gyroLeft, gyroRight, diameter=WHEEL_DIAM_IN, 
     gyroLeft = abs(gyroLeft)
     gyroRight = abs(gyroRight)
 
-    if lastDisplacement:
-        dist_m = [lastDisplacement]
-    else:
-        dist_m = [0]
+    dist_m = [0]
         
     for i in range(len(gyroRight) - 1):
         # Wheel rotation in time step:
@@ -73,7 +68,6 @@ def get_displacement_m(timeStamps, gyroLeft, gyroRight, diameter=WHEEL_DIAM_IN, 
         dx_m = dx_r * (diameter * IN_TO_M / 2)
         # Append last change to overall Displacement:
         dist_m.append(dx_m + dist_m[-1])
-    lastDisplacement = dist_m[-1]
     return dist_m
 
 def get_velocity_m_s(timeStamps, gyroLeft, gyroRight, diameter=WHEEL_DIAM_IN, dist_wheels=DIST_WHEELS_IN):
