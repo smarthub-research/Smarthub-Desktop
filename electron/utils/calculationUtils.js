@@ -81,10 +81,11 @@ class CalculationUtils {
      * @returns {Object} Calculation results including velocity, displacement, heading, trajectory, and timestamp.
      */
     calc(timeStamps, gyroDataLeft, gyroDataRight, accelDataLeft, accelDataRight, wheelDiameter = constants.WHEEL_DIAM_IN) {
-        const velocity = getVelocity(gyroDataLeft, gyroDataRight, wheelDiameter);
-        const displacement = getDisplacement(timeStamps, gyroDataLeft, gyroDataRight, wheelDiameter);
-        const heading = getHeading(timeStamps, gyroDataLeft, gyroDataRight, wheelDiameter);
-        const traj = getTraj(velocity, heading, timeStamps);
+
+        const velocity = this.getVelocity(gyroDataLeft, gyroDataRight, wheelDiameter);
+        const displacement = this.getDisplacement(timeStamps, gyroDataLeft, gyroDataRight, wheelDiameter);
+        const heading = this.getHeading(timeStamps, gyroDataLeft, gyroDataRight, wheelDiameter);
+        const traj = this.getTraj(velocity, heading, timeStamps);
         return {
             gyroLeft: gyroDataLeft,
             gyroRight: gyroDataRight,
@@ -109,9 +110,10 @@ class CalculationUtils {
      */
     getDisplacement(timeStamps, gyroLeft, gyroRight, diameter = constants.WHEEL_DIAM_IN) {
         const IN_TO_M = constants.IN_TO_M || 0.0254;
-        
+
+
         // Initialize with the last displacement value or 0 if this is the first calculation
-        let dist_m = [lastDisplacement || 0];
+        let dist_m = [0];
 
         // Calculate displacement using wheel circumference and average rotation rate
         for (let i = 0; i < gyroRight.length - 1; i++) {
@@ -119,9 +121,6 @@ class CalculationUtils {
             const dx_m = dx_r * (diameter * IN_TO_M / 2);
             dist_m.push(dx_m + dist_m[dist_m.length - 1]);
         }
-
-        // Update the last displacement for the next calculation
-        lastDisplacement = dist_m[dist_m.length - 1];
 
         return dist_m;
     }
@@ -155,7 +154,7 @@ class CalculationUtils {
      */
     getHeading(timeStamps, gyroLeft, gyroRight, diameter = constants.WHEEL_DIAM_IN) {
         // Initialize with the last heading value or 0 if this is the first calculation
-        let heading_deg = [lastHeading || 0];
+        let heading_deg = [0];
         const wheelDistance = calibration.getCalibration() ? calibration.wheelDistance : constants.DIST_WHEELS_IN;
         for (let i = 0; i < gyroRight.length - 1; i++) {
             // Left is positive right is negative
@@ -167,7 +166,6 @@ class CalculationUtils {
         }
         
         // Update the last heading for the next calculation
-        lastHeading = heading_deg[heading_deg.length - 1];
         
         return heading_deg;
     }
@@ -175,26 +173,22 @@ class CalculationUtils {
     /**
      * Calculates the trajectory (x, y) over time given velocity and heading.
      * @param {Array<number>} velocity - Velocity at each time step (m/s).
-     * @param {Array<number>} heading_deg - Heading at each time step (degrees).
+     * @param {Array<number}> heading_deg - Heading at each time step (degrees).
      * @param {Array<number>} timeStamps - Array of timestamps (seconds).
      * @returns {{x: Array<number>, y: Array<number>}} Object containing arrays for x and y positions.
      */
-    getTraj(velocity, heading_deg, timeStamps) {
-        // Initialize with the last trajectory positions or 0 if this is the first calculation
-        let x = [lastTrajX || 0];
-        let y = [lastTrajY || 0];
-        for (let i = 0; i < velocity.length - 1; i++) {
-            const dt = timeStamps[i + 1] - timeStamps[i];
-            const headingRad = heading_deg[i] * Math.PI / 180;
-            const dx = velocity[i] * Math.cos(headingRad) * dt;
-            const dy = velocity[i] * Math.sin(headingRad) * dt;
-            x.push(x[x.length - 1] + dx);
-            y.push(y[y.length - 1] + dy);
-        }
+    getTraj(velocity, heading, timeStamps) {
+        let x = [];
+        let y = [];
+        let dx = 0;
+        let dy = 0;
         
-        // Update the last trajectory positions for the next calculation
-        lastTrajX = x[x.length - 1];
-        lastTrajY = y[y.length - 1];
+        for (let i = 0; i < velocity.length - 1; i++) {
+            dx += velocity[i] * Math.cos(heading[i] * Math.PI / 180) * (timeStamps[i + 1] - timeStamps[i]);
+            dy += velocity[i] * Math.sin(heading[i] * Math.PI / 180) * (timeStamps[i + 1] - timeStamps[i]);
+            x.push(dx);
+            y.push(dy);
+        }
         
         return { x, y };
     }

@@ -28,6 +28,7 @@ async def login(request: AuthRequest):
         raise HTTPException(status_code=404, detail=str(e))
     return response
 
+# Returns the current auth session
 @router.get("/me")
 async def me():
     return supabase.auth.get_user()
@@ -53,7 +54,6 @@ async def signup(request: AuthRequest):
             }
         }
     )
-
     return new_user
 
 # Resets a users password by sending an email page
