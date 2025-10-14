@@ -11,6 +11,13 @@ from params import (
 
 def smooth_data(dataValues):
     response = {}
+    
+    # Validate required keys
+    required_keys = ['timeStamps', 'gyroLeft', 'gyroRight']
+    missing_keys = [key for key in required_keys if key not in dataValues]
+    if missing_keys:
+        raise ValueError(f"Missing required keys: {missing_keys}. Received keys: {list(dataValues.keys())}")
+    
     data = {'timeStamps': copy.deepcopy(dataValues['timeStamps']),
         'gyroLeft': copy.deepcopy(dataValues['gyroLeft']),
         'gyroRight': copy.deepcopy(dataValues['gyroRight'])}
@@ -41,9 +48,12 @@ def smooth_data(dataValues):
         data['gyro_left_smoothed'] = gyro_left_smoothed
 
         response['gyro_left_smoothed'] = list(gyro_left_smoothed)
-    except ValueError:
-        print('Value error in filtering, retrying')
-        return
+    except ValueError as e:
+        print(f'Value error in filtering: {e}')
+        raise
+    except Exception as e:
+        print(f'Unexpected error in smooth_data: {e}')
+        raise
 
     return response
 

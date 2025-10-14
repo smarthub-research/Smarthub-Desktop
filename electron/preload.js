@@ -68,6 +68,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
     // Calibration functions
     setCalibration: (calibration) => ipcRenderer.invoke("set-calibration", calibration),
+    getCalibration: () => ipcRenderer.invoke("get-calibration"),
 
     removeListener: (channel, callback) => {
         if (callback && typeof callback === 'function') {

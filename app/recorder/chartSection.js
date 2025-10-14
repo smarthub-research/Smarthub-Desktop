@@ -1,5 +1,6 @@
 import React, {useEffect, useState} from "react";
 import Graph from "../components/graphs/graph";
+import TrajectoryGraph from "../components/graphs/trajectoryGraph";
 
 export default function ChartSection({boxView}) {
     const [testData, setTestData] = useState({
@@ -50,11 +51,11 @@ export default function ChartSection({boxView}) {
 
     return (
         testData.displacement.length> 0 ? (
-                <div className={`${boxView ? 'grid grid-cols-2 gap-8 grow h-[80dvh]' : 'flex flex-col gap-8'}`}>
+                <div className={`ml-16 ${boxView ? 'grid grid-cols-2 gap-8 grow h-[80dvh]' : 'flex flex-col gap-8'}`}>
                     <Graph data={testData.displacement}/>
                     <Graph data={testData.heading}/>
                     <Graph data={testData.velocity}/>
-                    <Graph data={testData.trajectory}/>
+                    <TrajectoryGraph data={testData.trajectory}/>
                 </div>
             ) : (
             //     No data fallback

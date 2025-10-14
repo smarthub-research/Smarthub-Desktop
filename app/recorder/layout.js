@@ -6,7 +6,7 @@ export default function RootLayout({ children }) {
     return (
         <TestProvider>
             <FlaggingProvider>
-                <div className="ml-16">
+                <div>
                     {children}
                 </div>
             </FlaggingProvider>

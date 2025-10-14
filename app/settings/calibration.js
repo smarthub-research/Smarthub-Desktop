@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../co
 // Can be made into server component
 export default function Calibration() {
     const [calibrations, setCalibrations] = useState([]);
-    const [selectedId, setSelectedId] = useState(""); // FIX: define selectedId
+    const [selectedId, setSelectedId] = useState("");
     const [submitted, setSubmitted] = useState(false);
 
     useEffect(() => {
@@ -65,7 +65,7 @@ export default function Calibration() {
                         >
                             {calibrations.map((calibration, index) => (
                                 <option className="bg-card text-foreground dark:bg-card dark:text-card-foreground" key={calibration.id} value={calibration.id}>
-                                    {calibration.calibrationName || `Calibration ${index+1}`}
+                                    {calibration.calibration_name || `Calibration ${index+1}`}
                                 </option>
                             ))}
                         </select>

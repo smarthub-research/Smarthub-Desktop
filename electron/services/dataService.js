@@ -117,23 +117,24 @@ class DataService {
         }
     }
 
-    processPackets() {
+    async processPackets() {
         let time_curr = (Date.now() - timeManager.getRecordingStartTime()) / 1000
         let timeStamps = []
         // Creates 4 time stamps at sensor intervals
         for (let i = 3; i > -1; i--) {
-            timeStamps.push(time_curr - i * (1/68))
+            // ms -> sec
+            timeStamps.push(time_curr - i * (1/68)) / 1000
         }
         
         // // Use configurable calculation method
-        const smoothedData = this.smoothData(this.pendingRightData, this.pendingLeftData, timeStamps)
-        this.pendingLeftData.gyroData = smoothedData.gyroLeft_smoothed;
-        this.pendingRightData.gyroData = smoothedData.gyroRight_smoothed;
+        const smoothedData = await this.smoothData(this.pendingRightData, this.pendingLeftData, timeStamps)
+        this.pendingLeftData.gyroSmoothed = smoothedData.gyro_left_smoothed
+        this.pendingRightData.gyroSmoothed = smoothedData.gyro_right_smoothed
+        
+        this.applyGain(this.pendingLeftData.gyroSmoothed, this.pendingRightData.gyroSmoothed)
+        this.applyThreshold(this.pendingLeftData.gyroSmoothed, this.pendingRightData.gyroSmoothed)
 
-        this.applyGain(this.pendingLeftData.gyroData, this.pendingRightData.gyroData)
-        this.applyThreshold(this.pendingLeftData.gyroData, this.pendingRightData.gyroData)
-
-        let calculationData = calculationUtils.calc(timeStamps, this.pendingLeftData.gyroData, this.pendingRightData.gyroData, this.pendingLeftData.accelData, this.pendingRightData.accelData);
+        let calculationData = calculationUtils.calc(timeStamps, this.pendingLeftData.gyroSmoothed, this.pendingRightData.gyroSmoothed, this.pendingLeftData.accelData, this.pendingRightData.accelData);
 
         // Append data to both buffers
         dataBuffer.appendToBuffer(calculationData);
@@ -154,7 +155,7 @@ class DataService {
     }
 
     async smoothData(pendingRightData, pendingLeftData, timeStamps) {
-        const response = await fetch("http://localhost:8000/calibrate/smooth", {
+        const response = await fetch("http://localhost:8000/calculate/smooth", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"

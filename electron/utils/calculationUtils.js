@@ -4,6 +4,7 @@ const calibration = require("../services/calibrationService");
 class CalculationUtils {
     constructor() {
         this.lastDisplacement = null
+        this.lastVelocity = null
         this.lastHeading = null
         this.lastTrajX = null
         this.lastTrajY = null
@@ -113,7 +114,7 @@ class CalculationUtils {
 
 
         // Initialize with the last displacement value or 0 if this is the first calculation
-        let dist_m = [0];
+        let dist_m = [this.lastDisplacement || 0];
 
         // Calculate displacement using wheel circumference and average rotation rate
         for (let i = 0; i < gyroRight.length - 1; i++) {
@@ -121,6 +122,7 @@ class CalculationUtils {
             const dx_m = dx_r * (diameter * IN_TO_M / 2);
             dist_m.push(dx_m + dist_m[dist_m.length - 1]);
         }
+        this.lastDisplacement = dist_m[dist_m.length - 1]
 
         return dist_m;
     }
@@ -134,13 +136,15 @@ class CalculationUtils {
      */
     getVelocity(gyroLeft, gyroRight, diameter = constants.WHEEL_DIAM_IN) {
         const IN_TO_M = constants.IN_TO_M || 0.0254;
-        let vel_ms = [0];
+        let vel_ms = [this.lastVelocity || 0 ];
         for (let i = 0; i < gyroRight.length - 1; i++) {
             const v_r = gyroRight[i] * diameter / 2 * IN_TO_M;
             const v_l = gyroLeft[i] * diameter / 2 * IN_TO_M;
             const v_curr = (v_r + v_l) / 2;
             vel_ms.push(v_curr);
         }
+        this.lastVelocity = vel_ms[vel_ms.length - 1]
+
         return vel_ms;
     }
 
@@ -154,7 +158,7 @@ class CalculationUtils {
      */
     getHeading(timeStamps, gyroLeft, gyroRight, diameter = constants.WHEEL_DIAM_IN) {
         // Initialize with the last heading value or 0 if this is the first calculation
-        let heading_deg = [0];
+        let heading_deg = [this.lastHeading || 0];
         const wheelDistance = calibration.getCalibration() ? calibration.wheelDistance : constants.DIST_WHEELS_IN;
         for (let i = 0; i < gyroRight.length - 1; i++) {
             // Left is positive right is negative
@@ -166,6 +170,7 @@ class CalculationUtils {
         }
         
         // Update the last heading for the next calculation
+        this.lastHeading = heading_deg[heading_deg.length - 1]
         
         return heading_deg;
     }
@@ -180,8 +185,8 @@ class CalculationUtils {
     getTraj(velocity, heading, timeStamps) {
         let x = [];
         let y = [];
-        let dx = 0;
-        let dy = 0;
+        let dx = this.lastTrajX || 0;
+        let dy = this.lastTrajY || 0;
         
         for (let i = 0; i < velocity.length - 1; i++) {
             dx += velocity[i] * Math.cos(heading[i] * Math.PI / 180) * (timeStamps[i + 1] - timeStamps[i]);
@@ -189,7 +194,9 @@ class CalculationUtils {
             x.push(dx);
             y.push(dy);
         }
-        
+        this.lastTrajX = dx
+        this.lastTrajY = dy
+
         return { x, y };
     }
 

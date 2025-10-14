@@ -3,57 +3,58 @@ const calculationUtils = require('../calculationUtils')
 const dataService = require('../../services/dataService')
 const testData = require('./testing.json')
 const testData125 = require('./test125.json')
+const { exportTestResults } = require('./exportTestResults')
 
 describe("Displacement test with supabase data", () => {
-    // test("displacement should displace", async () => {
+    test("displacement should displace", async () => {
 
-    //     function checkArray(result, expected) {
-    //         result.forEach((value, index) => {
-    //             expect(value).toBeCloseTo(expected[index], 0);
-    //         });
-    //     }
+        function checkArray(result, expected) {
+            result.forEach((value, index) => {
+                expect(value).toBeCloseTo(expected[index], 0);
+            });
+        }
 
-    //     const timeStamp = testData.elapsed_time_s
-    //     const gyroLeft = testData.gyro_left
-    //     const gyroRight = testData.gyro_right
-    //     const accel_left = testData.accel_left
-    //     const accel_right = testData.accel_right
+        const timeStamp = testData.elapsed_time_s
+        const gyroLeft = testData.gyro_left
+        const gyroRight = testData.gyro_right
+        const accel_left = testData.accel_left
+        const accel_right = testData.accel_right
         
-    //     expect(timeStamp).toStrictEqual(testData.elapsed_time_s)
-    //     expect(gyroLeft).toStrictEqual(testData.gyro_left)
-    //     expect(gyroRight).toStrictEqual(testData.gyro_right)
+        expect(timeStamp).toStrictEqual(testData.elapsed_time_s)
+        expect(gyroLeft).toStrictEqual(testData.gyro_left)
+        expect(gyroRight).toStrictEqual(testData.gyro_right)
 
-    //     const smoothedData = await dataService.smoothData({"gyroData": gyroRight}, {"gyroData": gyroLeft}, timeStamp)
+        const smoothedData = await dataService.smoothData({"gyroData": gyroRight}, {"gyroData": gyroLeft}, timeStamp)
 
-    //     let gyroLeftSmoothed = smoothedData.gyro_left_smoothed
-    //     let gyroRightSmoothed = smoothedData.gyro_right_smoothed
+        let gyroLeftSmoothed = smoothedData.gyro_left_smoothed
+        let gyroRightSmoothed = smoothedData.gyro_right_smoothed
 
-    //     let exepectedLeftSmoothed = testData.gyro_left_smoothed
-    //     let expectedRightSmoothed = testData.gyro_right_smoothed
+        let exepectedLeftSmoothed = testData.gyro_left_smoothed
+        let expectedRightSmoothed = testData.gyro_right_smoothed
 
-    //     // console.log("RESULTS: ", gyroLeftSmoothed.slice(0, 10))
-    //     // console.log("BEFORE: ", gyroLeft)
-    //     // console.log("EXPECTED: ", exepectedLeftSmoothed.slice(0, 10))
+        console.log("RESULTS: ", gyroLeftSmoothed.slice(500, 550))
+        // console.log("BEFORE: ", gyroLeft)
+        console.log("EXPECTED: ", exepectedLeftSmoothed.slice(500, 550))
 
-    //     // const response = dataService.applyGain(gyroLeftSmoothed, gyroRightSmoothed)
-    //     // gyroLeftSmoothed = response.left
-    //     // gyroRightSmoothed = response.right
+        const response = dataService.applyGain(gyroLeftSmoothed, gyroRightSmoothed)
+        gyroLeftSmoothed = response.left
+        gyroRightSmoothed = response.right
 
-    //     // checkArray(gyroLeftSmoothed, exepectedLeftSmoothed)
+        checkArray(gyroLeftSmoothed, exepectedLeftSmoothed)
 
-    //     const result = calculationUtils.calc(timeStamp.slice(0, 10), gyroLeft.slice(0,10), gyroRight.slice(0,10), accel_left, accel_right, 24)
-    //     // const testResults = calculationUtils.calc(timeStamp.slice(0, 10), expectedGyroLeft.slice(0, 10), expectedGyroRight.slice(0, 10), accel_left, accel_right, 24)
-    //     // console.log(result)
+        const result = calculationUtils.calc(timeStamp.slice(0, 10), gyroLeft.slice(0,10), gyroRight.slice(0,10), accel_left, accel_right, 24)
+        // const testResults = calculationUtils.calc(timeStamp.slice(0, 10), expectedGyroLeft.slice(0, 10), expectedGyroRight.slice(0, 10), accel_left, accel_right, 24)
+        // console.log(result)
 
-    //     // expect(result.gyroLeft).toStrictEqual(gyroLeft.slice(0, 10))
-    //     // expect(testResults).toStrictEqual(result)
+        // expect(result.gyroLeft).toStrictEqual(gyroLeft.slice(0, 10))
+        // expect(testResults).toStrictEqual(result)
 
-    //     // console.log("EXPECTED: ", testData.distance_m.slice(0,10))
-    //     // console.log("RESULTS: ", result.displacement)
+        // console.log("EXPECTED: ", testData.distance_m.slice(0,10))
+        // console.log("RESULTS: ", result.displacement)
 
-    //     // expect(timeStamp).toStrictEqual(expectedResults.test_files.timeStamp)
-    //     // expect(result.displacement).toStrictEqual(testData.distance_m.slice(0,10));
-    // })
+        // expect(timeStamp).toStrictEqual(expectedResults.test_files.timeStamp)
+        expect(result.displacement).toStrictEqual(testData.distance_m.slice(0,10));
+    })
 
     describe('getDisplacement', () => {
         test("with 4 smoothed data", () => {
@@ -207,6 +208,34 @@ describe("Displacement test with supabase data", () => {
             expect(traj.y).toStrictEqual(expectedY.slice(0, -1))
             expect(traj.x).toStrictEqual(expectedX.slice(0, -1))
         });
+    });
+
+    describe('Export Test Results', () => {
+        test('export results to JSON file', async () => {
+            const exportResult = await exportTestResults({
+                elapsed_time_s: testData.elapsed_time_s,
+                gyro_left: testData.gyro_left,
+                gyro_right: testData.gyro_right,
+                accel_left: testData.accel_left,
+                accel_right: testData.accel_right,
+                gain_left: 1.13,
+                gain_right: 1.12,
+                outputFileName: 'exported_test_results.json'
+            });
+
+            expect(exportResult.success).toBe(true);
+            expect(exportResult.dataPoints).toBe(testData.elapsed_time_s.length);
+            expect(exportResult.results).toHaveProperty('elapsed_time_s');
+            expect(exportResult.results).toHaveProperty('gyro_left');
+            expect(exportResult.results).toHaveProperty('gyro_right');
+            expect(exportResult.results).toHaveProperty('gyro_left_smoothed');
+            expect(exportResult.results).toHaveProperty('gyro_right_smoothed');
+            expect(exportResult.results).toHaveProperty('displacement_m');
+            expect(exportResult.results).toHaveProperty('velocity');
+            expect(exportResult.results).toHaveProperty('heading_deg');
+            expect(exportResult.results).toHaveProperty('traj_x');
+            expect(exportResult.results).toHaveProperty('traj_y');
+        }, 30000); // 30 second timeout for this test
     });
 
 })

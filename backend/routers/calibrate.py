@@ -47,15 +47,6 @@ async def get_all_calibrations():
     )
     return response.data
 
-@router.post("/smooth")
-async def smooth_packet(data: dict):
-    response = smooth_data(data)
-    return {
-        "gyro_right_smoothed": response["gyro_right_smoothed"],
-        "gyro_left_smoothed": response["gyro_left_smoothed"]
-    }
-
-
 # Class that stores all methods needed for calibration
 class Calibration:
     def __init__(self, data):
@@ -63,14 +54,14 @@ class Calibration:
             'gyroRight': data['gyroRight'],
             'gyroLeft': data['gyroLeft'],
             'timeStamps': data['timeStamps'],
-            'gyroRight_smoothed': [],
-            'gyroLeft_smoothed': [],
+            'gyroRightSmoothed': [],
+            'gyroLeftSmoothed': [],
         }
 
     def perform_calibration(self):
         response = smooth_data(self.data)
-        self.data["gyroRight_smoothed"] = response["gyroRight_smoothed"]
-        self.data["gyroLeft_smoothed"] = response["gyroLeft_smoothed"]
+        self.data["gyroRightSmoothed"] = response["gyro_right_smoothed"]
+        self.data["gyroLeftSmoothed"] = response["gyro_left_smoothed"]
 
         self.leftGain, self.rightGain, self.wheel_dist = fsolve(minimize_turnaround, [20,20,20], args=self.data)
 
@@ -78,11 +69,11 @@ def minimize_turnaround(params, test):
     ml, mr, W = params
     timeStamps = np.array(test['timeStamps'])
     
-    min_len = min(len(timeStamps), len(test['gyroLeft_smoothed']), len(test['gyroRight_smoothed']))
+    min_len = min(len(timeStamps), len(test['gyroLeftSmoothed']), len(test['gyroRightSmoothed']))
 
     timeStamps = timeStamps[:min_len]
-    gyroLeft = np.array(test['gyroLeft_smoothed'])[:min_len]
-    gyroRight = np.array(test['gyroRight_smoothed'])[:min_len]
+    gyroLeft = np.array(test['gyroLeftSmoothed'])[:min_len]
+    gyroRight = np.array(test['gyroRightSmoothed'])[:min_len]
 
     disp_m = np.array(get_displacement_m(timeStamps, gyroLeft*ml, gyroRight*mr, dist_wheels=W, diameter=1))
     heading = np.array(get_heading_deg(timeStamps, gyroLeft*ml, gyroRight*mr, dist_wheels=W, diameter=1))
@@ -165,11 +156,11 @@ async def save_calibration(smarthubId, data, wheel_dist, leftGain, rightGain, ca
     response = (
         supabase.table("calibrations")
         .insert({
-            'smarthubId': smarthubId,
-            'calibrationName': calibrationName,
+            'smarthub_id': smarthubId,
+            'calibration_name': calibrationName,
             'wheel_distance': wheel_dist,
-            'leftGain': leftGain,
-            'rightGain': rightGain,
+            'left_gain': leftGain,
+            'right_gain': rightGain,
             'raw_data': data
         })
         .execute()

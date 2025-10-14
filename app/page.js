@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import RecentTests from "./components/recentTests";
 import Services from "./components/services";
 import { useAuth } from "./auth/authContext";
+import SmoothVsUnsmooth from './components/graphs/smoothVsUnsmooth';
 
 export default function DashboardClient() {
     const { user, loading } = useAuth();
@@ -46,8 +47,9 @@ export default function DashboardClient() {
         <div className="mt-12 flex flex-col h-full w-full p-6 lg:p-10 gap-6 bg-surface-200">
             {/*<Analytics testFiles={testFiles} />*/}
             <div className=" grid grid-cols-1 lg:grid-cols-3 gap-6 w-full">
-                <div className="flex flex-col gap-4 lg:col-span-2">
+                <div className="ml-16 flex flex-col gap-4 lg:col-span-2">
                     <Services/>
+                    <SmoothVsUnsmooth/>
                 </div>
                 <div className="flex flex-col gap-6 lg:col-span-1">
                     <RecentTests testFiles={testFiles} loading={testsLoading}/>
