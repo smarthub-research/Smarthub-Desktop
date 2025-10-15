@@ -5,7 +5,7 @@ export default function DataDivider({testData, comparisonData}) {
         const dataPoints = data.test_files.timeStamp.length;
         
         return (
-            <div className={`grid grid-cols-3 justify-around text-center items-center w-full p-4 bg-white shadow-md rounded-lg divide-x divide-surface-300 ${isComparison ? 'border-2 border-primary-300' : 'border-2 border-secondary-400'}`}>
+            <div className={`grid grid-cols-3 justify-around text-center items-center w-full p-4 bg-white shadow-md rounded-lg divide-x divide-surface-300 ${isComparison && 'border-2 border-secondary-400'}`}>
                 {label && (
                     <div className="col-span-3 pb-2 mb-2 border-b border-surface-200">
                         <p className="text-xs font-semibold uppercase tracking-wide">

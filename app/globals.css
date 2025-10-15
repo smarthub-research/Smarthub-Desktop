@@ -170,3 +170,38 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+/* Print styles for better PDF/print output */
+@media print {
+  /* Hide non-essential elements when printing */
+  .no-print {
+    display: none !important;
+  }
+  
+  /* Ensure content fits properly */
+  body {
+    margin: 0;
+    padding: 0;
+  }
+  
+  /* Prevent page breaks inside elements */
+  .screenshot-container {
+    page-break-inside: avoid;
+  }
+  
+  .screenshot-container > * {
+    page-break-inside: avoid;
+  }
+  
+  /* Ensure charts and graphs print well */
+  canvas {
+    max-width: 100% !important;
+    height: auto !important;
+  }
+  
+  /* Better card rendering for print */
+  .card {
+    border: 1px solid #ddd !important;
+    box-shadow: none !important;
+  }
+}

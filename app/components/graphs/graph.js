@@ -105,18 +105,71 @@ function Graph({data, comparisonData, graphId}) {
         return comparisonData.slice(startIndex, endIndex);
     }, [comparisonData, dataPointCount, scrollPosition]);
 
+    // Merge datasets to display both full datasets without trimming
+    const mergedData = useMemo(() => {
+        if (!displayData || displayData.length === 0) return [];
+        if (!displayComparisonData || displayComparisonData.length === 0) return displayData;
+
+        const maxLength = Math.max(displayData.length, displayComparisonData.length);
+        const merged = [];
+
+        for (let i = 0; i < maxLength; i++) {
+            const currentPoint = displayData[i];
+            const comparisonPoint = displayComparisonData[i];
+            
+            const mergedPoint = {};
+            
+            // Add current test data if it exists
+            if (currentPoint) {
+                Object.keys(currentPoint).forEach(key => {
+                    mergedPoint[key] = currentPoint[key];
+                });
+            }
+            
+            // Add comparison values with a different key if comparison point exists
+            if (comparisonPoint) {
+                Object.keys(comparisonPoint).forEach(key => {
+                    if (key !== 'time') {
+                        mergedPoint[`${key}_comparison`] = comparisonPoint[key];
+                    }
+                });
+                
+                // If current data doesn't exist at this index, use comparison data's time/x-axis value
+                if (!currentPoint) {
+                    mergedPoint.time = comparisonPoint.time;
+                    // Copy any axis data (like trajectory Y) but NOT the main data values
+                    Object.keys(comparisonPoint).forEach(key => {
+                        // Only copy non-primary data keys (time and potential secondary axis like trajectory)
+                        if (key === 'time' || (!key.includes('distance') && !key.includes('velocity') && !key.includes('heading'))) {
+                            if (!mergedPoint[key]) {
+                                mergedPoint[key] = comparisonPoint[key];
+                            }
+                        }
+                    });
+                }
+            }
+            
+            merged.push(mergedPoint);
+        }
+
+        return merged;
+    }, [displayData, displayComparisonData]);
+
     // Find first non-time key
-    const dataKey = displayData && displayData.length > 0
-        ? Object.keys(displayData[0]).find(key => key !== "time")
+    const dataKey = mergedData && mergedData.length > 0
+        ? Object.keys(mergedData[0]).find(key => key !== "time" && !key.endsWith("_comparison"))
         : "data";
 
     // Find a second non-time key (if there are 3+ keys total)
-    const dataKeys = displayData && displayData.length > 0
-        ? Object.keys(displayData[0]).filter(key => key !== "time")
+    const dataKeys = mergedData && mergedData.length > 0
+        ? Object.keys(mergedData[0]).filter(key => key !== "time" && !key.endsWith("_comparison"))
         : [];
 
     // Only define dataKey2 if we have more than one non-time key
     const dataKey2 = dataKeys.length > 1 ? dataKeys[1] : null;
+    
+    // Comparison data key
+    const comparisonKey = `${dataKey}_comparison`;
 
     // Regex to format title better. First char = (.) and rest=([^_]*)
     const title = dataKey ? dataKey.replace(/^(.)([^_]*)(_.*)?$/, (_, firstChar, rest) => {
@@ -137,8 +190,8 @@ function Graph({data, comparisonData, graphId}) {
     };
 
     // Y Axis domain calculation - include comparison data if present
-    const yValues = displayData?.map(d => d[dataKey]).filter(v => typeof v === "number") || [];
-    const comparisonYValues = displayComparisonData?.map(d => d[dataKey]).filter(v => typeof v === "number") || [];
+    const yValues = mergedData?.map(d => d[dataKey]).filter(v => typeof v === "number") || [];
+    const comparisonYValues = mergedData?.map(d => d[comparisonKey]).filter(v => typeof v === "number") || [];
     const allYValues = [...yValues, ...comparisonYValues];
     
     const yMin = allYValues.length ? Math.min(...allYValues) : 0;
@@ -169,7 +222,7 @@ function Graph({data, comparisonData, graphId}) {
                         <ChartContainer config={chartConfig} className={'h-full w-full min-h-0'}>
                             <LineChart
                                 accessibilityLayer
-                                data={displayData}
+                                data={mergedData}
                                 margin={{
                                     top: 16,
                                     right: 36,
@@ -215,21 +268,22 @@ function Graph({data, comparisonData, graphId}) {
                                     stroke={chartColor}
                                     strokeWidth={2}
                                     dot={false}
-                                    isAnimationActive={animate}
+                                    isAnimationActive={false}
                                     name="Current Test"
+                                    connectNulls={false}
                                 />
                                 {displayComparisonData && displayComparisonData.length > 0 && (
                                     <Line
                                         key={`${dataKey}-comparison`}
-                                        data={displayComparisonData}
-                                        dataKey={dataKey}
+                                        dataKey={comparisonKey}
                                         type={dataKey2 ? "linear" : "natural"}
                                         stroke="#0f000f"
                                         strokeWidth={2}
                                         dot={false}
-                                        isAnimationActive={animate}
+                                        isAnimationActive={false}
                                         strokeDasharray="5 5"
                                         name="Comparison Test"
+                                        connectNulls={false}
                                     />
                                 )}
 

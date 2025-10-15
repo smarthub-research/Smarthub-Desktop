@@ -7,6 +7,8 @@ import DataDivider from "./dataDivider";
 import GraphSection from "./graphSection";
 import Compare from "./compare";
 import Loading from "./loading";
+import Metrics from "./metrics";
+import ScreenshotButton from "./screenshotButton";
 
 export default function TestView({ params }) {
     const unwrappedParams = use(params);
@@ -46,15 +48,21 @@ export default function TestView({ params }) {
 
     return (
         <div className="ml-16 grow flex flex-col items-center gap-4 py-8 px-12 min-h-screen">
-            <div className={'self-start pt-6 w-full'}>
-                <TestName testData={testData} id={id} />
-                <p>Recorded on: {testData.created_at.slice(0, testData.created_at.indexOf('T'))}</p>
-            </div>
-            
-            <Compare onComparisonSelect={handleComparisonSelect} currentTestId={id} />
+            <div className="screenshot-container w-full flex flex-col gap-4">
+                <div className={'flex justify-between items-start pt-6 w-full'}>
+                    <div>
+                        <TestName testData={testData} id={id} />
+                        <p>Recorded on: {testData.created_at.slice(0, testData.created_at.indexOf('T'))}</p>
+                    </div>
+                    <ScreenshotButton testData={testData} />
+                </div>
+                
+                <Compare onComparisonSelect={handleComparisonSelect} currentTestId={id} />
 
-            <DataDivider testData={testData} comparisonData={comparisonData} />
-            <GraphSection testData={testData} comparisonData={comparisonData} />
+                <DataDivider testData={testData} comparisonData={comparisonData} />
+                <GraphSection testData={testData} comparisonData={comparisonData} />
+                <Metrics testData={testData} comparisonData={comparisonData} />
+            </div>
         </div>
     );
 }
