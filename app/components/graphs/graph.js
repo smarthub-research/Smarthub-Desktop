@@ -59,7 +59,7 @@ const CHART_COLORS = {
     purple: '#8884d8'
 }
 
-function Graph({data, graphId}) {
+function Graph({data, comparisonData, graphId}) {
     // Only animate if not on recorder page
     const pathName = usePathname();
     const animate = pathName !== '/recorder';
@@ -89,6 +89,21 @@ function Graph({data, graphId}) {
         
         return data.slice(startIndex, endIndex);
     }, [data, dataPointCount, scrollPosition]);
+
+    // Calculate comparison data slice with the same logic
+    const displayComparisonData = useMemo(() => {
+        if (!comparisonData || comparisonData.length === 0) return [];
+        
+        if (dataPointCount === 0) {
+            return comparisonData;
+        }
+        
+        const totalDataPoints = comparisonData.length;
+        const endIndex = totalDataPoints - scrollPosition;
+        const startIndex = Math.max(0, endIndex - dataPointCount);
+        
+        return comparisonData.slice(startIndex, endIndex);
+    }, [comparisonData, dataPointCount, scrollPosition]);
 
     // Find first non-time key
     const dataKey = displayData && displayData.length > 0
@@ -121,10 +136,13 @@ function Graph({data, graphId}) {
         },
     };
 
-    // Y Axis domain calculation
-    const yValues = displayData?.map(d => d[dataKey]).filter(v => typeof v === "number");
-    const yMin = yValues && yValues.length ? Math.min(...yValues) : 0;
-    const yMax = yValues && yValues.length ? Math.max(...yValues) : 1;
+    // Y Axis domain calculation - include comparison data if present
+    const yValues = displayData?.map(d => d[dataKey]).filter(v => typeof v === "number") || [];
+    const comparisonYValues = displayComparisonData?.map(d => d[dataKey]).filter(v => typeof v === "number") || [];
+    const allYValues = [...yValues, ...comparisonYValues];
+    
+    const yMin = allYValues.length ? Math.min(...allYValues) : 0;
+    const yMax = allYValues.length ? Math.max(...allYValues) : 1;
     const yPadding = (yMax - yMin) * 0.3 || 1;
     const domain = [yMin - yPadding, yMax + yPadding];
 
@@ -191,13 +209,29 @@ function Graph({data, graphId}) {
                                     content={<ChartTooltipContent hideLabel />}
                                 />
                                 <Line
+                                    key={`${dataKey}-current`}
                                     dataKey={dataKey}
                                     type={dataKey2 ? "linear" : "natural"}
                                     stroke={chartColor}
                                     strokeWidth={2}
                                     dot={false}
                                     isAnimationActive={animate}
+                                    name="Current Test"
                                 />
+                                {displayComparisonData && displayComparisonData.length > 0 && (
+                                    <Line
+                                        key={`${dataKey}-comparison`}
+                                        data={displayComparisonData}
+                                        dataKey={dataKey}
+                                        type={dataKey2 ? "linear" : "natural"}
+                                        stroke="#0f000f"
+                                        strokeWidth={2}
+                                        dot={false}
+                                        isAnimationActive={animate}
+                                        strokeDasharray="5 5"
+                                        name="Comparison Test"
+                                    />
+                                )}
 
                             </LineChart>
                         </ChartContainer>

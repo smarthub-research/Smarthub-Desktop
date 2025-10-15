@@ -17,11 +17,15 @@ const CHART_COLORS = {
     purple: '#8884d8'
 }
 
-function TrajectoryGraph({data, graphId}) {
+function TrajectoryGraph({data, comparisonData, graphId}) {
     const chartConfig = {
         trajectory: {
             label: "Trajectory",
             color: CHART_COLORS.purple,
+        },
+        comparison: {
+            label: "Comparison",
+            color: "#ff9800",
         },
     };
 
@@ -29,14 +33,20 @@ function TrajectoryGraph({data, graphId}) {
     const pathName = usePathname();
     const animate = pathName !== '/recorder';
 
-    // Calculate axis domains for better scaling
-    const xValues = data?.map(d => d.trajectory_x).filter(v => typeof v === "number");
-    const yValues = data?.map(d => d.trajectory_y).filter(v => typeof v === "number");
+    // Calculate axis domains for better scaling - include comparison data
+    const xValues = data?.map(d => d.trajectory_x).filter(v => typeof v === "number") || [];
+    const yValues = data?.map(d => d.trajectory_y).filter(v => typeof v === "number") || [];
     
-    const xMin = xValues && xValues.length ? Math.min(...xValues) : 0;
-    const xMax = xValues && xValues.length ? Math.max(...xValues) : 1;
-    const yMin = yValues && yValues.length ? Math.min(...yValues) : 0;
-    const yMax = yValues && yValues.length ? Math.max(...yValues) : 1;
+    const comparisonXValues = comparisonData?.map(d => d.trajectory_x).filter(v => typeof v === "number") || [];
+    const comparisonYValues = comparisonData?.map(d => d.trajectory_y).filter(v => typeof v === "number") || [];
+    
+    const allXValues = [...xValues, ...comparisonXValues];
+    const allYValues = [...yValues, ...comparisonYValues];
+    
+    const xMin = allXValues.length ? Math.min(...allXValues) : 0;
+    const xMax = allXValues.length ? Math.max(...allXValues) : 1;
+    const yMin = allYValues.length ? Math.min(...allYValues) : 0;
+    const yMax = allYValues.length ? Math.max(...allYValues) : 1;
     
     const xPadding = (xMax - xMin) * 0.1 || 1;
     const yPadding = (yMax - yMin) * 0.1 || 1;
@@ -110,13 +120,25 @@ function TrajectoryGraph({data, graphId}) {
                                 content={<ChartTooltipContent hideLabel />}
                             />
                             <Scatter
-                                name="Trajectory"
+                                key="trajectory-current"
+                                name="Current Test"
                                 data={data}
                                 fill="transparent"
                                 line={{ stroke: CHART_COLORS.purple, strokeWidth: 2 }}
                                 shape={"circle"}
                                 isAnimationActive={false}
                             />
+                            {comparisonData && comparisonData.length > 0 && (
+                                <Scatter
+                                    key="trajectory-comparison"
+                                    name="Comparison Test"
+                                    data={comparisonData}
+                                    fill="transparent"
+                                    line={{ stroke: "#ff9800", strokeWidth: 2, strokeDasharray: "5 5" }}
+                                    shape={"circle"}
+                                    isAnimationActive={false}
+                                />
+                            )}
                         </ScatterChart>
                     </ChartContainer>
                 ) : (
