@@ -109,7 +109,7 @@ function Graph({data, graphId}) {
     }) : '';
 
     const chartColor =
-        dataKey === 'displacement' ? CHART_COLORS.red
+        dataKey === 'distance' ? CHART_COLORS.red
             : dataKey === 'heading' ? CHART_COLORS.blue
                 : dataKey === 'velocity' ? CHART_COLORS.green
                     : CHART_COLORS.yellow;

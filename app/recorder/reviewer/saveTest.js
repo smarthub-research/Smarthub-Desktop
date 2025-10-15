@@ -5,15 +5,13 @@ import {useTest} from "../context/testContext";
 // Component to save test to database
 export default function SaveTest() {
     const router = useRouter();
-    const { testData, testName, testDistance, unitType, comments, allFlags } = useTest();
+    const { testData, testName, comments } = useTest();
 
     const handleSaveTest = async () => {
         if (!window.electronAPI) return;
 
         // Call IPC function to save test data
         try {
-            const distance = `${testDistance}${unitType}`;
-            const flags = allFlags || [];
             const response = await fetch("http://localhost:8000/db/write_test", {
                 method: "POST",
                 headers: {
@@ -22,9 +20,7 @@ export default function SaveTest() {
                 body: JSON.stringify({
                     testData,
                     testName,
-                    distance,
                     comments,
-                    flags
                 })
             })
             console.log(response)

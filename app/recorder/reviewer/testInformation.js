@@ -1,6 +1,5 @@
 import { FiFileText } from 'react-icons/fi';
 import TestNameInput from "./testNameInput";
-import TestDistanceInput from "./testDistanceInput";
 import TestDate from "./testDate";
 import CommentSection from "./commentSection";
 import SaveTest from "./saveTest";
@@ -15,13 +14,12 @@ export default function TestInformation() {
                     <h2 className="text-xl font-semibold flex items-center">
                         <FiFileText className="mr-2" /> Test Information
                     </h2>
-                    <SaveTest allFlags={[]} />
+                    <SaveTest />
                 </div>
             </CardHeader>
             <CardContent>
                 <div className="space-y-4">
                     <TestNameInput />
-                    <TestDistanceInput />
                     <TestDate />
                     <CommentSection />
                 </div>

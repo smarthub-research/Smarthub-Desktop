@@ -16,7 +16,7 @@ async def write_test(data: dict):
     test_files_response = (
         supabase.table("test_files")
         .insert({
-            "distance": data["distance"],
+            "distance": data["testData"]["distance"],
             "timeStamp": data["testData"]["timeStamp"],
             "displacement": data["testData"]["displacement"],
             "velocity": data["testData"]["velocity"],
@@ -37,7 +37,6 @@ async def write_test(data: dict):
             "test_file_id": test_file_id,
             "comments": data["comments"],
             "test_name": data["testName"],
-            "flags": data["flags"],
             "recorded_by_user_id": user_id,
         })
         .execute()
@@ -96,6 +95,7 @@ def format_for_review(response):
 
     # Format individual data types with timestamps
     def format_data_with_time(data_array, data_type):
+        if not data_array: return {}
         return [
             {
                 "time": round(float(time) / 1000, 2),
@@ -119,6 +119,7 @@ def format_for_review(response):
 
     formatted_response = {
         **test_data,
+        "distance": format_data_with_time(test_files["distance"], "distance"),
         "displacement": format_data_with_time(test_files["displacement"], "displacement"),
         "velocity": format_data_with_time(test_files["velocity"], "velocity"),
         "heading": format_data_with_time(test_files["heading"], "heading"),

@@ -7,7 +7,7 @@ export default function DataDivider({testData}) {
             </div>
             <div className={'px-6'}>
                 <p className={'opacity-75 text-sm'}>Distance</p>
-                <p className={'font-semibold text-xl'}>{testData.test_files.distance || "No distance recorded"}</p>
+                <p className={'font-semibold text-xl'}>{`${testData.test_files.distance.at(-1).toFixed(2)}m` || "No distance recorded"}</p>
             </div>
             <div className={'px-6'}>
                 <p className={'opacity-75 text-sm'}>Data Points</p>

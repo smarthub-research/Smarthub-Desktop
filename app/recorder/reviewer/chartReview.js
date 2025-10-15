@@ -36,8 +36,8 @@ export default function ChartReview() {
         if (!testData) return <div className="p-8 text-center">No data available</div>;
         return (
             <>
-                {activeChartTab === 'displacement' && (
-                    <Graph data={testData.displacement}/>
+                {activeChartTab === 'distance' && (
+                    <Graph data={testData.distance}/>
                 )}
                 {activeChartTab === 'heading' && (
                     <Graph data={testData.heading}/>

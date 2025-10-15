@@ -4,6 +4,7 @@ const calibration = require("../services/calibrationService");
 class CalculationUtils {
     constructor() {
         this.lastDisplacement = null
+        this.lastDistance = null
         this.lastVelocity = null
         this.lastHeading = null
         this.lastTrajX = null
@@ -85,6 +86,7 @@ class CalculationUtils {
 
         const velocity = this.getVelocity(gyroDataLeft, gyroDataRight, wheelDiameter);
         const displacement = this.getDisplacement(timeStamps, gyroDataLeft, gyroDataRight, wheelDiameter);
+        const distance = this.getDistance(timeStamps, gyroDataLeft, gyroDataRight, wheelDiameter);
         const heading = this.getHeading(timeStamps, gyroDataLeft, gyroDataRight, wheelDiameter);
         const traj = this.getTraj(velocity, heading, timeStamps);
         return {
@@ -93,38 +95,13 @@ class CalculationUtils {
             accelLeft: accelDataLeft,
             accelRight: accelDataRight,
             displacement: displacement,
+            distance: distance,
             velocity: velocity,
             heading: heading,
             trajectory_y: traj.y,
             trajectory_x: traj.x,
             timeStamp: timeStamps
         };
-    }
-
-    /**
-     * Calculates displacement (meters) at each time step.
-     * @param {Array<number>} timeStamps - Array of timestamps (seconds).
-     * @param {Array<number>} gyroLeft - Left wheel rotation rates (rps).
-     * @param {Array<number>} gyroRight - Right wheel rotation rates (rps).
-     * @param {number} [diameter=constants.WHEEL_DIAM_IN] - Wheel diameter (inches).
-     * @returns {Array<number>} Displacement at each time step (meters).
-     */
-    getDisplacement(timeStamps, gyroLeft, gyroRight, diameter = constants.WHEEL_DIAM_IN) {
-        const IN_TO_M = constants.IN_TO_M || 0.0254;
-
-
-        // Initialize with the last displacement value or 0 if this is the first calculation
-        let dist_m = [this.lastDisplacement || 0];
-
-        // Calculate displacement using wheel circumference and average rotation rate
-        for (let i = 0; i < gyroRight.length - 1; i++) {
-            const dx_r = (gyroLeft[i]+gyroRight[i])/2 * (timeStamps[i + 1] - timeStamps[i]);
-            const dx_m = dx_r * (diameter * IN_TO_M / 2);
-            dist_m.push(dx_m + dist_m[dist_m.length - 1]);
-        }
-        this.lastDisplacement = dist_m[dist_m.length - 1]
-
-        return dist_m;
     }
 
     /**
@@ -143,9 +120,59 @@ class CalculationUtils {
             const v_curr = (v_r + v_l) / 2;
             vel_ms.push(v_curr);
         }
-        this.lastVelocity = vel_ms[vel_ms.length - 1]
+        this.lastVelocity = vel_ms.at(-1)
 
         return vel_ms;
+    }
+
+    /**
+     * Calculates displacement (meters) at each time step.
+     * @param {Array<number>} timeStamps - Array of timestamps (seconds).
+     * @param {Array<number>} gyroLeft - Left wheel rotation rates (rps).
+     * @param {Array<number>} gyroRight - Right wheel rotation rates (rps).
+     * @param {number} [diameter=constants.WHEEL_DIAM_IN] - Wheel diameter (inches).
+     * @returns {Array<number>} Displacement at each time step (meters).
+     */
+    getDisplacement(timeStamps, gyroLeft, gyroRight, diameter = constants.WHEEL_DIAM_IN) {
+        const IN_TO_M = constants.IN_TO_M || 0.0254;
+
+        // Initialize with the last displacement value or 0 if this is the first calculation
+        let diplacement = [this.lastDisplacement || 0];
+
+        // Calculate displacement using wheel circumference and average rotation rate
+        for (let i = 0; i < gyroRight.length - 1; i++) {
+            const dx_r = (gyroLeft[i] + gyroRight[i]) / 2 * (timeStamps[i + 1] - timeStamps[i]);
+            const dx_m = dx_r * (diameter * IN_TO_M / 2);
+            diplacement.push(dx_m + diplacement.at(-1));
+        }
+        this.lastDisplacement = diplacement.at(-1)
+
+        return diplacement;
+    }
+
+    /**
+     * Calculates displacement (meters) at each time step.
+     * @param {Array<number>} timeStamps - Array of timestamps (seconds).
+     * @param {Array<number>} gyroLeft - Left wheel rotation rates (rps).
+     * @param {Array<number>} gyroRight - Right wheel rotation rates (rps).
+     * @param {number} [diameter=constants.WHEEL_DIAM_IN] - Wheel diameter (inches).
+     * @returns {Array<number>} Displacement at each time step (meters).
+     */
+    getDistance(timeStamps, gyroLeft, gyroRight, diameter = constants.WHEEL_DIAM_IN) {
+        const IN_TO_M = constants.IN_TO_M || 0.0254;
+
+        // Initialize with the last displacement value or 0 if this is the first calculation
+        let distance = [this.lastDistance || 0];
+
+        // Calculate displacement using wheel circumference and average rotation rate
+        for (let i = 0; i < gyroRight.length - 1; i++) {
+            const dx_r = (Math.abs(gyroLeft[i])+ Math.abs(gyroRight[i])) / 2 * (timeStamps[i + 1] - timeStamps[i]);
+            const dx_m = dx_r * (diameter * IN_TO_M / 2);
+            distance.push(dx_m + distance.at(-1));
+        }
+        this.lastDistance = distance.at(-1)
+
+        return distance;
     }
 
     /**
@@ -166,11 +193,11 @@ class CalculationUtils {
             const dt = timeStamps[i + 1] - timeStamps[i];
             let dh = w * dt;
             dh = dh * 180 / Math.PI;
-            heading_deg.push(dh + heading_deg[heading_deg.length - 1]);
+            heading_deg.push(dh + heading_deg.at(-1));
         }
         
         // Update the last heading for the next calculation
-        this.lastHeading = heading_deg[heading_deg.length - 1]
+        this.lastHeading = heading_deg.at(-1)
         
         return heading_deg;
     }
@@ -200,23 +227,9 @@ class CalculationUtils {
         return { x, y };
     }
 
-    async nateCalculate(timeStamps, gyroDataLeft, gyroDataRight, accelDataLeft, accelDataRight, wheelDiameter = constants.WHEEL_DIAM_IN) {
-        const response = await fetch("http://0.0.0.0:8000/calculate/1", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                gyroRight: gyroDataRight,
-                gyroLeft: gyroDataLeft,
-                timeStamps: timeStamps
-            })
-        });
-        return await response.json();
-    }
-
     resetState() {
         lastDisplacement = null;
+        lastDistance = null
         lastHeading = null;
         lastTrajX = null;
         lastTrajY = null;
