@@ -1,5 +1,6 @@
 from fastapi import APIRouter
 from calc import get_displacement_m, get_velocity_m_s, get_heading_deg, get_top_traj, smooth_data
+from metricsService import data_analyze_main
 
 router = APIRouter(
     prefix="/calculate",
@@ -40,6 +41,10 @@ async def calc(data: dict):
         "gyroRight": data["gyroRight"],
         "timeStamp": data["timeStamps"]
     }
+
+@router.get("/metrics")
+async def calculateMetrics(data: dict):
+    return data_analyze_main(data["timeStamp"], data["distance"], data["velocity"])
 
 @router.post("/smooth")
 async def smooth_packet(data: dict):
