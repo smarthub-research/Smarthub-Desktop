@@ -18,16 +18,15 @@ export default function Auth({ children }) {
     const [isSigningUp, setIsSigningUp] = useState(false);
 
     return (
-        <>
-            {/* <DraggableNav /> */}
-            <div className="m-0 grid md:grid-cols-2 grid-cols-1 w-screen h-screen">
-                {/* Left Side */}
-                <VideoMask />
+        <div className="m-0 flex w-screen h-screen">
+            {/* Left Side */}
+            <VideoMask />
 
-                {/* Right Side */}
-                <div className="grid grid-rows-4 justify-center px-6 relative">
+            {/* Right Side */}
+            <div className='m-auto '>
+                <div className="bg-surface-50 border drop-shadow-2xl rounded-2xl grid grid-rows-3 justify-center px-8 py-4">
                     {/* Fixed position welcome message */}
-                    <div className="flex flex-col justify-center items-center row-span-1 self-end">
+                    <div className="flex flex-col justify-center items-center row-span-1 self-end pb-2">
                         <img src={'/logo.png'} alt={'logo'} className={'size-16'}/>
                         <h1 className="text-2xl md:text-3xl font-semibold">Welcome to Smarthub</h1>
                         <p className={'opacity-50'}>Please {isSigningUp ? ('signup') : ('login')} below</p>
@@ -41,6 +40,7 @@ export default function Auth({ children }) {
                     </div>
                 </div>
             </div>
-        </>
+
+        </div>
     );
 }
