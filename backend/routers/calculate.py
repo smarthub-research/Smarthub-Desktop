@@ -48,8 +48,6 @@ async def calculateMetrics(data: dict):
 
 @router.post("/smooth")
 async def smooth_packet(data: dict):
-    print(f"Received data keys: {list(data.keys())}")
-    print(f"Data types: {[(k, type(v).__name__, len(v) if isinstance(v, list) else 'N/A') for k, v in data.items()]}")
     response = smooth_data(data)
     return {
         "gyro_right_smoothed": response["gyro_right_smoothed"],

@@ -7,8 +7,8 @@ class CalculationUtils {
         this.lastDistance = null
         this.lastVelocity = null
         this.lastHeading = null
-        this.lastTrajX = null
-        this.lastTrajY = null
+        this.lastTrajX = null;
+        this.lastTrajY = null;
     }
 
     /**
@@ -137,17 +137,17 @@ class CalculationUtils {
         const IN_TO_M = constants.IN_TO_M || 0.0254;
 
         // Initialize with the last displacement value or 0 if this is the first calculation
-        let diplacement = [this.lastDisplacement || 0];
+        let displacement = [this.lastDisplacement || 0];
 
         // Calculate displacement using wheel circumference and average rotation rate
         for (let i = 0; i < gyroRight.length - 1; i++) {
             const dx_r = (gyroLeft[i] + gyroRight[i]) / 2 * (timeStamps[i + 1] - timeStamps[i]);
             const dx_m = dx_r * (diameter * IN_TO_M / 2);
-            diplacement.push(dx_m + diplacement.at(-1));
+            displacement.push(dx_m + displacement.at(-1));
         }
-        this.lastDisplacement = diplacement.at(-1)
+        this.lastDisplacement = displacement.at(-1);
 
-        return diplacement;
+        return displacement;
     }
 
     /**
@@ -170,7 +170,7 @@ class CalculationUtils {
             const dx_m = dx_r * (diameter * IN_TO_M / 2);
             distance.push(dx_m + distance.at(-1));
         }
-        this.lastDistance = distance.at(-1)
+        this.lastDistance = distance.at(-1);
 
         return distance;
     }
@@ -228,11 +228,12 @@ class CalculationUtils {
     }
 
     resetState() {
-        lastDisplacement = null;
-        lastDistance = null
-        lastHeading = null;
-        lastTrajX = null;
-        lastTrajY = null;
+        this.lastDisplacement = null;
+        this.lastDistance = null
+        this.lastHeading = null;
+        this.lastVelocity = null;
+        this.lastTrajX = null;
+        this.lastTrajY = null;
     }
 }
 

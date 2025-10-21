@@ -67,7 +67,7 @@ function Graph({data, comparisonData, graphId}) {
     const [containerRef, containerSize] = useDebouncedResize(100);
     
     // State for ChartToolbar integration
-    const [dataPointCount, setDataPointCount] = useState(0); // 0 means show all data
+    const [dataPointCount, setDataPointCount] = useState(50); // 0 means show all data
     const [scrollPosition, setScrollPosition] = useState(0);
 
     // Generate a fallback graphId if none provided

@@ -37,6 +37,8 @@ export default function Controls({calibrationStep, setCalibrationStep, calibrati
                     timeStamps: testData.timeStamp || []
                 };
 
+                console.log(calibrationData)
+
                 // Call your calibration API
                 const response = await fetch("http://localhost:8000/calibrate/", {
                     method: "POST",

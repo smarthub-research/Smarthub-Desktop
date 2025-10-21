@@ -86,9 +86,21 @@ def minimize_turnaround(params, test):
         for i in range(1, len(heading)):
             heading_diff.append(heading[i] - heading[i-1])
 
-        turning_points = np.where(np.abs(np.array(heading_diff)) > 0.1)
-        if turning_points:
-            minimize_turnaround.start_turn, minimize_turnaround.end_turn = (largest_consecutive_group(turning_points[0])[0], largest_consecutive_group(turning_points[0])[-1])
+        # turning_points is a tuple from np.where; take the first element which is an array of indices
+        turning_points = np.where(np.abs(np.array(heading_diff)) > 0.1)[0]
+        # only proceed if we found any turning points
+        if turning_points.size > 0:
+            groups = largest_consecutive_group(turning_points)
+            if groups:
+                minimize_turnaround.start_turn = groups[0]
+                minimize_turnaround.end_turn = groups[-1]
+
+        # If no valid start/end were found, provide safe defaults to avoid empty-index errors
+        if not hasattr(minimize_turnaround, "start_turn") or not hasattr(minimize_turnaround, "end_turn"):
+            n = len(traj)
+            # choose safe quarter split points ensuring non-empty halves
+            minimize_turnaround.start_turn = max(1, n // 4)
+            minimize_turnaround.end_turn = min(n - 2, 3 * n // 4)
 
     start_turn = minimize_turnaround.start_turn
     end_turn = minimize_turnaround.end_turn
@@ -110,6 +122,12 @@ def minimize_turnaround(params, test):
 
 
 def largest_consecutive_group(nums, min_size=60, threshold=0.5):
+    # handle empty input
+    if nums is None or len(nums) == 0:
+        return []
+
+    # ensure we work with a plain list of ints
+    nums = list(nums)
     groups, current = [], [nums[0]]
 
     for i in range(1, len(nums)):

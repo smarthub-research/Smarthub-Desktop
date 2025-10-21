@@ -118,40 +118,43 @@ class DataService {
     }
 
     async processPackets() {
-        let time_curr = (Date.now() - timeManager.getRecordingStartTime()) / 1000
-        let timeStamps = []
-        // Creates 4 time stamps at sensor intervals
-        for (let i = 3; i > -1; i--) {
-            // ms -> sec
-            timeStamps.push(time_curr - i * (1/68)) / 1000
-        }
-        
-        // // Use configurable calculation method
-        const smoothedData = await this.smoothData(this.pendingRightData, this.pendingLeftData, timeStamps)
-        this.pendingLeftData.gyroSmoothed = smoothedData.gyro_left_smoothed
-        this.pendingRightData.gyroSmoothed = smoothedData.gyro_right_smoothed
-        
-        this.applyGain(this.pendingLeftData.gyroSmoothed, this.pendingRightData.gyroSmoothed)
-        this.applyThreshold(this.pendingLeftData.gyroSmoothed, this.pendingRightData.gyroSmoothed)
-
-        let calculationData = calculationUtils.calc(timeStamps, this.pendingLeftData.gyroSmoothed, this.pendingRightData.gyroSmoothed, this.pendingLeftData.accelData, this.pendingRightData.accelData);
-
-        // Append data to both buffers
-        dataBuffer.appendToBuffer(calculationData);
-        
-        // reformat data for our graphs
-        let finalData = this.processData(calculationData);
-
-        // Send downsampled data to frontend
-        BrowserWindow.getAllWindows().forEach((win) => {
-            if (win && !win.isDestroyed()) {
-                win.webContents.send('new-ble-data', {data: finalData});
+        try {
+            let time_curr = (Date.now() - timeManager.getRecordingStartTime()) / 1000
+            let timeStamps = []
+            // Creates 4 time stamps at sensor intervals
+            for (let i = 3; i > -1; i--) {
+                // ms -> sec
+                timeStamps.push(time_curr - i * (1/68)) / 1000
             }
-        });
 
-        // Clear the pending data after processing
-        this.pendingLeftData = null;
-        this.pendingRightData = null;
+            const smoothedData = await this.smoothData(this.pendingRightData, this.pendingLeftData, timeStamps)
+            this.pendingLeftData.gyroSmoothed = smoothedData.gyro_left_smoothed
+            this.pendingRightData.gyroSmoothed = smoothedData.gyro_right_smoothed
+            
+            this.applyGain(this.pendingLeftData.gyroSmoothed, this.pendingRightData.gyroSmoothed)
+            this.applyThreshold(this.pendingLeftData.gyroSmoothed, this.pendingRightData.gyroSmoothed)
+
+            let calculationData = calculationUtils.calc(timeStamps, this.pendingLeftData.gyroSmoothed, this.pendingRightData.gyroSmoothed, this.pendingLeftData.accelData, this.pendingRightData.accelData);
+
+            // Append data to both buffers
+            dataBuffer.appendToBuffer(calculationData);
+            
+            // reformat data for our graphs
+            let finalData = this.processData(calculationData);
+
+            // Send downsampled data to frontend
+            BrowserWindow.getAllWindows().forEach((win) => {
+                if (win && !win.isDestroyed()) {
+                    win.webContents.send('new-ble-data', {data: finalData});
+                }
+            });
+
+            // Clear the pending data after processing
+            this.pendingLeftData = null;
+            this.pendingRightData = null;
+        } catch(error) {
+            console.warn(error)
+        }
     }
 
     async smoothData(pendingRightData, pendingLeftData, timeStamps) {
@@ -198,6 +201,7 @@ class DataService {
     processData(data) {
         let returnData = {
             displacement: [],
+            distance: [],
             heading: [],
             velocity: [],
             trajectory: [],
@@ -209,6 +213,10 @@ class DataService {
             returnData.displacement.push({
                 time: data.timeStamp[i],
                 displacement: data.displacement[i]
+            })
+            returnData.distance.push({
+                time: data.timeStamp[i],
+                distance: data.distance[i]
             })
             returnData.heading.push({
                 time: data.timeStamp[i],

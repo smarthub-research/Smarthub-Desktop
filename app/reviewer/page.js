@@ -16,7 +16,7 @@ export default async function ReviewerHomePage({ searchParams }) {
             <div className="flex flex-col md:flex-row gap-6">
 
                 {/* FILTERS SIDEBAR */}
-                {/*<SearchFilters filters={filters}/>*/}
+                <SearchFilters filters={filters}/>
 
                 {/* FILE LIST */}
                 <div className="flex-1">

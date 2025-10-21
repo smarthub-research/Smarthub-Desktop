@@ -25,7 +25,7 @@ class TestDataService {
     }
 
     setTestData(data) {
-        console.log("TEST DATA SET: ", data);
+        console.log("TEST DATA SET: ", dataBuffer.getRawDataBuffer());
         let dataValues;
         if (data === null) {
             // Return without changing anything if explicitly set to null
@@ -47,7 +47,7 @@ class TestDataService {
             heading: dataValues.heading || [],
             trajectory_x: dataValues.trajectory_x || [],
             trajectory_y: dataValues.trajectory_y || [],
-            timeStamp: dataValues.timeStamps || [],
+            timeStamp: this._spreadData(dataValues.timeStamp) || [],
         };
 
         // Clear the data buffers

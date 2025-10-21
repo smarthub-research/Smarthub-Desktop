@@ -12,12 +12,6 @@ from params import (
 def smooth_data(dataValues):
     response = {}
     
-    # Validate required keys
-    required_keys = ['timeStamps', 'gyroLeft', 'gyroRight']
-    missing_keys = [key for key in required_keys if key not in dataValues]
-    if missing_keys:
-        raise ValueError(f"Missing required keys: {missing_keys}. Received keys: {list(dataValues.keys())}")
-    
     data = {'timeStamps': copy.deepcopy(dataValues['timeStamps']),
         'gyroLeft': copy.deepcopy(dataValues['gyroLeft']),
         'gyroRight': copy.deepcopy(dataValues['gyroRight'])}

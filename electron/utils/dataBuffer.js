@@ -12,6 +12,7 @@ class DataBuffer {
             accelLeft: [],
             accelRight: [],
             displacement: [],
+            distance: [],
             velocity: [],
             heading: [],
             trajectory_x: [],
@@ -58,6 +59,7 @@ class DataBuffer {
         this.rawBuffer.accelLeft.push(data.accelLeft);
         this.rawBuffer.accelRight.push(data.accelRight);
         this.rawBuffer.displacement.push(data.displacement);
+        this.rawBuffer.distance.push(data.distance);
         this.rawBuffer.velocity.push(data.velocity);
         this.rawBuffer.heading.push(data.heading);
         this.rawBuffer.trajectory_x.push(data.trajectory_x);
