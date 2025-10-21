@@ -12,6 +12,9 @@
 !.yarn/releases
 !.yarn/versions
 .venv*
+actions-runner
+.pytest-cache
+.vscode
 
 # testing
 /coverage

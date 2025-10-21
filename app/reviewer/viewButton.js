@@ -1,5 +1,6 @@
 
 import {useRouter} from "next/navigation";
+import { Button } from "../components/ui/button";
 
 export default function ViewButton({testFile}) {
     const router = useRouter();
@@ -12,12 +13,14 @@ export default function ViewButton({testFile}) {
     }
 
     return (
-        <button
-            className="bg-gray-700 hover:bg-gray-600 text-white py-2 px-4 rounded-lg transition-colors cursor-pointer"
+        <Button
+            className="flex items-center gap-2"
+            variant="default"
             onClick={() => handleView(testFile)}
             onMouseEnter={() => router.prefetch('/reviewer/' + testFile.id)}
+            title="View test"
         >
             View
-        </button>
+        </Button>
     )
 }
