@@ -7,7 +7,7 @@ import Link from "next/link";
 // Displays 10 of the most recent tests
 export default function RecentTests({testFiles, loading = false}) {
     return (
-        <Card>
+        <Card className={'gap-2'}>
             <CardHeader>
                 <div className="flex items-center justify-between">
                     <CardTitle className="text-base">Recent Tests</CardTitle>
@@ -22,7 +22,7 @@ export default function RecentTests({testFiles, loading = false}) {
                 ) : (
                     testFiles.slice(0, 10).map((test) => (
                         <div key={test.id} className="flex items-center justify-between">
-                            <div className="space-y-1">
+                            <div >
                                 <p className="text-sm font-medium">{test.test_name}</p>
                                 <p className="text-xs text-muted-foreground flex items-center gap-1">
                                     <Clock className="h-3 w-3" />
