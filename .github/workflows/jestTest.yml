@@ -1,8 +1,6 @@
 name: Jest Tests
 
 on:
-  push:
-    branches: [ "**" ]  # Run on all branches
   pull_request:
     branches: [ "**" ]
 
