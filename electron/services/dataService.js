@@ -10,6 +10,8 @@ class DataService {
         this.pendingLeftData = null;
         this.pendingRightData = null;
         this.THRESHOLD = 0.03;
+        this.isProcessing = false;
+        this.packetQueue = [];
     }
 
     async beginReadingData() {
@@ -94,7 +96,7 @@ class DataService {
             calculationUtils.decodeSensorData(data, accelData, gyroData);
             this.storePacket(peripheral, accelData, gyroData);
             if (this.pendingLeftData && this.pendingRightData) {
-                this.processPackets();   
+                await this.processPackets();   
             }
         }
 
@@ -118,23 +120,55 @@ class DataService {
     }
 
     async processPackets() {
+        // Prevent concurrent processing
+        if (this.isProcessing) {
+            console.log('Already processing, skipping duplicate call');
+            return;
+        }
+
+        this.isProcessing = true;
+
         try {
+            // Capture pending data immediately to prevent race conditions
+            const leftData = this.pendingLeftData;
+            const rightData = this.pendingRightData;
+            
+            // Clear immediately to allow new packets to arrive
+            this.pendingLeftData = null;
+            this.pendingRightData = null;
+
+            // Validate we still have both packets (defensive)
+            if (!leftData || !rightData) {
+                console.warn('Packet data became null during processing');
+                this.isProcessing = false;
+                return;
+            }
+
             let time_curr = (Date.now() - timeManager.getRecordingStartTime()) / 1000
             let timeStamps = []
             // Creates 4 time stamps at sensor intervals
             for (let i = 3; i > -1; i--) {
-                // ms -> sec
-                timeStamps.push(time_curr - i * (1/68)) / 1000
+                timeStamps.push(time_curr - i * (1/68))
             }
 
-            const smoothedData = await this.smoothData(this.pendingRightData, this.pendingLeftData, timeStamps)
-            this.pendingLeftData.gyroSmoothed = smoothedData.gyro_left_smoothed
-            this.pendingRightData.gyroSmoothed = smoothedData.gyro_right_smoothed
+            // Use captured data instead of this.pending* to avoid race conditions
+            const smoothedData = await this.smoothData(rightData, leftData, timeStamps)
             
-            this.applyGain(this.pendingLeftData.gyroSmoothed, this.pendingRightData.gyroSmoothed)
-            this.applyThreshold(this.pendingLeftData.gyroSmoothed, this.pendingRightData.gyroSmoothed)
+            // Create copies to avoid mutation issues
+            const gyroLeftSmoothed = [...smoothedData.gyro_left_smoothed];
+            const gyroRightSmoothed = [...smoothedData.gyro_right_smoothed];
+            
+            this.applyGain(gyroLeftSmoothed, gyroRightSmoothed)
+            this.applyThreshold(gyroLeftSmoothed, gyroRightSmoothed)
 
-            let calculationData = calculationUtils.calc(timeStamps, this.pendingLeftData.gyroSmoothed, this.pendingRightData.gyroSmoothed, this.pendingLeftData.accelData, this.pendingRightData.accelData);
+            let calculationData = calculationUtils.calc(
+                timeStamps, 
+                gyroLeftSmoothed, 
+                gyroRightSmoothed, 
+                leftData.accelData, 
+                rightData.accelData
+            );
+            
 
             // Append data to both buffers
             dataBuffer.appendToBuffer(calculationData);
@@ -143,33 +177,82 @@ class DataService {
             let finalData = this.processData(calculationData);
 
             // Send downsampled data to frontend
-            BrowserWindow.getAllWindows().forEach((win) => {
-                if (win && !win.isDestroyed()) {
-                    win.webContents.send('new-ble-data', {data: finalData});
-                }
-            });
+            if (BrowserWindow) {
+                BrowserWindow.getAllWindows().forEach((win) => {
+                    if (win && !win.isDestroyed()) {
+                        win.webContents.send('new-ble-data', {data: finalData});
+                    }
+                });
+            }
 
-            // Clear the pending data after processing
+        } catch(error) {
+            console.error('Error processing packets:', error);
+            // Clear pending data on error to prevent stuck state
             this.pendingLeftData = null;
             this.pendingRightData = null;
-        } catch(error) {
-            console.warn(error)
+        } finally {
+            this.isProcessing = false;
         }
     }
 
     async smoothData(pendingRightData, pendingLeftData, timeStamps) {
-        const response = await fetch("http://localhost:8000/calculate/smooth", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                gyroRight: pendingRightData.gyroData,
-                gyroLeft: pendingLeftData.gyroData,
-                timeStamps: timeStamps
-            })
-        });
-        return await response.json();
+        const SMOOTHING_TIMEOUT_MS = 500; // 500ms timeout
+        
+        try {
+            // Create timeout promise
+            const timeoutPromise = new Promise((_, reject) => {
+                setTimeout(() => reject(new Error('Smoothing API timeout')), SMOOTHING_TIMEOUT_MS);
+            });
+
+            // Race between fetch and timeout
+            const fetchPromise = fetch("http://localhost:8000/calculate/smooth", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    gyroRight: pendingRightData.gyroData,
+                    gyroLeft: pendingLeftData.gyroData,
+                    timeStamps: timeStamps
+                })
+            });
+
+            const response = await Promise.race([fetchPromise, timeoutPromise]);
+            
+            if (!response.ok) {
+                throw new Error(`Smoothing API returned ${response.status}`);
+            }
+
+            const data = await response.json();
+            
+            // Validate response
+            if (!data.gyro_left_smoothed || !data.gyro_right_smoothed) {
+                throw new Error('Invalid smoothing response: missing data');
+            }
+            
+            if (data.gyro_left_smoothed.length !== 4 || data.gyro_right_smoothed.length !== 4) {
+                throw new Error(`Invalid smoothing response: wrong length (left: ${data.gyro_left_smoothed.length}, right: ${data.gyro_right_smoothed.length})`);
+            }
+
+            // Check for invalid values
+            const hasInvalidLeft = data.gyro_left_smoothed.some(v => !isFinite(v) || isNaN(v));
+            const hasInvalidRight = data.gyro_right_smoothed.some(v => !isFinite(v) || isNaN(v));
+            
+            if (hasInvalidLeft || hasInvalidRight) {
+                throw new Error('Invalid smoothing response: NaN or Infinity values');
+            }
+
+            return data;
+
+        } catch (error) {
+            console.warn('Smoothing failed, using unsmoothed data:', error.message);
+            
+            // Fallback: return unsmoothed data
+            return {
+                gyro_left_smoothed: [...pendingLeftData.gyroData],
+                gyro_right_smoothed: [...pendingRightData.gyroData]
+            };
+        }
     }
 
     // Both data comes in the form of {
