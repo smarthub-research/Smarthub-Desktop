@@ -7,7 +7,6 @@ import SaveTest from "./saveTest";
 
 // Main component for the ReviewerTab page
 function ReviewerContent() {
-    const [allFlags] = useFetchFlags();
     const { isLoading } = useTest();
 
     if (isLoading) {

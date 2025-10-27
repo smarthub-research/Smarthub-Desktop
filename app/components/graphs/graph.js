@@ -247,7 +247,7 @@ function Graph({data, comparisonData, graphId}) {
                                     dataKey={dataKey}
                                     tickLine={false}
                                     tickMargin={8}
-                                    tickFormatter={(value) => value.toFixed(2)}
+                                    tickFormatter={(value) => value.toFixed(3)}
                                     domain={domain}
                                     label={{
                                         value: dataKey,

@@ -10,7 +10,7 @@ const DIST_WHEELS_IN = 26;
 const DIST_WHEELS_M = DIST_WHEELS_IN * IN_TO_M; // Convert to meters
 const DT = 0.058;
 const MESSAGE_INTERVAL = (1.0 / 17) * 1000;
-const SENSOR_INTERVAL = MESSAGE_INTERVAL / 4.0;
+const SENSOR_INTERVAL = MESSAGE_INTERVAL / 4.0; // 14.7ms
 
 module.exports = {
     TARGET_POINTS,
