@@ -103,7 +103,7 @@ class KalmanFilter(ISignalFilter):
         self._cutoff_freq = cutoff_freq
     
     def filter(self, signal: List[float], time_data: List[float]) -> np.ndarray:
-        pass
+        return np.ndarray([])
     
 
 class DataProcessor:

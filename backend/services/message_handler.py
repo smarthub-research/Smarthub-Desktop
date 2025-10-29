@@ -3,7 +3,7 @@ Message handling and processing pipeline.
 Separates concerns of consuming, processing, and producing messages.
 """
 from abc import ABC, abstractmethod
-from typing import Dict, List, Optional
+from typing import List, Optional
 import numpy as np
 
 from services.kafka_service import IMessageConsumer, IMessageProducer

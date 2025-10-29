@@ -41,8 +41,6 @@ async def lifespan(app: FastAPI):
     print("=" * 60)
     
     # Startup - Use factory pattern to create all dependencies
-    print("\n⏳ Creating Kafka services...")
-    
     factory = ServiceFactory(
         kafka_bootstrap=KAFKA_BOOTSTRAP,
         raw_topic=RAW_TOPIC,
@@ -55,7 +53,6 @@ async def lifespan(app: FastAPI):
     )
     
     # Create processing pipeline with all dependencies wired
-    print("⏳ Creating message processing pipeline...")
     pipeline = factory.create_processing_pipeline()
     
     # Start pipeline (consumer will join group immediately)
@@ -143,3 +140,4 @@ def get_producer() -> KafkaMessageProducer:
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host=API_HOST, port=API_PORT)
+    
