@@ -2,9 +2,9 @@
 'use client';
 
 import {CartesianGrid, Scatter, ScatterChart, XAxis, YAxis} from "recharts"
-import { Card, CardContent, CardHeader, CardTitle } from "../ui/card"
+import { Card, CardContent, CardHeader } from "../ui/card"
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "../ui/chart"
-import { memo, useMemo, useState } from "react";
+import { memo, useState } from "react";
 import ChartToolbar from "../../recorder/chartToolbar";
 import {usePathname} from "next/navigation";
 
@@ -52,7 +52,7 @@ function TrajectoryGraph({data, comparisonData, graphId}) {
     const yPadding = (yMax - yMin) * 0.1 || 1;
     
     const xDomain = [xMin - xPadding, xMax + xPadding];
-    const yDomain = [yMin - yPadding, yMax + yPadding];
+    const yDomain = [yMin - yPadding, Math.max(-2.5, yMax + yPadding)];
 
     const [dataPointCount, setDataPointCount] = useState(0); // 0 means show all data
     const [scrollPosition, setScrollPosition] = useState(0);

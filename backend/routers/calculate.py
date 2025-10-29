@@ -1,6 +1,6 @@
 from fastapi import APIRouter
-from calc import get_displacement_m, get_velocity_m_s, get_heading_deg, get_top_traj, smooth_data
-from metricsService import data_analyze_main
+from utils.calc import get_displacement_m, get_velocity_m_s, get_heading_deg, get_top_traj
+from services.metrics_service import data_analyze_main
 
 router = APIRouter(
     prefix="/calculate",

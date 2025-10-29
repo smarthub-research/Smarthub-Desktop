@@ -7,6 +7,7 @@ Performs the business logic of the device management process
 const noble = require("@abandonware/noble")
 const { BrowserWindow } = require('electron');
 const connectionStore = require('../utils/connectionStore');
+const dataService = require('./dataService');
 
 // Ensure only one listener is set for state changes
 noble.on('stateChange', (state) => {
@@ -120,6 +121,12 @@ class DeviceManagementService {
                 await devicePeripheral.disconnectAsync();
                 return { success: false, error: "Maximum number of connections reached" };
             }
+
+            // Initialize Kafka when first device connects (non-blocking)
+            // This ensures Kafka is ready before recording starts
+            dataService.initializeKafka().catch(error => {
+                console.error('Background Kafka initialization failed:', error);
+            });
 
             return { success: true };
         } catch (error) {

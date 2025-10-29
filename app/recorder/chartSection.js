@@ -14,11 +14,11 @@ export default function ChartSection({boxView}) {
         console.log(data)
         data = data.data
         // Update testData with the new formatted data from BLE service
-        setTestData(prevTestData => ({
-            distance: [...prevTestData.distance, data.distance[0]],
-            velocity: [...prevTestData.velocity, data.velocity[0]],
-            heading: [...prevTestData.heading, data.heading[0]],
-            trajectory: [...prevTestData.trajectory, data.trajectory[0]]
+        setTestData(() => ({
+            distance: data.distance,
+            velocity: data.velocity,
+            heading: data.heading,
+            trajectory: data.trajectory
         }));
     }
 
