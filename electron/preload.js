@@ -50,10 +50,16 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // Recording functions
     restartRecording: () => ipcRenderer.invoke('restart-recording'),
     getRecordingState: () => ipcRenderer.invoke('get-recording-state'),
+    pauseRecording: () => ipcRenderer.invoke('pause-recording'),
     onRestartRecording: (callback) => {
         const listener = (_, data) => callback(data);
         ipcRenderer.on('restart-recording', listener);
         return () => ipcRenderer.removeListener('restart-recording', listener);
+    },
+    onPauseRecording: (callback) => {
+        const listener = () => callback();
+        ipcRenderer.on('pause-recording', listener);
+        return () => ipcRenderer.removeListener('pause-recording', listener);
     },
     endTest: () => ipcRenderer.invoke('end-test'),
 

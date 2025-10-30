@@ -65,6 +65,14 @@ class PacketMessageHandler(IMessageHandler):
 
         # Track recording start time for timestamp generation
         self.start_time: Optional[float] = None
+        self.paused_time: Optional[float] = None
+        
+        # Track if recording is paused
+        self.paused: bool = False
+        
+        # Track total paused time for timestamp adjustment
+        self.total_paused_time: float = 0.0
+        self.pause_start_time: float = 0.0
         
         # Accumulate all gyro data and timestamps for entire session
         self.gyro_left: List[float] = []
@@ -73,21 +81,53 @@ class PacketMessageHandler(IMessageHandler):
     
     async def handle_message(self, message: dict) -> Optional[dict]:
         """
-        Process packet message with sensor data.
-        Mimics the dataService.js flow:
-        1. Decode raw packet
-        2. Store by side (left/right)
-        3. Wait for both sides
-        4. Generate timestamps
-        5. Apply threshold
-        6. Process (smooth + calculate)
+        Process message - either packet data or recording events.
+        For packet messages: mimics the dataService.js flow
+        For recording events: handles start/stop/reset commands
         
-        :param message: Raw packet data with keys: 'packet', 'side', 'device_id', 'ts'
-        :return: Processed results or None if waiting for other side
+        :param message: Message with keys depending on type
+        :return: Processed results or None
         """
+        # Check if this is a recording event or packet
+        if message.get("type") == "recording_event":
+            return self._handle_recording_event(message=message)
+        else:
+            return self._handle_packet(message=message)
+        
+    def _handle_recording_event(self, message: dict) -> None:
+        event_type = message.get("event")
+        if event_type == "start-recording":
+            print("Starting recording", flush=True)
+            if self.start_time is not None:
+                self.total_paused_time = time.time() - self.pause_start_time
+            self.paused = False
+        elif event_type == "restart-recording":
+            print(f"Recording restarted - resetting session data", flush=True)
+            self.reset_session()
+            # start_time will be set on first packet
+            self.paused_time = None
+            self.paused = False
+        elif event_type == "pause-recording":
+            print(f"Recording paused", flush=True)
+            self.paused = True
+            self.pause_start_time = time.time()
+        elif event_type == "end-test":
+            print(f"Test ended - finalizing session", flush=True)
+            # Could add logic here for saving final data
+        else:
+            print(f"Unknown recording event: {event_type}", flush=True)
+        # Recording events don't produce output messages
+        return None
+    
+    def _handle_packet(self, message: dict) -> Optional[dict]:
+        # Skip processing if recording is paused
+        if self.paused:
+            return None
+            
         # Initialize start time on first message
         if self.start_time is None:
-            self.start_time = time.time()
+            # Set start_time so that the first packet's newest timestamp is at current time
+            self.start_time = time.time() - 3/68  # 3 intervals back to make oldest at 0
         
         # Extract byte array from message
         packet = message["packet"]
@@ -105,6 +145,28 @@ class PacketMessageHandler(IMessageHandler):
         if self.left_data is not None and self.right_data is not None:
             # Generate timestamps (like dataService.js does in processPackets)
             new_timestamps = self._generate_time_stamps()
+            
+            # Fill gaps with zero data if resuming after a long pause
+            if self.time_stamps:
+                last_time = self.time_stamps[-1]
+                first_new = new_timestamps[0]
+                gap = first_new - last_time
+                if gap > 1/68 * 2:  # Gap larger than 2 sensor intervals
+                    # Calculate how many points to fill (at 68Hz)
+                    num_fill_points = int(gap * 68) - 1  # -1 to avoid overlap
+                    if num_fill_points > 0:
+                        fill_timestamps = []
+                        fill_gyro_left = []
+                        fill_gyro_right = []
+                        for i in range(num_fill_points):
+                            fill_timestamps.append(last_time + (i+1) * (1/68))
+                            fill_gyro_left.append(0.0)
+                            fill_gyro_right.append(0.0)
+                        self.time_stamps.extend(fill_timestamps)
+                        self.gyro_left.extend(fill_gyro_left)
+                        self.gyro_right.extend(fill_gyro_right)
+                        print(f"Filled gap with {num_fill_points} zero points", flush=True)
+            
             self.time_stamps.extend(new_timestamps)
             
             # Accumulate gyro data from both sides
@@ -152,7 +214,9 @@ class PacketMessageHandler(IMessageHandler):
         self.left_data = None
         self.right_data = None
         self.start_time = None
-        print("Session reset - cleared all accumulated data")
+        self.paused = False
+        self.total_paused_time = 0.0
+        print("Session reset - cleared all accumulated data", flush=True)
     
     def _convert_to_json_serializable(self, data: dict) -> dict:
         """
@@ -184,13 +248,14 @@ class PacketMessageHandler(IMessageHandler):
         Generate timestamps for the 4 data points in the packet.
         Mimics dataService.js timestamp generation in processPackets.
         Generates timestamps from oldest to newest at 68Hz sensor rate.
+        Adjusts for total paused time to keep timestamps continuous.
         
         :return: List of 4 timestamps
         """
         if self.start_time is None:
             self.start_time = time.time()
         
-        time_curr = time.time() - self.start_time
+        time_curr = (time.time() - self.start_time) - self.total_paused_time
         # Generate timestamps for the 4 data points (oldest to newest)
         time_vals = []
         for i in range(3, -1, -1):
@@ -255,5 +320,5 @@ class MessageProcessingPipeline:
                 if result:
                     await self._producer.send_message(self._output_topic, result)
         except Exception as e:
-            print(f"Error in processing pipeline: {e}")
+            print(f"Error in processing pipeline: {e}", flush=True)
             raise

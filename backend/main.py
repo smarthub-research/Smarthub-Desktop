@@ -5,7 +5,7 @@ import asyncio
 
 from routers import auth, db, calibrate
 from constants import (
-    ALLOWED_ORIGINS, API_HOST, API_PORT, KAFKA_BOOTSTRAP,
+    ALLOWED_ORIGINS, API_HOST, API_PORT, KAFKA_BOOTSTRAP, RECORDING_EVENTS_TOPIC,
     RAW_TOPIC, RESULT_TOPIC, left_gain, right_gain,
     WHEEL_DIAM_IN, DIST_WHEELS_IN
 )
@@ -45,6 +45,7 @@ async def lifespan(app: FastAPI):
         kafka_bootstrap=KAFKA_BOOTSTRAP,
         raw_topic=RAW_TOPIC,
         result_topic=RESULT_TOPIC,
+        recording_events_topic=RECORDING_EVENTS_TOPIC,
         left_gain=left_gain,
         right_gain=right_gain,
         wheel_diameter=WHEEL_DIAM_IN,
@@ -57,7 +58,7 @@ async def lifespan(app: FastAPI):
     
     # Start pipeline (consumer will join group immediately)
     print("⏳ Starting Kafka consumer and producer...")
-    print(f"   └─ Consuming from: {RAW_TOPIC}")
+    print(f"   └─ Consuming from: {RAW_TOPIC}, {RECORDING_EVENTS_TOPIC}")
     print(f"   └─ Producing to: {RESULT_TOPIC}")
     print(f"   └─ Calibration: L={left_gain}, R={right_gain}")
     print(f"   └─ Wheel: {WHEEL_DIAM_IN}\" diameter, {DIST_WHEELS_IN}\" apart")

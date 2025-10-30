@@ -3,6 +3,7 @@ const BrowserWindow = require('electron').BrowserWindow;
 const timeManager = require("../utils/timeManager")
 const connectionStore = require('../utils/connectionStore')
 const kafkaService = require('./kafkaService')
+const recordingService = require('./recordingService')
 
 class DataService {
     constructor() {
@@ -68,6 +69,7 @@ class DataService {
         }
 
         timeManager.beginRecording();
+        recordingService.startRecording();
 
         const conn1 = connectionStore.getConnectionOne();
         const conn2 = connectionStore.getConnectionTwo();
@@ -88,6 +90,9 @@ class DataService {
 
         await this.findCharacteristics(false, conn1);
         await this.findCharacteristics(false, conn2);
+
+        // sends stop recording message to kafka
+        recordingService.pauseRecording();
 
         BrowserWindow.getAllWindows().forEach((win) => {
             win.webContents.send('stop-reading', { elapsedTime: timeManager.getPausedElapsedTime() });
@@ -121,6 +126,7 @@ class DataService {
     }
 
     unsubscribeToCharacteristics(characteristic) {
+        console.log("unsubscribing")
         characteristic.unsubscribe((error) => {
             if (error) {
                 console.error('Unsubscribe error:', error);

@@ -154,7 +154,7 @@ class KafkaMessageConsumer(IMessageConsumer):
                     data = json.loads(message_bytes.decode('utf-8'))
                     yield data
             except json.JSONDecodeError as e:
-                print(f"Error decoding message: {e}")
+                print(f"Error decoding message: {e}", flush=True)
                 continue
     
     @property

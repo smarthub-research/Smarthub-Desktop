@@ -18,6 +18,7 @@ class ServiceFactory:
         kafka_bootstrap: str,
         raw_topic: str,
         result_topic: str,
+        recording_events_topic: str,
         left_gain: float,
         right_gain: float,
         wheel_diameter: float,
@@ -39,6 +40,7 @@ class ServiceFactory:
         self._kafka_bootstrap = kafka_bootstrap
         self._raw_topic = raw_topic
         self._result_topic = result_topic
+        self._recording_events_topic = recording_events_topic
         self._left_gain = left_gain
         self._right_gain = right_gain
         self._wheel_diameter = wheel_diameter
@@ -53,7 +55,7 @@ class ServiceFactory:
         """Create a configured Kafka consumer"""
         return KafkaMessageConsumer(
             bootstrap_servers=self._kafka_bootstrap,
-            topics=[self._raw_topic],
+            topics=[self._raw_topic, self._recording_events_topic],
             group_id=group_id
         )
     

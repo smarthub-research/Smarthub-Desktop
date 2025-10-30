@@ -1,4 +1,5 @@
 const { Kafka, Partitioners } = require('kafkajs');
+const timeManager = require('../utils/timeManager');
 const BrowserWindow = require('electron').BrowserWindow;
 
 class KafkaService {
@@ -20,6 +21,7 @@ class KafkaService {
         // Topics
         this.RAW_PACKET_TOPIC = 'raw-packets';
         this.PROCESSED_RESULTS_TOPIC = 'processed-results';
+        this.RECORDING_EVENTS_TOPIC = 'recording-events';
     }
 
     async checkKafkaReachable() {
@@ -91,13 +93,12 @@ class KafkaService {
             console.log('✓ Kafka consumer connected');
 
             // Subscribe to processed results topic
-            console.log('⏳ Subscribing to processed-results topic...');
+            console.log('⏳ Subscribing to topics...');
             await this.consumer.subscribe({ 
                 topic: this.PROCESSED_RESULTS_TOPIC,
                 fromBeginning: false 
             });
-            console.log('✓ Subscribed to processed-results topic');
-
+            console.log('✓ Subscribed to topics');
             // Start consuming in background
             this.startConsuming();
             
@@ -110,6 +111,10 @@ class KafkaService {
     }
 
     async sendRawPacket(packetData, side, deviceId) {
+        if (timeManager.isPaused()) {
+            return false;
+        }
+        
         if (!this.producer) {
             console.error('Kafka producer not initialized');
             return false;
@@ -140,6 +145,37 @@ class KafkaService {
             return true;
         } catch (error) {
             console.error('Failed to send raw packet to Kafka:', error);
+            return false;
+        }
+    }
+
+    // Send recording events to backend (restart-recording, pause-recording, end-test)
+    async sendEvent(eventData) {
+        if (!this.producer) {
+            console.error('Kafka producer not initialized');
+            return false;
+        }
+
+        try {
+            const message = {
+                type: "recording_event",
+                event: eventData,
+                ts: Date.now()
+            };
+
+            await this.producer.send({
+                topic: this.RECORDING_EVENTS_TOPIC,
+                messages: [
+                    {
+                        value: JSON.stringify(message),
+                        timestamp: Date.now().toString()
+                    }
+                ]
+            });
+
+            return true;
+        } catch (error) {
+            console.error('Failed to send recording event to Kafka:', error);
             return false;
         }
     }

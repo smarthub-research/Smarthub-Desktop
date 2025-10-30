@@ -23,6 +23,7 @@ ALLOWED_ORIGINS = [
 KAFKA_BOOTSTRAP = "localhost:9092"
 RAW_TOPIC = "raw-packets"
 RESULT_TOPIC = "processed-results"
+RECORDING_EVENTS_TOPIC = "recording-events"
 
 import os
 from datetime import datetime

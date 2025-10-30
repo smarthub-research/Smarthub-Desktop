@@ -1,15 +1,18 @@
 const BrowserWindow = require('electron').BrowserWindow;
 const timeManager = require('../utils/timeManager');
 const dataBuffer = require("../utils/dataBuffer")
+const KafkaService = require('./kafkaService');
 
 class RecordingService {
     async restartRecording() {
-        timeManager.restartRecording();
+        // Reset recording state without starting
+        timeManager.reset();
         dataBuffer.clearAllBuffers();
+        KafkaService.sendEvent('restart-recording')
 
-        this.notifyAllWindows('restart-recording', { startTime: timeManager.getRecordingStartTime() });
+        this.notifyAllWindows('restart-recording', { startTime: null }); // No start time since not starting
 
-        return { success: true, startTime: timeManager.getRecordingStartTime() };
+        return { success: true, startTime: null };
     }
 
     getRecordingState() {
@@ -21,7 +24,21 @@ class RecordingService {
         };
     }
 
+    startRecording() {
+        timeManager.beginRecording()
+        KafkaService.sendEvent('start-recording')
+        this.notifyAllWindows('start-recording')
+    }
+
+    pauseRecording() {
+        timeManager.stopRecording();
+        KafkaService.sendEvent('pause-recording')
+        this.notifyAllWindows('pause-recording')
+    }
+
     endTest() {
+        timeManager.stopRecording();
+        KafkaService.sendEvent('end-test')
         this.notifyAllWindows('test-ended');
     }
 
