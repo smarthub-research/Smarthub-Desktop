@@ -2,18 +2,23 @@ import ChartTabs from "./chartTabs";
 import React, {useEffect, useState} from "react";
 import {useTest} from "../context/testContext";
 import Graph from "../../components/graphs/graph";
+import TrajectoryGraph from "../../components/graphs/trajectoryGraph";
 
 
 // Component to display charts based on the active tab
 export default function ChartReview() {
-    const { fetchReviewData, testData: rawTestData } = useTest();
-    const [activeChartTab, setActiveChartTab] = useState('displacement');
+    const { fetchReviewData, testData: rawTestData, processedPackets } = useTest();
+    const [activeChartTab, setActiveChartTab] = useState('distance');
     const [testData, setTestData] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        const loadReviewData = async () => {
-            if (rawTestData) {
+        // Use processedPackets if available (live data), otherwise fetch saved data
+        if (processedPackets.distance.length > 0) {
+            setTestData(processedPackets);
+            setIsLoading(false);
+        } else if (rawTestData) {
+            const loadReviewData = async () => {
                 try {
                     const formattedData = await fetchReviewData();
                     setTestData(formattedData);
@@ -23,13 +28,12 @@ export default function ChartReview() {
                 } finally {
                     setIsLoading(false);
                 }
-            } else {
-                setIsLoading(false);
-            }
-        };
-
-        loadReviewData();
-    }, [rawTestData, fetchReviewData]);
+            };
+            loadReviewData();
+        } else {
+            setIsLoading(false);
+        }
+    }, [rawTestData, fetchReviewData, processedPackets]);
 
     // Render the chart content based on the active tab
     const renderChartContent = () => {
@@ -46,7 +50,7 @@ export default function ChartReview() {
                     <Graph data={testData.velocity}/>
                 )}
                 {activeChartTab === 'trajectory' && (
-                    <Graph data={testData.trajectory}/>
+                    <TrajectoryGraph data={testData.trajectory}/>
                 )}
             </>
         );

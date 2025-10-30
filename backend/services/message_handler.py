@@ -11,6 +11,8 @@ from services.message_processor import DataProcessor
 from utils.decode_packet import convert_from_raw
 import time
 
+# Global variable to store the current test file ID
+current_test_id = None
 
 class IMessageHandler(ABC):
     """
@@ -77,6 +79,8 @@ class PacketMessageHandler(IMessageHandler):
         # Accumulate all gyro data and timestamps for entire session
         self.gyro_left: List[float] = []
         self.gyro_right: List[float] = []
+        self.accel_left: List[float] = []
+        self.accel_right: List[float] = []
         self.time_stamps: List[float] = []
     
     async def handle_message(self, message: dict) -> Optional[dict]:
@@ -90,11 +94,11 @@ class PacketMessageHandler(IMessageHandler):
         """
         # Check if this is a recording event or packet
         if message.get("type") == "recording_event":
-            return self._handle_recording_event(message=message)
+            return await self._handle_recording_event(message=message)
         else:
-            return self._handle_packet(message=message)
+            return await self._handle_packet(message=message)
         
-    def _handle_recording_event(self, message: dict) -> None:
+    async def _handle_recording_event(self, message: dict) -> None:
         event_type = message.get("event")
         if event_type == "start-recording":
             print("Starting recording", flush=True)
@@ -114,12 +118,13 @@ class PacketMessageHandler(IMessageHandler):
         elif event_type == "end-test":
             print(f"Test ended - finalizing session", flush=True)
             # Could add logic here for saving final data
+            await self._save_test_data()
         else:
             print(f"Unknown recording event: {event_type}", flush=True)
         # Recording events don't produce output messages
         return None
     
-    def _handle_packet(self, message: dict) -> Optional[dict]:
+    async def _handle_packet(self, message: dict) -> Optional[dict]:
         # Skip processing if recording is paused
         if self.paused:
             return None
@@ -151,7 +156,7 @@ class PacketMessageHandler(IMessageHandler):
                 last_time = self.time_stamps[-1]
                 first_new = new_timestamps[0]
                 gap = first_new - last_time
-                if gap > 1/68 * 2:  # Gap larger than 2 sensor intervals
+                if gap > 0.1:  # Gap larger than 100ms (long pause)
                     # Calculate how many points to fill (at 68Hz)
                     num_fill_points = int(gap * 68) - 1  # -1 to avoid overlap
                     if num_fill_points > 0:
@@ -172,6 +177,8 @@ class PacketMessageHandler(IMessageHandler):
             # Accumulate gyro data from both sides
             self.gyro_left.extend(self.left_data["gyro_data"])
             self.gyro_right.extend(self.right_data["gyro_data"])
+            self.accel_left.extend(self.left_data['accel_data'])
+            self.accel_right.extend(self.right_data["accel_data"])
             
             # Process the ENTIRE accumulated data (not just the new packet)
             result = self._processor.process_data(
@@ -208,40 +215,39 @@ class PacketMessageHandler(IMessageHandler):
         Reset accumulated data for a new recording session.
         Should be called when starting a new recording.
         """
+        global current_test_id
+        current_test_id = None
         self.gyro_left = []
         self.gyro_right = []
+        self.accel_left = []
+        self.accel_right = []
         self.time_stamps = []
         self.left_data = None
         self.right_data = None
         self.start_time = None
         self.paused = False
         self.total_paused_time = 0.0
+        self.test_id = 0
         print("Session reset - cleared all accumulated data", flush=True)
     
-    def _convert_to_json_serializable(self, data: dict) -> dict:
+    def _convert_to_json_serializable(self, data):
         """
         Convert numpy arrays and other non-JSON-serializable types to JSON-compatible types.
+        Recursively handles nested structures.
         
-        :param data: Dictionary potentially containing numpy arrays
-        :return: Dictionary with all values converted to JSON-serializable types
+        :param data: Data potentially containing numpy arrays
+        :return: Data with all values converted to JSON-serializable types
         """
-        result = {}
-        for key, value in data.items():
-            if isinstance(value, np.ndarray):
-                result[key] = value.tolist()
-            elif isinstance(value, (np.integer, np.floating)):
-                result[key] = value.item()
-            elif isinstance(value, list):
-                # Handle list of numpy types
-                result[key] = [
-                    v.item() if isinstance(v, (np.integer, np.floating)) 
-                    else v.tolist() if isinstance(v, np.ndarray)
-                    else v
-                    for v in value
-                ]
-            else:
-                result[key] = value
-        return result
+        if isinstance(data, np.ndarray):
+            return data.tolist()
+        elif isinstance(data, (np.integer, np.floating)):
+            return data.item()
+        elif isinstance(data, list):
+            return [self._convert_to_json_serializable(item) for item in data]
+        elif isinstance(data, dict):
+            return {key: self._convert_to_json_serializable(value) for key, value in data.items()}
+        else:
+            return data
     
     def _generate_time_stamps(self) -> List[float]:
         """
@@ -261,6 +267,59 @@ class PacketMessageHandler(IMessageHandler):
         for i in range(3, -1, -1):
             time_vals.append(time_curr - i * (1/68))
         return time_vals
+    
+    async def _save_test_data(self) -> None:
+        from routers.db import write_test
+        result = self._processor.process_data(
+            {
+                "gyro_left": self.gyro_left,
+                "gyro_right": self.gyro_right,
+                "time_from_start": self.time_stamps
+            },
+            self._left_gain,
+            self._right_gain,
+            self._diameter,
+            self._dist_wheels
+        )
+
+        # Convert numpy arrays to lists for database storage
+        def convert_arrays(data):
+            if isinstance(data, np.ndarray):
+                return data.tolist()
+            elif isinstance(data, dict):
+                return {k: convert_arrays(v) for k, v in data.items()}
+            elif isinstance(data, list):
+                return [convert_arrays(item) for item in data]
+            else:
+                return data
+
+        result = convert_arrays(result)
+
+        self.test_file_id = await write_test(
+            {
+                "timeStamp": result["time_from_start"],
+                "distance": result["dist_m"],
+                "displacement": result["disp_m"],
+                "velocity": result["velocity"],
+                "heading": result["heading_deg"],
+                "trajectory_x": result["trajectory"]["x"],
+                "trajectory_y": result["trajectory"]["y"],
+                "gyro_left": [x.tolist() if isinstance(x, np.ndarray) else x for x in self.gyro_left],
+                "gyro_right": [x.tolist() if isinstance(x, np.ndarray) else x for x in self.gyro_right],
+                'gyro_left_smoothed': result["gyro_left_smoothed"],
+                'gyro_right_smoothed': result["gyro_right_smoothed"],
+                "accel_right": [x.tolist() if isinstance(x, np.ndarray) else x for x in self.accel_right],
+                "accel_left": [x.tolist() if isinstance(x, np.ndarray) else x for x in self.accel_left]
+            }
+        )
+        # Update global current test ID
+        global current_test_id
+        current_test_id = self.test_file_id
+        print("Test written")
+        return None
+
+    def get_test_id(self) -> int:
+        return self.test_id
 
 
 class MessageProcessingPipeline:

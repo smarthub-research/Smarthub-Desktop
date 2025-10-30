@@ -5,7 +5,7 @@ import {useTest} from "../context/testContext";
 // Component to save test to database
 export default function SaveTest() {
     const router = useRouter();
-    const { testData, testName, comments } = useTest();
+    const { testName, comments } = useTest();
 
     const handleSaveTest = async () => {
         if (!window.electronAPI) return;
@@ -18,7 +18,6 @@ export default function SaveTest() {
                     "content-type": "application/json"
                 },
                 body: JSON.stringify({
-                    testData,
                     testName,
                     comments,
                 })

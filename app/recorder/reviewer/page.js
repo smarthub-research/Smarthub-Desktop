@@ -1,13 +1,37 @@
 'use client';
 import useFetchFlags from '../hooks/useFetchFlags';
-import { TestProvider, useTest } from '../context/testContext';
+import { useTest } from '../context/testContext';
 import TestInformation from "./testInformation";
 import ChartReview from "./chartReview";
 import SaveTest from "./saveTest";
+import { useEffect } from 'react';
 
 // Main component for the ReviewerTab page
 function ReviewerContent() {
     const { isLoading } = useTest();
+
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            // Prevent F5, Ctrl+R, Cmd+R refreshes
+            if (e.key === 'F5' || (e.ctrlKey && e.key === 'r') || (e.metaKey && e.key === 'r')) {
+                e.preventDefault();
+            }
+        };
+
+        const handleBeforeUnload = (e) => {
+            // Prevent page unload/refresh
+            e.preventDefault();
+            e.returnValue = '';
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        window.addEventListener('beforeunload', handleBeforeUnload);
+
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+            window.removeEventListener('beforeunload', handleBeforeUnload);
+        };
+    }, []);
 
     if (isLoading) {
         return (
@@ -36,9 +60,6 @@ function ReviewerContent() {
 
 export default function Reviewer() {
     return (
-        // Provides context for the test data
-        <TestProvider>
-            <ReviewerContent />
-        </TestProvider>
+        <ReviewerContent />
     );
 }

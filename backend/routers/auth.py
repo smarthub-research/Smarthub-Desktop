@@ -14,6 +14,11 @@ class AuthRequest(BaseModel):
     password: str
     full_name: str = ""
 
+async def get_user_id():
+    user = supabase.auth.get_user()
+    user_id = user.user.id
+    return user_id
+
 # Logs a user in and sends the JWT for the session
 @router.post("/login")
 async def login(request: AuthRequest):
