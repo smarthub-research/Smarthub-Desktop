@@ -11,7 +11,11 @@ export default function Recorder() {
     const [boxView, setBoxView] = useState(true);
 
     async function handleEndTest() {
-        await window.electronAPI.endTest()
+        if (window.electronAPI) {
+            await window.electronAPI.endTest();
+            // Add a small delay to ensure the event is sent
+            await new Promise(resolve => setTimeout(resolve, 100));
+        }
     }
 
     return (

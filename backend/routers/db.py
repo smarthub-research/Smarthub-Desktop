@@ -1,8 +1,8 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from constants import supabase
-from services.message_handler import current_test_id
 from .auth import get_user_id
 from typing import Optional
+import services.message_handler as message_handler_module
 
 router = APIRouter(
     prefix="/db",
@@ -10,28 +10,56 @@ router = APIRouter(
     responses={404: {"description": "Not found"}}
 )
 
-    
+# Check if test_file_id is available
+@router.get("/check_test_file_id")
+async def check_test_file_id():
+    """Check if a test file ID is available (test has been saved)"""
+    test_id = message_handler_module.current_test_id
+    print(f"check_test_file_id called, current_test_id: {test_id}", flush=True)
+    return {"test_file_id": test_id}
 
 # Adds a test to the database
 # Add idempotent ability so duplicate writes don't occur
 # only recieves test name and comments from the front end. none of the recorded data
 @router.post("/write_test")
 async def write_test_info(data: dict):
-    user_id = get_user_id()
-    test_file_id = current_test_id
-    if test_file_id is None:
-        return {"error": "No test data available. Please end a test first."}
-    test_info_response = (
-        supabase.table("test_info")
-        .insert({
-            "test_file_id": test_file_id,
-            "comments": data["comments"],
-            "test_name": data["testName"],
-            "recorded_by_user_id": user_id,
-        })
-        .execute()
-    )
-    return {"test_file_id": test_file_id, "test_info": test_info_response.data[0]}
+    try:
+        print(f"write_test_info called with data: {data}", flush=True)
+        
+        # Get user ID
+        user_id = await get_user_id()
+        print(f"User ID: {user_id}", flush=True)
+        
+        # Get test file ID from global variable
+        test_file_id = message_handler_module.current_test_id
+        print(f"Current test file ID: {test_file_id}", flush=True)
+        
+        if test_file_id is None:
+            print("ERROR: No test file ID available", flush=True)
+            raise HTTPException(status_code=400, detail="No test data available. Please end a test first.")
+        
+        # Insert test info
+        test_info_response = (
+            supabase.table("test_info")
+            .insert({
+                "test_file_id": test_file_id,
+                "comments": data.get("comments", ""),
+                "test_name": data.get("testName", ""),
+                "recorded_by_user_id": user_id,
+            })
+            .execute()
+        )
+        print(f"Supabase response: {test_info_response}", flush=True)
+        
+        if not test_info_response.data:
+            raise Exception("No data returned from Supabase insert")
+        
+        return {"test_file_id": test_file_id, "test_info": test_info_response.data[0]}
+    except Exception as e:
+        print(f"Error writing test info: {e}", flush=True)
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
 
 async def write_test(test_data: dict):
     try:
@@ -54,7 +82,6 @@ async def write_test(test_data: dict):
             })
             .execute()
         )
-        print("Wrote test: ", test_files_response, flush=True)
         test_file_id = test_files_response.data[0]["id"]
         return test_file_id
     except Exception as e:

@@ -15,9 +15,16 @@ class AuthRequest(BaseModel):
     full_name: str = ""
 
 async def get_user_id():
-    user = supabase.auth.get_user()
-    user_id = user.user.id
-    return user_id
+    try:
+        user = supabase.auth.get_user()
+        if not user or not user.user:
+            raise HTTPException(status_code=401, detail="User not authenticated")
+        user_id = user.user.id
+        print(f"Retrieved user ID: {user_id}", flush=True)
+        return user_id
+    except Exception as e:
+        print(f"Error getting user ID: {e}", flush=True)
+        raise HTTPException(status_code=401, detail="Failed to get user information")
 
 # Logs a user in and sends the JWT for the session
 @router.post("/login")

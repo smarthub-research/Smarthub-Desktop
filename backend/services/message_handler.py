@@ -227,7 +227,7 @@ class PacketMessageHandler(IMessageHandler):
         self.start_time = None
         self.paused = False
         self.total_paused_time = 0.0
-        self.test_id = 0
+        self.test_file_id = None
         print("Session reset - cleared all accumulated data", flush=True)
     
     def _convert_to_json_serializable(self, data):
@@ -315,11 +315,12 @@ class PacketMessageHandler(IMessageHandler):
         # Update global current test ID
         global current_test_id
         current_test_id = self.test_file_id
-        print("Test written")
+        print(f"Test written with file_id: {self.test_file_id}", flush=True)
         return None
 
-    def get_test_id(self) -> int:
-        return self.test_id
+    def get_test_file_id(self) -> Optional[int]:
+        """Get the current test file ID"""
+        return self.test_file_id
 
 
 class MessageProcessingPipeline:
