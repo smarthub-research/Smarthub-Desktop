@@ -25,6 +25,7 @@
     "electron": "^34.3.0",
     "fft-js": "^0.0.12",
     "jspdf": "^3.0.3",
+    "kafkajs": "^2.2.4",
     "lucide-react": "^0.525.0",
     "modern-screenshot": "^4.6.6",
     "next": "^15.2.1",
@@ -46,7 +47,7 @@
   },
   "main": "electron/main.js",
   "scripts": {
-    "start": "concurrently \"cross-env BROWSER=none next dev --turbopack\" \"npm run electron:start\" \"npm run fastapi:start\"",
+    "start": " concurrently \"cross-env BROWSER=none next dev --turbopack\" \"npm run electron:start\" \"npm run fastapi:start\"",
     "build": "next build",
     "test": "next test",
     "test:jest": "jest --config jest.config.cjs",
@@ -55,7 +56,8 @@
     "dev": "next dev",
     "electron:start": "wait-on http://localhost:3000 && electron --trace-deprecation .",
     "fastapi:start": "cd backend && source ../.venv/bin/activate && python -m main",
-    "pytest": "cd backend && ../.venv/bin/python -m pytest -vv"
+    "kafka:standalone": "cd backend && source ../.venv/bin/activate && python kafka_runner.py",
+    "pytest": "cd backend && ../.venv/bin/activate && python -m pytest -vv"
   },
   "build": {
     "appId": "com.kellengary.smarthub",
@@ -85,6 +87,7 @@
     "node-fetch": "^2.7.0",
     "prettier": "^3.5.3",
     "prettier-plugin-tailwindcss": "^0.6.12",
+    "supabase": "^2.54.11",
     "tailwindcss": "^4.1.8",
     "tw-animate-css": "^1.3.5"
   }

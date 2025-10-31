@@ -2,8 +2,6 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import FlagConsole from "./navbar/flagConsole";
-import { useFlagging } from "./context/flaggingContext";
 import NavbarRecording from "./navbar/navbarRecording";
 import ChartSection from "./chartSection";
 import ViewSwapper from "./viewSwapper";
@@ -11,13 +9,12 @@ import ViewSwapper from "./viewSwapper";
 // Main RecorderTab component
 export default function Recorder() {
     const [boxView, setBoxView] = useState(true);
-    const { flagging, handleFlagging } = useFlagging();
 
-    // Handle end of recording
-    function handleEndRecording() {
+    async function handleEndTest() {
         if (window.electronAPI) {
-            window.electronAPI.setTestData(true);
-            handleFlagging(false);
+            await window.electronAPI.endTest();
+            // Add a small delay to ensure the event is sent
+            await new Promise(resolve => setTimeout(resolve, 100));
         }
     }
 
@@ -33,7 +30,7 @@ export default function Recorder() {
                             <ViewSwapper boxView={boxView} setBoxView={setBoxView} />
                             {/* End recording button */}
                             <Link href={"/recorder/reviewer"}
-                                  onClick={handleEndRecording}
+                                onClick={handleEndTest}
                                   className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
                             >
                                 Finish Test
@@ -43,11 +40,6 @@ export default function Recorder() {
                     </div>
                 </div>
             </div>
-
-            {/* flagging console if we are flagging */}
-            {flagging && (
-                <FlagConsole setFlagging={handleFlagging}/>
-            )}
         </div>
     );
 }

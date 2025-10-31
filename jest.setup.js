@@ -1,5 +1,13 @@
 // Jest setup file to add polyfills
 
+// Mock @abandonware/noble to prevent native module loading issues
+jest.mock('@abandonware/noble', () => ({
+  on: jest.fn(),
+  startScanning: jest.fn(),
+  stopScanning: jest.fn(),
+  state: 'poweredOn'
+}));
+
 // Add fetch polyfill for Node.js
 if (typeof fetch === 'undefined') {
   // Try to use node-fetch if available, otherwise use a mock

@@ -3,6 +3,10 @@ module.exports = {
   testEnvironment: 'node',
   roots: ['<rootDir>'],
   testMatch: ['**/__tests__/**/*.test.js'],
+  testPathIgnorePatterns: [
+    '/node_modules/',
+    '/actions-runner/'
+  ],
   moduleFileExtensions: ['js', 'json'],
   clearMocks: true,
   resetMocks: true,

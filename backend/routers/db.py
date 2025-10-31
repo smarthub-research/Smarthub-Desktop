@@ -1,5 +1,8 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from constants import supabase
+from .auth import get_user_id
+from typing import Optional
+import services.message_handler as message_handler_module
 
 router = APIRouter(
     prefix="/db",
@@ -7,41 +10,83 @@ router = APIRouter(
     responses={404: {"description": "Not found"}}
 )
 
+# Check if test_file_id is available
+@router.get("/check_test_file_id")
+async def check_test_file_id():
+    """Check if a test file ID is available (test has been saved)"""
+    test_id = message_handler_module.current_test_id
+    print(f"check_test_file_id called, current_test_id: {test_id}", flush=True)
+    return {"test_file_id": test_id}
+
 # Adds a test to the database
 # Add idempotent ability so duplicate writes don't occur
+# only recieves test name and comments from the front end. none of the recorded data
 @router.post("/write_test")
-async def write_test(data: dict):
-    user = supabase.auth.get_user()
-    user_id = user.user.id
-    test_files_response = (
-        supabase.table("test_files")
-        .insert({
-            "distance": data["testData"]["distance"],
-            "timeStamp": data["testData"]["timeStamp"],
-            "displacement": data["testData"]["displacement"],
-            "velocity": data["testData"]["velocity"],
-            "heading": data["testData"]["heading"],
-            "trajectory_x": data["testData"]["trajectory_x"],
-            "trajectory_y": data["testData"]["trajectory_y"],
-            "gyroLeft": data["testData"]["gyroLeft"],
-            "gyroRight": data["testData"]["gyroRight"],
-            "accelRight": data["testData"]["accelRight"],
-            "accelLeft": data["testData"]["accelLeft"],
-        })
-        .execute()
-    )
-    test_file_id = test_files_response.data[0]["id"]
-    test_info_response = (
-        supabase.table("test_info")
-        .insert({
-            "test_file_id": test_file_id,
-            "comments": data["comments"],
-            "test_name": data["testName"],
-            "recorded_by_user_id": user_id,
-        })
-        .execute()
-    )
-    return {"test_file_id": test_file_id, "test_info": test_info_response.data[0]}
+async def write_test_info(data: dict):
+    try:
+        print(f"write_test_info called with data: {data}", flush=True)
+        
+        # Get user ID
+        user_id = await get_user_id()
+        print(f"User ID: {user_id}", flush=True)
+        
+        # Get test file ID from global variable
+        test_file_id = message_handler_module.current_test_id
+        print(f"Current test file ID: {test_file_id}", flush=True)
+        
+        if test_file_id is None:
+            print("ERROR: No test file ID available", flush=True)
+            raise HTTPException(status_code=400, detail="No test data available. Please end a test first.")
+        
+        # Insert test info
+        test_info_response = (
+            supabase.table("test_info")
+            .insert({
+                "test_file_id": test_file_id,
+                "comments": data.get("comments", ""),
+                "test_name": data.get("testName", ""),
+                "recorded_by_user_id": user_id,
+            })
+            .execute()
+        )
+        print(f"Supabase response: {test_info_response}", flush=True)
+        
+        if not test_info_response.data:
+            raise Exception("No data returned from Supabase insert")
+        
+        return {"test_file_id": test_file_id, "test_info": test_info_response.data[0]}
+    except Exception as e:
+        print(f"Error writing test info: {e}", flush=True)
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+async def write_test(test_data: dict):
+    try:
+        test_files_response = (
+            supabase.table("test_files")
+            .insert({
+                "distance": test_data["distance"],
+                "timeStamp": test_data["timeStamp"],
+                "displacement": test_data["displacement"],
+                "velocity": test_data["velocity"],
+                "heading": test_data["heading"],
+                "trajectory_x": test_data["trajectory_x"],
+                "trajectory_y": test_data["trajectory_y"],
+                "gyro_left": test_data["gyro_left"],
+                "gyro_right": test_data["gyro_right"],
+                'gyro_left_smoothed': test_data["gyro_left_smoothed"],
+                'gyro_right_smoothed': test_data["gyro_right_smoothed"],
+                "accel_right": test_data["accel_right"],
+                "accel_left": test_data["accel_left"],
+            })
+            .execute()
+        )
+        test_file_id = test_files_response.data[0]["id"]
+        return test_file_id
+    except Exception as e:
+        print("Error writing test: ", e, flush=True)
+        return None
 
 # Fetches all tests with pagination
 @router.get("/tests")
@@ -49,37 +94,39 @@ async def get_tests(page: int = 1, limit: int = 25):
     # Calculate offset for pagination
     offset = (page - 1) * limit
     
-    # Get total count for pagination info
-    count_response = (
-        supabase.table("test_info")
-        .select("id", count="exact")
-        .execute()
-    )
-    total_count = count_response.count
-    
-    # Get paginated tests
+    # Get paginated results
     response = (
         supabase.table("test_info")
         .select("*, test_files(*)")
-        .order("id", desc=True)  # Order by newest first
         .range(offset, offset + limit - 1)
+        .order("created_at", desc=True)
         .execute()
     )
     
-    # Calculate pagination metadata
+    # Get total count (simplified approach)
+    total_response = supabase.table("test_info").select("id").execute()
+    total_count = len(total_response.data) if total_response.data else 0
+    
+    # Process the results
+    tests = []
+    for test in response.data:
+        if test.get("test_files"):
+            test_files = test["test_files"]
+            # Convert arrays to lists for JSON serialization
+            for field in ["distance", "timeStamp", "displacement", "velocity", "heading", "trajectory_x", "trajectory_y", "gyro_left", "gyro_right", "gyro_left_smoothed", "gyro_right_smoothed", "accel_right", "accel_left"]:
+                if field in test_files and test_files[field]:
+                    test_files[field] = list(test_files[field])
+        tests.append(test)
+    
     total_pages = (total_count + limit - 1) // limit  # Ceiling division
-    has_next = page < total_pages
-    has_previous = page > 1
     
     return {
-        "data": response.data,
+        "tests": tests,
         "pagination": {
-            "current_page": page,
-            "total_pages": total_pages,
-            "total_count": total_count,
+            "page": page,
             "limit": limit,
-            "has_next": has_next,
-            "has_previous": has_previous
+            "total_count": total_count,
+            "total_pages": total_pages
         }
     }
 
@@ -91,23 +138,26 @@ async def get_tests(page: int = 1, limit: int = 25):
 def format_for_review(response):
     test_data = response.data[0]
     test_files = test_data["test_files"]
-    time_stamps = test_files["timeStamp"]
+    
+    # Convert arrays to lists for JSON serialization
+    time_stamps = list(test_files["timeStamp"])
 
     # Format individual data types with timestamps
     def format_data_with_time(data_array, data_type):
         if not data_array: return {}
+        data_list = list(data_array)
         return [
             {
                 "time": round(float(time) / 1000, 2),
-                data_type: data_array[index] if index < len(data_array) else None
+                data_type: data_list[index] if index < len(data_list) else None
             }
             for index, time in enumerate(time_stamps)
         ]
 
     # Format trajectory data with timestamps
     def format_trajectory_data():
-        trajectory_x = test_files["trajectory_x"]
-        trajectory_y = test_files["trajectory_y"]
+        trajectory_x = list(test_files["trajectory_x"])
+        trajectory_y = list(test_files["trajectory_y"])
         return [
             {
                 "time": round(float(time) / 1000, 2),
@@ -130,7 +180,8 @@ def format_for_review(response):
 
 # Get a single test
 @router.get("/tests/{test_id}")
-async def get_test(test_id: int, response_format: str = None):
+async def get_test(test_id: int, response_format: Optional[str] = None):
+    import json
     response = (
         supabase.table("test_info")
         .select("*, test_files(*)")
@@ -141,6 +192,17 @@ async def get_test(test_id: int, response_format: str = None):
     if response_format == "review":
         formatted_response = format_for_review(response)
         return formatted_response
+
+    # Parse JSON strings back to arrays for raw response
+    if response.data and response.data[0].get("test_files"):
+        test_files = response.data[0]["test_files"]
+        # Parse all JSON fields back to arrays
+        json_fields = ["timeStamp", "distance", "displacement", "velocity", "heading", 
+                      "trajectory_x", "trajectory_y", "gyro_left", "gyro_right", 
+                      "gyro_left_smoothed", "gyro_right_smoothed", "accel_right", "accel_left"]
+        for field in json_fields:
+            if field in test_files and test_files[field]:
+                test_files[field] = json.loads(test_files[field])
 
     return response
 

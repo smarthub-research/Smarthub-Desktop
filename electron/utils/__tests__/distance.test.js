@@ -2,6 +2,7 @@ const calculationUtils = require('../calculationUtils')
 const testData = require('./testing.json')
 const testData125 = require('./test125.json')
 const testUtils = require("./testUtils")
+const dataService = require('../../services/dataService')
 
 describe("getDistance", () => {
     beforeEach(() => {
@@ -33,5 +34,44 @@ describe("getDistance", () => {
         const dist = calculationUtils.getDistance(t, left, right);
         const expected = testData125.distance_m
         testUtils.assertArraysClose(dist, expected, 12, 'getDistance-full-125', 10)
+    })
+
+    test("full integration", async () => {
+        const t = testData.elapsed_time_s
+        let left = testData.gyro_left
+        let right = testData.gyro_right
+
+        const smoothedData = await dataService.smoothData(left, right, t)
+            
+        // Create copies to avoid mutation issues
+        const gyroLeftSmoothed = [...smoothedData.gyro_left_smoothed];
+        const gyroRightSmoothed = [...smoothedData.gyro_right_smoothed];
+
+        const gainedVals = dataService.applyGain(gyroLeftSmoothed, gyroRightSmoothed)
+
+        const dist = calculationUtils.getDistance(t, gainedVals.left, gainedVals.right);
+        const expected = testData.distance_m
+        testUtils.assertArraysClose(dist, expected, 2, 'getDistance-integration', 10)
+        expect(dist.at(-1)).toStrictEqual(expected.at(-1))
+    })
+
+    test("full integration 125", async () => {
+        const t = testData125.elapsed_time_s
+        let left = testData125.gyro_left
+        let right = testData125.gyro_right
+
+        const smoothedData = await dataService.smoothData(left, right, t)
+            
+        // Create copies to avoid mutation issues
+        const gyroLeftSmoothed = [...smoothedData.gyro_left_smoothed];
+        const gyroRightSmoothed = [...smoothedData.gyro_right_smoothed];
+
+        const gainedVals = dataService.applyGain(gyroLeftSmoothed, gyroRightSmoothed)
+
+        const dist = calculationUtils.getDistance(t, gainedVals.left, gainedVals.right);
+        const expected = testData125.distance_m
+
+        testUtils.assertArraysClose(dist, expected, 2, 'getDistance-integration', 10)
+        expect(dist.at(-1)).toStrictEqual(expected.at(-1))
     })
 })

@@ -1,5 +1,5 @@
 "use client"
-import {createContext, useContext, useEffect, useState} from 'react';
+import {createContext, useCallback, useContext, useEffect, useState} from 'react';
 
 const TestContext = createContext();
 
@@ -13,8 +13,27 @@ export function TestProvider({ children }) {
     const [formErrors, setFormErrors] = useState({
         testName: false
     });
+    const [processedPackets, setProcessedPackets] = useState({
+        distance: [],
+        velocity: [],
+        heading: [],
+        trajectory: []
+    });
 
-    async function fetchReviewData() {
+    const addProcessedData = (data) => {
+        setProcessedPackets(data);
+    };
+
+    const clearProcessedData = () => {
+        setProcessedPackets({
+            distance: [],
+            velocity: [],
+            heading: [],
+            trajectory: []
+        });
+    };
+
+    const fetchReviewData = useCallback(async () => {
         if (window.electronAPI) {
             try {
                 await window.electronAPI.setReviewData(testData);
@@ -27,7 +46,7 @@ export function TestProvider({ children }) {
         } else {
             setIsLoading(false);
         }
-    }
+    }, [testData]);
 
     useEffect(() => {
         const fetchTestData = async () => {
@@ -52,7 +71,7 @@ export function TestProvider({ children }) {
         <TestContext.Provider value={{
             testData, testName, setTestName, testDistance, setTestDistance,
             unitType, setUnitType, comments, setComments, formErrors, setFormErrors,
-            isLoading, fetchReviewData
+            isLoading, fetchReviewData, processedPackets, addProcessedData, clearProcessedData
         }}>
             {children}
         </TestContext.Provider>

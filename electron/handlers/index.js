@@ -3,6 +3,7 @@ const { calibrationHandlers } = require("./calibrationHandlers");
 const { deviceManagementHandlers } = require("./deviceManagementHandlers")
 const { recordingHandlers } = require("./recordingHandlers")
 const { testDataHandlers } = require("./testDataHandlers")
+const { kafkaHandlers } = require("./kafkaHandlers")
 
 function initializeAllHandlers() {
     dataHandlers();
@@ -10,6 +11,7 @@ function initializeAllHandlers() {
     deviceManagementHandlers();
     recordingHandlers();
     testDataHandlers();
+    kafkaHandlers();
 }
 
 module.exports = {

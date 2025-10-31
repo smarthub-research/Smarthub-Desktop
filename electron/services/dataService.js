@@ -2,22 +2,74 @@ const noble = require("@abandonware/noble")
 const BrowserWindow = require('electron').BrowserWindow;
 const timeManager = require("../utils/timeManager")
 const connectionStore = require('../utils/connectionStore')
-const dataBuffer = require('../utils/dataBuffer');
-const calculationUtils = require("../utils/calculationUtils")
+const kafkaService = require('./kafkaService')
+const recordingService = require('./recordingService')
 
 class DataService {
     constructor() {
-        this.pendingLeftData = null;
-        this.pendingRightData = null;
-        this.THRESHOLD = 0.03;
-        this.isProcessing = false;
-        this.packetQueue = [];
+        this.kafkaInitialized = false;
+        this.kafkaInitializing = false;
     }
 
+    async initializeKafka() {
+        // If already initialized, return immediately
+        if (this.kafkaInitialized) {
+            return true;
+        }
+        
+        // If currently initializing, wait for it to complete
+        if (this.kafkaInitializing) {
+            console.log('Kafka initialization already in progress, waiting...');
+            // Poll until initialization completes (with timeout)
+            const startTime = Date.now();
+            const timeout = 15000; // 15 second timeout
+            while (this.kafkaInitializing && (Date.now() - startTime) < timeout) {
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+            return this.kafkaInitialized;
+        }
+        
+        // Start initialization
+        this.kafkaInitializing = true;
+        console.log('Initializing Kafka connection...');
+        try {
+            // Now initialize Electron's Kafka producer/consumer
+            this.kafkaInitialized = await kafkaService.initialize();
+            if (this.kafkaInitialized) {
+                console.log('✓ Kafka initialized successfully');
+            } else {
+                console.warn('✗ Kafka initialization failed - data will not be processed');
+            }
+        } catch (error) {
+            console.error('✗ Kafka initialization error:', error);
+            this.kafkaInitialized = false;
+        } finally {
+            this.kafkaInitializing = false;
+        }
+        
+        return this.kafkaInitialized;
+    }
+
+    async ensureKafkaReady() {
+        if (!this.kafkaInitialized) {
+            console.log('Kafka not ready, initializing now...');
+            await this.initializeKafka();
+        }
+        return this.kafkaInitialized;
+    }
+    
     async beginReadingData() {
         noble.stopScanning();
 
+        // Ensure Kafka is ready before starting to read data
+        const kafkaReady = await this.ensureKafkaReady();
+        if (!kafkaReady) {
+            console.error('Cannot begin reading - Kafka is not ready');
+            // Still proceed but warn that data won't be processed
+        }
+
         timeManager.beginRecording();
+        recordingService.startRecording();
 
         const conn1 = connectionStore.getConnectionOne();
         const conn2 = connectionStore.getConnectionTwo();
@@ -38,6 +90,9 @@ class DataService {
 
         await this.findCharacteristics(false, conn1);
         await this.findCharacteristics(false, conn2);
+
+        // sends stop recording message to kafka
+        recordingService.pauseRecording();
 
         BrowserWindow.getAllWindows().forEach((win) => {
             win.webContents.send('stop-reading', { elapsedTime: timeManager.getPausedElapsedTime() });
@@ -71,6 +126,7 @@ class DataService {
     }
 
     unsubscribeToCharacteristics(characteristic) {
+        console.log("unsubscribing")
         characteristic.unsubscribe((error) => {
             if (error) {
                 console.error('Unsubscribe error:', error);
@@ -90,234 +146,29 @@ class DataService {
             }
         });
 
+        // Determine which side this device is (left or right)
+        const conn1 = connectionStore.getConnectionOne();
+        const side = (peripheral === conn1) ? 'left' : 'right';
+        const deviceId = peripheral.id || peripheral.address || 'unknown';
+
         characteristic._dataCallback = async (data) => {
-            let accelData = [];
-            let gyroData = [];
-            calculationUtils.decodeSensorData(data, accelData, gyroData);
-            this.storePacket(peripheral, accelData, gyroData);
-            if (this.pendingLeftData && this.pendingRightData) {
-                await this.processPackets();   
+            // Send raw packet to Kafka for backend processing
+            if (this.kafkaInitialized) {
+                await kafkaService.sendRawPacket(data, side, deviceId);
+            } else {
+                console.warn('Kafka not initialized - packet dropped');
             }
+
+            // Note: The processed result will come back via Kafka consumer
+            // and be sent to frontend automatically by kafkaService.sendToFrontend()
         }
 
         characteristic.on('data', characteristic._dataCallback);
     }
 
-    storePacket(peripheral, accelData, gyroData) {
-        if (peripheral === connectionStore.getConnectionOne()) {
-            // Store data from left device
-            this.pendingLeftData = {
-                accelData: accelData,
-                gyroData: gyroData,
-            };
-        } else if (peripheral === connectionStore.getConnectionTwo()) {
-            // Store data from right device
-            this.pendingRightData = {
-                accelData: accelData,
-                gyroData: gyroData,
-            };
-        }
-    }
-
-    async processPackets() {
-        // Prevent concurrent processing
-        if (this.isProcessing) {
-            console.log('Already processing, skipping duplicate call');
-            return;
-        }
-
-        this.isProcessing = true;
-
-        try {
-            // Capture pending data immediately to prevent race conditions
-            const leftData = this.pendingLeftData;
-            const rightData = this.pendingRightData;
-            
-            // Clear immediately to allow new packets to arrive
-            this.pendingLeftData = null;
-            this.pendingRightData = null;
-
-            // Validate we still have both packets (defensive)
-            if (!leftData || !rightData) {
-                console.warn('Packet data became null during processing');
-                this.isProcessing = false;
-                return;
-            }
-
-            let time_curr = (Date.now() - timeManager.getRecordingStartTime()) / 1000
-            let timeStamps = []
-            // Creates 4 time stamps at sensor intervals
-            for (let i = 3; i > -1; i--) {
-                timeStamps.push(time_curr - i * (1/68))
-            }
-
-            // Use captured data instead of this.pending* to avoid race conditions
-            const smoothedData = await this.smoothData(rightData, leftData, timeStamps)
-            
-            // Create copies to avoid mutation issues
-            const gyroLeftSmoothed = [...smoothedData.gyro_left_smoothed];
-            const gyroRightSmoothed = [...smoothedData.gyro_right_smoothed];
-            
-            this.applyGain(gyroLeftSmoothed, gyroRightSmoothed)
-            this.applyThreshold(gyroLeftSmoothed, gyroRightSmoothed)
-
-            let calculationData = calculationUtils.calc(
-                timeStamps, 
-                gyroLeftSmoothed, 
-                gyroRightSmoothed, 
-                leftData.accelData, 
-                rightData.accelData
-            );
-            
-
-            // Append data to both buffers
-            dataBuffer.appendToBuffer(calculationData);
-            
-            // reformat data for our graphs
-            let finalData = this.processData(calculationData);
-
-            // Send downsampled data to frontend
-            if (BrowserWindow) {
-                BrowserWindow.getAllWindows().forEach((win) => {
-                    if (win && !win.isDestroyed()) {
-                        win.webContents.send('new-ble-data', {data: finalData});
-                    }
-                });
-            }
-
-        } catch(error) {
-            console.error('Error processing packets:', error);
-            // Clear pending data on error to prevent stuck state
-            this.pendingLeftData = null;
-            this.pendingRightData = null;
-        } finally {
-            this.isProcessing = false;
-        }
-    }
-
-    async smoothData(pendingRightData, pendingLeftData, timeStamps) {
-        const SMOOTHING_TIMEOUT_MS = 500; // 500ms timeout
-        
-        try {
-            // Create timeout promise
-            const timeoutPromise = new Promise((_, reject) => {
-                setTimeout(() => reject(new Error('Smoothing API timeout')), SMOOTHING_TIMEOUT_MS);
-            });
-
-            // Race between fetch and timeout
-            const fetchPromise = fetch("http://localhost:8000/calculate/smooth", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    gyroRight: pendingRightData.gyroData,
-                    gyroLeft: pendingLeftData.gyroData,
-                    timeStamps: timeStamps
-                })
-            });
-
-            const response = await Promise.race([fetchPromise, timeoutPromise]);
-            
-            if (!response.ok) {
-                throw new Error(`Smoothing API returned ${response.status}`);
-            }
-
-            const data = await response.json();
-            
-            // Validate response
-            if (!data.gyro_left_smoothed || !data.gyro_right_smoothed) {
-                throw new Error('Invalid smoothing response: missing data');
-            }
-            
-            if (data.gyro_left_smoothed.length !== 4 || data.gyro_right_smoothed.length !== 4) {
-                throw new Error(`Invalid smoothing response: wrong length (left: ${data.gyro_left_smoothed.length}, right: ${data.gyro_right_smoothed.length})`);
-            }
-
-            // Check for invalid values
-            const hasInvalidLeft = data.gyro_left_smoothed.some(v => !isFinite(v) || isNaN(v));
-            const hasInvalidRight = data.gyro_right_smoothed.some(v => !isFinite(v) || isNaN(v));
-            
-            if (hasInvalidLeft || hasInvalidRight) {
-                throw new Error('Invalid smoothing response: NaN or Infinity values');
-            }
-
-            return data;
-
-        } catch (error) {
-            console.warn('Smoothing failed, using unsmoothed data:', error.message);
-            
-            // Fallback: return unsmoothed data
-            return {
-                gyro_left_smoothed: [...pendingLeftData.gyroData],
-                gyro_right_smoothed: [...pendingRightData.gyroData]
-            };
-        }
-    }
-
-    // Both data comes in the form of {
-    //  accelData:
-    //  gyroData:
-    // }
-    applyGain(gyroLeft, gyroRight) {
-        for (let i = 0; i < gyroLeft.length; i++) {
-            gyroLeft[i] *= 1.13;
-            gyroRight[i] *= 1.12;
-        }
-        return {
-            "left": gyroLeft,
-            "right": gyroRight
-        }
-    }
-
-    // Both data comes in the form of {
-    //  accelData:
-    //  gyroData:
-    // }
-    applyThreshold(gyroLeft, gyroRight) {
-        for (let i = 0; i < gyroLeft.length; i++) {
-            gyroLeft[i] = (Math.abs(gyroLeft[i]) > this.THRESHOLD ? gyroLeft[i] : 0) 
-            gyroRight[i] = (Math.abs(gyroRight[i]) > this.THRESHOLD ? gyroRight[i] : 0)
-        }
-    }
-
-    processData(data) {
-        let returnData = {
-            displacement: [],
-            distance: [],
-            heading: [],
-            velocity: [],
-            trajectory: [],
-            gyroLeft: [],
-            gyroRight: [],
-            timeStamp: []
-        };
-        for (let i = 0; i < data.timeStamp.length; i++) {
-            returnData.displacement.push({
-                time: data.timeStamp[i],
-                displacement: data.displacement[i]
-            })
-            returnData.distance.push({
-                time: data.timeStamp[i],
-                distance: data.distance[i]
-            })
-            returnData.heading.push({
-                time: data.timeStamp[i],
-                heading: data.heading[i],
-            });
-            returnData.velocity.push({
-                time: data.timeStamp[i],
-                velocity: data.velocity[i],
-            });
-            returnData.trajectory.push({
-                trajectory_x: data.trajectory_x[i],
-                trajectory_y: data.trajectory_y[i],
-            });
-        }
-        returnData.gyroLeft.push(data.gyroLeft);
-        returnData.gyroRight.push(data.gyroRight);
-        returnData.timeStamp.push(data.timeStamp);
-        return returnData;
+    async shutdown() {
+        // Clean shutdown of Kafka connections
+        await kafkaService.shutdown();
     }
 }
 

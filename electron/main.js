@@ -2,6 +2,7 @@ const path = require('path');
 const { app, screen, session, Menu } = require('electron');
 const {initializeAllHandlers} = require("./handlers");
 const BrowserWindow = require('electron').BrowserWindow;
+const dataService = require('./services/dataService');
 
 initializeAllHandlers();
 
@@ -11,7 +12,6 @@ function createMainWindow() {
     const iconPath = path.resolve( __dirname, 'assets/icons',
         process.platform === 'darwin' ? 'icon.icns' :
             process.platform === 'win32' && 'icon.png');
-    console.log('Icon path:', iconPath);
 
     const mainWindow = new BrowserWindow({
         title: 'Smarthub Desktop',
@@ -46,4 +46,18 @@ app.on("ready", async () => {
 
 app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') app.quit();
+})
+
+app.on('before-quit', async (event) => {
+    // Prevent quit until Kafka is properly shut down
+    event.preventDefault();
+    
+    try {
+        await dataService.shutdown();
+    } catch (error) {
+        console.error('Error during shutdown:', error);
+    }
+    
+    // Now allow the app to quit
+    app.exit(0);
 })

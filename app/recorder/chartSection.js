@@ -1,34 +1,20 @@
-import React, {useEffect, useState} from "react";
+import React, {useEffect} from "react";
 import Graph from "../components/graphs/graph";
 import TrajectoryGraph from "../components/graphs/trajectoryGraph";
+import {useTest} from "./context/testContext";
 
 export default function ChartSection({boxView}) {
-    const [testData, setTestData] = useState({
-        distance: [],
-        velocity: [],
-        heading: [],
-        trajectory: []
-    });
+    const { processedPackets, addProcessedData, clearProcessedData } = useTest();
 
     function handleData(data) {
         console.log(data)
         data = data.data
-        // Update testData with the new formatted data from BLE service
-        setTestData(prevTestData => ({
-            distance: [...prevTestData.distance, data.distance[0]],
-            velocity: [...prevTestData.velocity, data.velocity[0]],
-            heading: [...prevTestData.heading, data.heading[0]],
-            trajectory: [...prevTestData.trajectory, data.trajectory[0]]
-        }));
+        // Add the new formatted data to the context
+        addProcessedData(data);
     }
 
     function clearData() {
-        setTestData({
-            distance: [],
-            velocity: [],
-            heading: [],
-            trajectory: []
-        });
+        clearProcessedData();
     }
 
     const restartHandler = () => {
@@ -50,12 +36,12 @@ export default function ChartSection({boxView}) {
     }, []);
 
     return (
-        testData.distance.length> 0 ? (
+        processedPackets.distance.length> 0 ? (
                 <div className={`ml-16 ${boxView ? 'grid grid-cols-2 gap-8 grow h-[80dvh]' : 'flex flex-col gap-8'}`}>
-                    <Graph data={testData.distance}/>
-                    <Graph data={testData.heading}/>
-                    <Graph data={testData.velocity}/>
-                    <TrajectoryGraph data={testData.trajectory}/>
+                    <Graph data={processedPackets.distance}/>
+                    <Graph data={processedPackets.heading}/>
+                    <Graph data={processedPackets.velocity}/>
+                    <TrajectoryGraph data={processedPackets.trajectory}/>
                 </div>
             ) : (
             //     No data fallback

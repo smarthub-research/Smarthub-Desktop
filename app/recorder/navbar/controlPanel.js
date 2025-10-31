@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import StopButton from "./stopButton";
 import RestartButton from "./restartButton";
-import FlaggingButton from "./flaggingButton";
 import StartButton from "./startButton";
 
 // Component for the control panel with buttons to start, stop, and restart recording,
