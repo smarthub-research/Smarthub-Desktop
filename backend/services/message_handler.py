@@ -8,8 +8,10 @@ import numpy as np
 
 from services.kafka_service import IMessageConsumer, IMessageProducer
 from services.message_processor import DataProcessor
-from utils.decode_packet import convert_from_raw
+from services.ble_packet_handler import BLEPacketHandler
+from services.calibration_service import calibration_service
 import time
+from utils.gyro_offsets import process_gyro_axis
 
 # Global variable to store the current test file ID
 current_test_id = None
@@ -82,6 +84,8 @@ class PacketMessageHandler(IMessageHandler):
         self.accel_left: List[float] = []
         self.accel_right: List[float] = []
         self.time_stamps: List[float] = []
+
+        self.packet_handler = BLEPacketHandler()
     
     async def handle_message(self, message: dict) -> Optional[dict]:
         """
@@ -93,6 +97,7 @@ class PacketMessageHandler(IMessageHandler):
         :return: Processed results or None
         """
         # Check if this is a recording event or packet
+        # print(f"Packet recieved: ", message)
         if message.get("type") == "recording_event":
             return await self._handle_recording_event(message=message)
         else:
@@ -101,44 +106,172 @@ class PacketMessageHandler(IMessageHandler):
     async def _handle_recording_event(self, message: dict) -> None:
         event_type = message.get("event")
         if event_type == "start-recording":
-            print("Starting recording", flush=True)
+            # print("Starting recording", flush=True)
             if self.start_time is not None:
                 self.total_paused_time = time.time() - self.pause_start_time
             self.paused = False
         elif event_type == "restart-recording":
-            print(f"Recording restarted - resetting session data", flush=True)
+            # print(f"Recording restarted - resetting session data", flush=True)
             self.reset_session()
             # start_time will be set on first packet
             self.paused_time = None
             self.paused = False
         elif event_type == "pause-recording":
-            print(f"Recording paused", flush=True)
+            # print(f"Recording paused", flush=True)
             self.paused = True
             self.pause_start_time = time.time()
         elif event_type == "end-test":
-            print(f"Test ended - finalizing session", flush=True)
+            # print(f"Test ended - finalizing session", flush=True)
             # Could add logic here for saving final data
             await self._save_test_data()
+        elif event_type == "begin-static-calibration":
+            print("Starting dynamic calibration...", flush=True)
+            calibration_service.start_calibration()
+        elif event_type == "end-static-calibration":
+            print("Ending calibration manually...", flush=True)
+            results = calibration_service.stop_calibration()
+            # Apply calibration results to packet handler
+            if results and 'offsets' in results and 'std_devs' in results:
+                offsets = results['offsets']
+                std_devs = results['std_devs']
+                print(f"\n[APPLYING OFFSETS - MANUAL] Left: {offsets['left']}", flush=True)
+                print(f"[APPLYING OFFSETS - MANUAL] Right: {offsets['right']}", flush=True)
+                for side in ["left", "right"]:
+                    for axis in ["gx", "gy", "gz"]:
+                        self.packet_handler.gyro_offsets[side][axis] = offsets[side][axis]
+                        self.packet_handler.gyro_std_devs[side][axis] = std_devs[side][axis]
+                print(f"[APPLIED - MANUAL] packet_handler offsets - Left: {self.packet_handler.gyro_offsets['left']}", flush=True)
+                print(f"[APPLIED - MANUAL] packet_handler offsets - Right: {self.packet_handler.gyro_offsets['right']}", flush=True)
+                print("Calibration applied to packet handler", flush=True)
+                # Reset debug flags so we see the new offsets on next packet
+                if hasattr(self, '_offset_debug_printed'):
+                    self._offset_debug_printed = {}
         else:
             print(f"Unknown recording event: {event_type}", flush=True)
         # Recording events don't produce output messages
         return None
     
     async def _handle_packet(self, message: dict) -> Optional[dict]:
-        # Skip processing if recording is paused
-        if self.paused:
-            return None
-            
-        # Initialize start time on first message
-        if self.start_time is None:
-            # Set start_time so that the first packet's newest timestamp is at current time
-            self.start_time = time.time() - 3/68  # 3 intervals back to make oldest at 0
-        
         # Extract byte array from message
         packet = message["packet"]
+        side = message.get("side", "unknown")
 
         # Decode the gyro data and accel data from bytearray
-        raw_data = convert_from_raw(packet)
+        # Some producers may send the packet as a list of ints (JSON). Convert to bytes-like if necessary.
+        try:
+            if isinstance(packet, list):
+                packet_bytes = bytearray(packet)
+            elif isinstance(packet, (bytes, bytearray)):
+                packet_bytes = packet
+            else:
+                # Attempt to coerce other sequence types
+                packet_bytes = bytearray(packet)
+
+            counter, samples = self.packet_handler.unpack_packet(packet_bytes)
+            
+            # If calibration is active, process samples for calibration
+            if calibration_service.is_calibrating:
+                should_continue = calibration_service.process_packet(side, samples)
+                if not should_continue:
+                    # Calibration complete, stop it
+                    results = calibration_service.stop_calibration()
+                    # Apply calibration results
+                    if results and 'offsets' in results and 'std_devs' in results:
+                        offsets = results['offsets']
+                        std_devs = results['std_devs']
+                        print(f"\n[APPLYING OFFSETS] Left: {offsets['left']}", flush=True)
+                        print(f"[APPLYING OFFSETS] Right: {offsets['right']}", flush=True)
+                        for wheel_side in ["left", "right"]:
+                            for axis in ["gx", "gy", "gz"]:
+                                self.packet_handler.gyro_offsets[wheel_side][axis] = offsets[wheel_side][axis]
+                                self.packet_handler.gyro_std_devs[wheel_side][axis] = std_devs[wheel_side][axis]
+                        print(f"[APPLIED] packet_handler offsets - Left: {self.packet_handler.gyro_offsets['left']}", flush=True)
+                        print(f"[APPLIED] packet_handler offsets - Right: {self.packet_handler.gyro_offsets['right']}", flush=True)
+                        print("Calibration complete and applied!", flush=True)
+                        # Reset debug flags so we see the new offsets on next packet
+                        if hasattr(self, '_offset_debug_printed'):
+                            self._offset_debug_printed = {}
+                    
+                    # Send calibration completion event to frontend via result topic
+                    # This will notify the frontend to stop reading data
+                    return {
+                        "type": "calibration_complete",
+                        "results": results,
+                        "timestamp": time.time()
+                    }
+                return None  # Don't process packets during calibration
+            
+            # Skip processing if recording is paused
+            if self.paused:
+                return None
+                
+            # Initialize start time on first message
+            if self.start_time is None:
+                # Set start_time so that the first packet's newest timestamp is at current time
+                self.start_time = time.time() - 3/68  # 3 intervals back to make oldest at 0
+            
+            # Transform samples into the format expected by the processor
+            # samples is a list of dicts: [{"ax": ..., "ay": ..., "az": ..., "gx": ..., "gy": ..., "gz": ...}, ...]
+            # Apply calibration offsets to all gyro axes
+            
+            # Debug: Print offsets for first packet of each side
+            if not hasattr(self, '_offset_debug_printed'):
+                self._offset_debug_printed = {}
+            if side not in self._offset_debug_printed:
+                print(f"\n[DEBUG {side}] Gyro offsets: {self.packet_handler.gyro_offsets[side]}", flush=True)
+                print(f"[DEBUG {side}] Gyro std_devs: {self.packet_handler.gyro_std_devs[side]}", flush=True)
+                self._offset_debug_printed[side] = True
+            
+            # Debug: Show calibration for first sample
+            show_sample_debug = (side not in self._offset_debug_printed or 
+                                not hasattr(self, '_sample_debug_shown'))
+            
+            for idx, sample in enumerate(samples):
+                # Store original value for debug
+                original_gy = sample["gy"] if show_sample_debug and idx == 0 else None
+                
+                # Process all gyro axes with axis-specific offsets
+                gx_results = process_gyro_axis(
+                    sample["gx"], 
+                    self.packet_handler.gyro_offsets[side]["gx"], 
+                    self.packet_handler.gyro_std_devs[side]["gx"]
+                )
+                sample["gx_raw"] = gx_results['raw']
+                sample["gx"] = gx_results['calibrated']  # Update with calibrated value
+                
+                gy_results = process_gyro_axis(
+                    sample["gy"], 
+                    self.packet_handler.gyro_offsets[side]["gy"], 
+                    self.packet_handler.gyro_std_devs[side]["gy"]
+                )
+                sample["gy_raw"] = gy_results['raw']
+                sample["gy"] = gy_results['calibrated']  # Update with calibrated value
+                
+                # Debug first sample
+                if original_gy is not None and idx == 0:
+                    print(f"[DEBUG {side}] Sample gy: raw={original_gy:.6f} -> calibrated={sample['gy']:.6f} (offset={self.packet_handler.gyro_offsets[side]['gy']:.6f})", flush=True)
+                    self._sample_debug_shown = True
+                
+                gz_results = process_gyro_axis(
+                    sample["gz"], 
+                    self.packet_handler.gyro_offsets[side]["gz"], 
+                    self.packet_handler.gyro_std_devs[side]["gz"]
+                )
+                sample["gz_raw"] = gz_results['raw']
+                sample["gz"] = gz_results['calibrated']  # Update with calibrated value
+            
+            # Extract calibrated gyro data (gy axis) for wheel rotation
+            gyro_data = [sample["gy"] for sample in samples]
+            accel_data = [[sample["ax"], sample["ay"], sample["az"]] for sample in samples]
+            
+            raw_data = {
+                "counter": counter,
+                "gyro_data": gyro_data,
+                "accel_data": accel_data
+            }
+        except Exception as e:
+            print(f"Failed to unpack packet (len={len(packet) if packet is not None else 'None'}): {e}", flush=True)
+            return None
         
         # Store decoded data by side (like dataService.js stores pendingLeftData/pendingRightData)
         if message["side"] == "left":
@@ -170,7 +303,7 @@ class PacketMessageHandler(IMessageHandler):
                         self.time_stamps.extend(fill_timestamps)
                         self.gyro_left.extend(fill_gyro_left)
                         self.gyro_right.extend(fill_gyro_right)
-                        print(f"Filled gap with {num_fill_points} zero points", flush=True)
+                        # print(f"Filled gap with {num_fill_points} zero points", flush=True)
             
             self.time_stamps.extend(new_timestamps)
             

@@ -121,6 +121,8 @@ class KafkaMessageConsumer(IMessageConsumer):
                 *self._topics,
                 bootstrap_servers=self._bootstrap_servers,
                 group_id=self._group_id,
+                # Start from latest messages only (skip old buffered messages)
+                auto_offset_reset='latest',  # 'latest' = only new messages, 'earliest' = replay all
                 # Optimize consumer group coordination
                 session_timeout_ms=10000,  # Faster failure detection (default 10s)
                 heartbeat_interval_ms=3000,  # Frequent heartbeats (default 3s)

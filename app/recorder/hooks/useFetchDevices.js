@@ -1,43 +1,78 @@
 
-import {useEffect, useState} from "react";
+import { useEffect, useState } from "react";
 
-// Custom hook to fetch devices
+// Module-level shared store so multiple components using the hook share the same state
+let devicesState = [];
+let deviceOneState = null;
+let deviceTwoState = null;
+const listeners = new Set();
+let initialized = false;
+
+function notifyListeners() {
+    const snapshot = { devices: devicesState, deviceOne: deviceOneState, deviceTwo: deviceTwoState };
+    listeners.forEach((l) => {
+        try { l(snapshot); } catch (e) { /* ignore listener errors */ }
+    });
+}
+
+// Custom hook to fetch devices (shared store)
 export default function useFetchDevices() {
-    const [devices, setDevices] = useState([]);
-    const [deviceOne, setDeviceOne] = useState(null);
-    const [deviceTwo, setDeviceTwo] = useState(null);
+    const [state, setState] = useState({ devices: devicesState, deviceOne: deviceOneState, deviceTwo: deviceTwoState });
 
-    // Fetch nearby devices
+    // Subscribe to shared store updates
     useEffect(() => {
-        if (window.electronAPI) {
-            window.electronAPI.searchForDevices();
-            window.electronAPI.onDeviceDiscovery((newDevice) => {
-                setDevices(prevDevices => {
-                    if (!prevDevices.some(dev => dev.name === newDevice.name)) {
-                        return [...prevDevices, newDevice]; // Return new array
+        const listener = (newState) => setState(newState);
+        listeners.add(listener);
+        // sync immediately in case module state changed before this hook ran
+        listener({ devices: devicesState, deviceOne: deviceOneState, deviceTwo: deviceTwoState });
+        return () => listeners.delete(listener);
+    }, []);
+
+    // Initialize electronAPI listeners only once
+    useEffect(() => {
+        if (initialized) return;
+        initialized = true;
+
+        if (typeof window !== "undefined" && window.electronAPI) {
+            // start searching for devices and listen for discoveries
+            try { window.electronAPI.searchForDevices(); } catch (e) { /* ignore in non-electron env */ }
+
+            if (window.electronAPI.onDeviceDiscovery) {
+                window.electronAPI.onDeviceDiscovery((newDevice) => {
+                    const exists = devicesState.some((d) => d?.name === newDevice?.name);
+                    if (!exists) {
+                        devicesState = [...devicesState, newDevice];
+                        notifyListeners();
                     }
-                    return prevDevices; // If device exists, return old state
                 });
-            });
-        }
-    }, []);
-
-    // Fetch connected devices when the component mounts
-    useEffect(() => {
-        async function fetchConnectedDevices() {
-            if (window.electronAPI) {
-                const connectedDevices = await window.electronAPI.getConnectedDevices();
-                if (connectedDevices[0]) {
-                    setDeviceOne(connectedDevices[0]);
-                }
-
-                if (connectedDevices[1]) {
-                    setDeviceTwo(connectedDevices[1]);
-                }
             }
+
+            // fetch connected devices once at startup
+            (async () => {
+                try {
+                    if (window.electronAPI.getConnectedDevices) {
+                        const connectedDevices = await window.electronAPI.getConnectedDevices();
+                        if (connectedDevices?.[0]) deviceOneState = connectedDevices[0];
+                        if (connectedDevices?.[1]) deviceTwoState = connectedDevices[1];
+                        notifyListeners();
+                    }
+                } catch (e) {
+                    // ignore errors during initial fetch
+                }
+            })();
         }
-        fetchConnectedDevices();
     }, []);
 
-    return { devices, deviceOne, deviceTwo, setDeviceOne, setDeviceTwo };
+    // setters that update module state and notify subscribers
+    const setDeviceOne = (d) => {
+        deviceOneState = d;
+        notifyListeners();
+    };
+
+    const setDeviceTwo = (d) => {
+        deviceTwoState = d;
+        notifyListeners();
+    };
+
+    return { devices: state.devices, deviceOne: state.deviceOne, deviceTwo: state.deviceTwo, setDeviceOne, setDeviceTwo };
 }

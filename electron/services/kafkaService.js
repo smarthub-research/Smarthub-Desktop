@@ -194,6 +194,23 @@ class KafkaService {
                     const value = message.value.toString();
                     const processedData = JSON.parse(value);
 
+                    // Check if this is a calibration completion event
+                    if (processedData.type === 'calibration_complete') {
+                        console.log('Calibration completed automatically by backend');
+                        // Stop reading data from BLE devices
+                        const calibrationService = require('./calibrationService');
+                        await calibrationService.endStaticCalibration();
+                        // Notify frontend
+                        if (BrowserWindow) {
+                            BrowserWindow.getAllWindows().forEach((win) => {
+                                if (win && !win.isDestroyed()) {
+                                    win.webContents.send('calibration-complete', processedData.results);
+                                }
+                            });
+                        }
+                        return;
+                    }
+
                     // Send processed data to frontend via Electron IPC
                     this.sendToFrontend(processedData);
 
@@ -208,6 +225,11 @@ class KafkaService {
     }
 
     sendToFrontend(processedData) {
+        // Check if this is calibration data (shouldn't be sent to graphs)
+        if (processedData.type === 'calibration_complete') {
+            return; // Don't send calibration events to graph
+        }
+
         // Format data for frontend graphs (matching original dataService format)
         const formattedData = this.formatForFrontend(processedData);
 

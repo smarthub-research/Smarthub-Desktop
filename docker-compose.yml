@@ -1,3 +1,5 @@
+# Kafka message broker (Redpanda)
+# To clear old messages: python3 backend/clear_kafka_topics.py
 services:
   redpanda:
     image: redpandadata/redpanda:latest

@@ -8,6 +8,7 @@ from utils.calc import (
     get_displacement_m, get_distance_m, get_velocity_m_s, 
     get_heading_deg, get_top_traj
 )
+from utils.filtering import FFTLowPassFilter, ISignalFilter
 
 class IDataValidator(ABC):
     """Interface for data validation (Interface Segregation Principle)"""
@@ -15,15 +16,6 @@ class IDataValidator(ABC):
     @abstractmethod
     def validate(self, data: Dict) -> bool:
         """Validate input data"""
-        pass
-
-
-class ISignalFilter(ABC):
-    """Interface for signal filtering (Interface Segregation Principle)"""
-    
-    @abstractmethod
-    def filter(self, signal: List[float], time_data: List[float]) -> np.ndarray:
-        """Apply filtering to signal"""
         pass
 
 
@@ -50,62 +42,6 @@ class DataLengthValidator(IDataValidator):
             print('Data length mismatch: gyro_left vs gyro_right')
             return False
         return True
-
-
-class FFTLowPassFilter(ISignalFilter):
-    """
-    FFT-based low-pass filter implementation.
-    Single Responsibility: Only handles FFT filtering.
-    """
-    
-    def __init__(self, cutoff_freq: float = 6.0):
-        """
-        Initialize filter with cutoff frequency.
-        
-        :param cutoff_freq: Cutoff frequency in Hz
-        """
-        self._cutoff_freq = cutoff_freq
-    
-    def filter(self, signal: List[float], time_data: List[float]) -> np.ndarray:
-        """
-        Apply FFT-based low-pass filter to signal data.
-        
-        :param signal: list of signal values
-        :param time_data: list of time values
-        :returns filtered signal as numpy array
-        """
-        # Calculate frequency domain
-        W = fftfreq(len(signal), d=time_data[1] - time_data[0])
-        f_signal = rfft(signal)
-        
-        # Filter out signal above cutoff frequency
-        f_filtered = f_signal.copy()
-        f_filtered[np.abs(W) > self._cutoff_freq] = 0
-        
-        # Convert back to time domain
-        signal_smoothed = irfft(f_filtered)
-        
-        return signal_smoothed
-    
-
-class KalmanFilter(ISignalFilter):
-    """
-    Extended Kalman Filter implementation
-    Single Responsibility: Only handles EK filtering.
-    """
-    
-    def __init__(self, cutoff_freq: float = 6.0):
-        """
-        Initialize filter with cutoff frequency.
-        
-        :param cutoff_freq: Cutoff frequency in Hz
-        """
-        self._cutoff_freq = cutoff_freq
-    
-    def filter(self, signal: List[float], time_data: List[float]) -> np.ndarray:
-        return np.ndarray([])
-    
-
 class DataProcessor:
     """
     Processes raw sensor data using dependency injection.
@@ -161,8 +97,10 @@ class DataProcessor:
             )
             
             # Apply gain calibration
-            gyro_left_smoothed = gyro_left_smoothed * left_gain
-            gyro_right_smoothed = gyro_right_smoothed * right_gain
+            # gyro_left_smoothed = gyro_left_smoothed * left_gain
+            # gyro_right_smoothed = gyro_right_smoothed * right_gain
+            gyro_left_smoothed = data['gyro_left']
+            gyro_right_smoothed = data['gyro_right']
             
             # Calculate all derived values
             dist_m = get_distance_m(

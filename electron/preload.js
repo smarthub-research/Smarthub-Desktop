@@ -75,6 +75,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // Calibration functions
     setCalibration: (calibration) => ipcRenderer.invoke("set-calibration", calibration),
     getCalibration: () => ipcRenderer.invoke("get-calibration"),
+    beginStaticCalibration: () => ipcRenderer.invoke("begin-static-calibration"),
+    endStaticCalibration: () => ipcRenderer.invoke("end-static-calibration"),
+    onCalibrationComplete: (callback) => {
+        const listener = (_, results) => callback(results);
+        ipcRenderer.on('calibration-complete', listener);
+        return () => ipcRenderer.removeListener('calibration-complete', listener);
+    },
 
     removeListener: (channel, callback) => {
         if (callback && typeof callback === 'function') {

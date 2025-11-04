@@ -28,15 +28,15 @@ RECORDING_EVENTS_TOPIC = "recording-events"
 import os
 from datetime import datetime
 
-left_gain = 23.10
+left_gain = 1
 left_offset = -0.049
-right_gain = 22.94
+right_gain = 1
 right_offset = -0.0357
 
 D_EULER_THRESH = 25
-WHEEL_DIAM_IN = 1
+WHEEL_DIAM_IN = 24
 IN_TO_M = 0.0254
-DIST_WHEELS_IN = 21.07
+DIST_WHEELS_IN = 26
 
 DATETIME_FMT = '%Y%m%d'
 DATETIME_HMS_FMT = '%Y%m%d-%H%M%S'

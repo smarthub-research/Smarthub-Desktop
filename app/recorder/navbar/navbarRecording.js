@@ -96,7 +96,7 @@ export default function NavbarRecording() {
         <div className={`sticky z-10 bg-linear-to-b from-surface-200 to-transparent flex flex-row grow justify-center items-center p-4 gap-6 top-0 w-full h-[10dvh] transition`}>
             <ConnectionStatus/>
             <ControlPanel/>
-            {/* <Timer recordingTime= {recordingTime} recordingState={recordingState} /> */}
+            <Timer recordingTime= {recordingTime} recordingState={recordingState} />
         </div>
     );
 }

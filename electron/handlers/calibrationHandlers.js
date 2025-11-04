@@ -18,6 +18,17 @@ function calibrationHandlers() {
     ipcMain.handle("get-calibration", async (_) => {
         return calibrationService.getCalibration();
     });
+
+    ipcMain.handle("begin-static-calibration", async(_) => {
+        await calibrationService.beginStaticCalibration();
+        return true;
+    });
+
+    // End static calibration
+    ipcMain.handle("end-static-calibration", async(_) => {
+        await calibrationService.endStaticCalibration();
+        return true;
+    });
 }
 
 module.exports = {

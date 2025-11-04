@@ -28,6 +28,7 @@ export default function TestView({ params }) {
                 });
                 const data = await response.json();
                 setTestData(data);
+                console.log(data)
             } catch (error) {
                 console.error('Error fetching test data:', error);
             } finally {

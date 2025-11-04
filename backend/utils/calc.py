@@ -41,7 +41,7 @@ def get_distance_m(time_from_start, rot_l, rot_r, diameter=WHEEL_DIAM_IN):
     dist_m = [0]
     for i in range(len(rot_r) - 1):
         # Wheel rotation in time step:
-        dx_r = (rot_l[i]+rot_r[i])/2 * (time_from_start[i + 1] - time_from_start[i])
+        dx_r = (rot_l[i]+rot_r[i])/2 * (np.pi / 180) * (time_from_start[i + 1] - time_from_start[i])
         # Change in distance over time step:
         dx_m = dx_r * (diameter * IN_TO_M / 2)
         # Append last change to overall distance travelled:

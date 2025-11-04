@@ -3,9 +3,9 @@ Dependency injection factory for creating service instances.
 Centralizes configuration and dependency wiring.
 """
 from services.kafka_service import KafkaMessageProducer, KafkaMessageConsumer
-from services.message_processor import DataProcessor, DataLengthValidator, FFTLowPassFilter
+from services.message_processor import DataProcessor, DataLengthValidator
 from services.message_handler import PacketMessageHandler, MessageProcessingPipeline
-
+from utils.filtering import FFTLowPassFilter
 
 class ServiceFactory:
     """

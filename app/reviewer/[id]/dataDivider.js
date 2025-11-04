@@ -1,6 +1,6 @@
 export default function DataDivider({testData, comparisonData}) {
     const renderStats = (data, label, isComparison = false) => {
-        const timeElapsed = (Number(data.test_files.timeStamp.at(-1)) / 1000).toFixed(2);
+        const timeElapsed = (Number(data.test_files.timeStamp.at(-1))).toFixed(2);
         const distance = data.test_files.distance.at(-1).toFixed(2);
         const dataPoints = data.test_files.timeStamp.length;
         

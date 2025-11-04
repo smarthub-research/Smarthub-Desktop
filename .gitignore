@@ -15,6 +15,11 @@
 actions-runner
 .pytest-cache
 .vscode
+__pycache__/
+**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
 
 # testing
 /coverage

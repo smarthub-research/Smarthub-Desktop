@@ -91,44 +91,50 @@ async def write_test(test_data: dict):
 # Fetches all tests with pagination
 @router.get("/tests")
 async def get_tests(page: int = 1, limit: int = 25):
-    # Calculate offset for pagination
-    offset = (page - 1) * limit
-    
-    # Get paginated results
-    response = (
-        supabase.table("test_info")
-        .select("*, test_files(*)")
-        .range(offset, offset + limit - 1)
-        .order("created_at", desc=True)
-        .execute()
-    )
-    
-    # Get total count (simplified approach)
-    total_response = supabase.table("test_info").select("id").execute()
-    total_count = len(total_response.data) if total_response.data else 0
-    
-    # Process the results
-    tests = []
-    for test in response.data:
-        if test.get("test_files"):
-            test_files = test["test_files"]
-            # Convert arrays to lists for JSON serialization
-            for field in ["distance", "timeStamp", "displacement", "velocity", "heading", "trajectory_x", "trajectory_y", "gyro_left", "gyro_right", "gyro_left_smoothed", "gyro_right_smoothed", "accel_right", "accel_left"]:
-                if field in test_files and test_files[field]:
-                    test_files[field] = list(test_files[field])
-        tests.append(test)
-    
-    total_pages = (total_count + limit - 1) // limit  # Ceiling division
-    
-    return {
-        "tests": tests,
-        "pagination": {
-            "page": page,
-            "limit": limit,
-            "total_count": total_count,
-            "total_pages": total_pages
+    try:
+        # Calculate offset for pagination
+        offset = (page - 1) * limit
+        
+        # Get paginated results
+        response = (
+            supabase.table("test_info")
+            .select("*, test_files(*)")
+            .range(offset, offset + limit - 1)
+            .order("created_at", desc=True)
+            .execute()
+        )
+        
+        # Get total count (simplified approach)
+        total_response = supabase.table("test_info").select("id").execute()
+        total_count = len(total_response.data) if total_response.data else 0
+        
+        # Process the results
+        tests = []
+        for test in response.data:
+            if test.get("test_files"):
+                test_files = test["test_files"]
+                # Convert arrays to lists for JSON serialization
+                for field in ["distance", "timeStamp", "displacement", "velocity", "heading", "trajectory_x", "trajectory_y", "gyro_left", "gyro_right", "gyro_left_smoothed", "gyro_right_smoothed", "accel_right", "accel_left"]:
+                    if field in test_files and test_files[field]:
+                        test_files[field] = list(test_files[field])
+            tests.append(test)
+        
+        total_pages = (total_count + limit - 1) // limit  # Ceiling division
+        
+        return {
+            "tests": tests,
+            "pagination": {
+                "page": page,
+                "limit": limit,
+                "total_count": total_count,
+                "total_pages": total_pages
+            }
         }
-    }
+    except Exception as e:
+        print("Error fetching test files: ", e)
+        return {
+            "error": e
+        }
 
 # Converts the response from supabase into the format:
 #   "displacement" : {"displacement": [], "timeStamp": []},
@@ -138,7 +144,7 @@ async def get_tests(page: int = 1, limit: int = 25):
 def format_for_review(response):
     test_data = response.data[0]
     test_files = test_data["test_files"]
-    
+
     # Convert arrays to lists for JSON serialization
     time_stamps = list(test_files["timeStamp"])
 
@@ -148,10 +154,10 @@ def format_for_review(response):
         data_list = list(data_array)
         return [
             {
-                "time": round(float(time) / 1000, 2),
+                "time": time_stamps[index],
                 data_type: data_list[index] if index < len(data_list) else None
             }
-            for index, time in enumerate(time_stamps)
+            for index in range(len(time_stamps))
         ]
 
     # Format trajectory data with timestamps
@@ -160,11 +166,11 @@ def format_for_review(response):
         trajectory_y = list(test_files["trajectory_y"])
         return [
             {
-                "time": round(float(time) / 1000, 2),
+                "time": round(float(time_stamps[index]) / 1000, 2),
                 "trajectory_x": trajectory_x[index] if index < len(trajectory_x) else None,
                 "trajectory_y": trajectory_y[index] if index < len(trajectory_y) else None
             }
-            for index, time in enumerate(time_stamps)
+            for index in range(len(time_stamps))
         ]
 
     formatted_response = {
@@ -196,13 +202,15 @@ async def get_test(test_id: int, response_format: Optional[str] = None):
     # Parse JSON strings back to arrays for raw response
     if response.data and response.data[0].get("test_files"):
         test_files = response.data[0]["test_files"]
-        # Parse all JSON fields back to arrays
+        # Parse all JSON fields back to arrays (only if they're strings)
         json_fields = ["timeStamp", "distance", "displacement", "velocity", "heading", 
                       "trajectory_x", "trajectory_y", "gyro_left", "gyro_right", 
                       "gyro_left_smoothed", "gyro_right_smoothed", "accel_right", "accel_left"]
         for field in json_fields:
             if field in test_files and test_files[field]:
-                test_files[field] = json.loads(test_files[field])
+                # Only parse if it's a string, otherwise it's already a list
+                if isinstance(test_files[field], str):
+                    test_files[field] = json.loads(test_files[field])
 
     return response
 

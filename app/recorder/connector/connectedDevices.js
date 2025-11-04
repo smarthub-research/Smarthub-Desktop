@@ -19,7 +19,7 @@ export default function ConnectedDevices({deviceOne, deviceTwo, setDeviceOne, se
 
     return (
         <div className="w-full h-fit">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between pb-1">
                 <h3 className="text-lg font-semibold">Connected</h3>
                 <button className={'opacity-50 cursor-pointer'} onClick={handleDisconnectAll}>
                     Disconnect all

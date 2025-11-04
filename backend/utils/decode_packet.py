@@ -1,7 +1,6 @@
 """
 Utility functions for decoding SmartHub BLE data packets.
 """
-from typing import Tuple, List
 
 
 def convert_from_raw(raw_data: bytearray):

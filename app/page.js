@@ -25,7 +25,7 @@ export default function DashboardClient() {
                         }
                     });
                     const data = await response.json();
-                    setTestFiles(data.data || []);
+                    setTestFiles(data.tests || []);
                 } catch (error) {
                     console.log(error);
                     setTestFiles([]);
