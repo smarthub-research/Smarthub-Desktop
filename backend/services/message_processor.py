@@ -97,10 +97,9 @@ class DataProcessor:
             )
             
             # Apply gain calibration
-            # gyro_left_smoothed = gyro_left_smoothed * left_gain
-            # gyro_right_smoothed = gyro_right_smoothed * right_gain
-            gyro_left_smoothed = data['gyro_left']
-            gyro_right_smoothed = data['gyro_right']
+            gyro_right_smoothed = gyro_right_smoothed * right_gain
+            gyro_left_smoothed = gyro_left_smoothed * left_gain
+
             
             # Calculate all derived values
             dist_m = get_distance_m(

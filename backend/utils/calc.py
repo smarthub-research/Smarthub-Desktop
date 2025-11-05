@@ -1,7 +1,5 @@
-# Imports:
 import numpy as np
 
-# Load Wheelchair Measurements:
 from constants import (
     WHEEL_DIAM_IN,
     DIST_WHEELS_IN,
@@ -12,9 +10,6 @@ def get_displacement_m(time_from_start, rot_l, rot_r, diameter=WHEEL_DIAM_IN):
     rot_l = np.array(rot_l)  # Rotation of left wheel (converted to rps by Arduino)
     rot_r = np.array(rot_r)  # Rotation of right wheel (converted to rps by Arduino)
     time_from_start = np.array(time_from_start)  # Time (sec)
-
-    # remove spikes
-    # gyro_data[gyro_data > 20] = 0
 
     dist_m = [0]
     for i in range(len(rot_r) - 1):
@@ -35,9 +30,6 @@ def get_distance_m(time_from_start, rot_l, rot_r, diameter=WHEEL_DIAM_IN):
     rot_l = abs(rot_l)
     rot_r = abs(rot_r)
 
-    # remove spikes
-    # gyro_data[gyro_data > 20] = 0
-
     dist_m = [0]
     for i in range(len(rot_r) - 1):
         # Wheel rotation in time step:
@@ -54,9 +46,6 @@ def get_velocity_m_s(time_from_start, rot_l, rot_r, diameter=WHEEL_DIAM_IN):
     rot_r = np.array(rot_r)  # Rotation of right wheel (converted to rps by Arduino)
     time_from_start = np.array(time_from_start)  # Time (sec)
 
-    # remove spikes
-    # gyro_data[gyro_data > 20] = 0
-
     vel_ms = [0]
     for i in range(len(rot_r) - 1):
         # Right wheel velocity:
@@ -64,7 +53,7 @@ def get_velocity_m_s(time_from_start, rot_l, rot_r, diameter=WHEEL_DIAM_IN):
         # Left wheel velocity:
         v_l = (rot_l[i]) * diameter/2*IN_TO_M
         # Velocity of wheelchair over time:
-        v_curr = (v_r+v_l)/2
+        v_curr = (v_r+v_l)/2 * (np.pi / 180)
         # Append last change to overall Displacement:
         vel_ms.append(v_curr)
     return vel_ms
@@ -82,7 +71,8 @@ def get_heading_deg(time_from_start, rot_l, rot_r, diameter=WHEEL_DIAM_IN, dist_
         # Change in heading angle over time step:
         dh = w * (time_from_start[i + 1] - time_from_start[i])
         # convert to degrees:
-        dh = dh*180/np.pi
+        # May not need this due to new device conversion
+        # dh = dh*180/np.pi
         # Append last change to overall heading angle:
         heading_deg.append(dh + heading_deg[-1])
     return heading_deg
@@ -103,7 +93,6 @@ def get_top_traj(disp_m, vel_ms, heading_deg, time_from_start):
         dy += vel_ms[i]*np.sin(heading_deg[i]*np.pi/180) * (time_from_start[i + 1] - time_from_start[i])
         x.append(dx)
         y.append(dy)
-    traj = [[x[i], y[i]] for i in range(len(x))]
     return {
         "x": x, 
         "y": y

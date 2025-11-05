@@ -5,6 +5,7 @@ Separates concerns of consuming, processing, and producing messages.
 from abc import ABC, abstractmethod
 from typing import List, Optional
 import numpy as np
+from utils.save_to_json import save_data
 
 from services.kafka_service import IMessageConsumer, IMessageProducer
 from services.message_processor import DataProcessor
@@ -403,6 +404,11 @@ class PacketMessageHandler(IMessageHandler):
     
     async def _save_test_data(self) -> None:
         from routers.db import write_test
+        import json
+        import os
+        from datetime import datetime
+        
+        # Process the accumulated data to get calculated results
         result = self._processor.process_data(
             {
                 "gyro_left": self.gyro_left,
@@ -415,7 +421,7 @@ class PacketMessageHandler(IMessageHandler):
             self._dist_wheels
         )
 
-        # Convert numpy arrays to lists for database storage
+        # Convert numpy arrays to lists for JSON serialization
         def convert_arrays(data):
             if isinstance(data, np.ndarray):
                 return data.tolist()
@@ -426,23 +432,65 @@ class PacketMessageHandler(IMessageHandler):
             else:
                 return data
 
-        result = convert_arrays(result)
+        # Convert all result data to JSON-serializable format
+        result_converted = convert_arrays(result) if result else {}
+        
+        # Convert raw sensor data
+        gyro_left_list = convert_arrays(self.gyro_left)
+        gyro_right_list = convert_arrays(self.gyro_right)
+        accel_left_list = convert_arrays(self.accel_left)
+        accel_right_list = convert_arrays(self.accel_right)
+        
+        # Prepare comprehensive data structure with both raw and calculated data
+        comprehensive_data = {
+            # Metadata
+            "test_timestamp": datetime.now().isoformat(),
+            "calibration": {
+                "left_gain": self._left_gain,
+                "right_gain": self._right_gain,
+                "wheel_diameter": self._diameter,
+                "wheel_distance": self._dist_wheels
+            },
+            # Raw sensor data
+            "raw_data": {
+                "timestamps": self.time_stamps,
+                "gyro_left": gyro_left_list,
+                "gyro_right": gyro_right_list,
+                "accel_left": accel_left_list,
+                "accel_right": accel_right_list
+            },
+            # Calculated/processed data from processor
+            "calculated_data": result_converted
+        }
+        
+        # Save to JSON file
+        os.makedirs("data", exist_ok=True)
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        data_file = os.path.join("data", f"test_data_{timestamp}.json")
+        
+        with open(data_file, "w") as f:
+            json.dump(comprehensive_data, f, indent=2)
+        
+        print(f"Saved comprehensive test data to {data_file}", flush=True)
 
+        # Write to database (using type-safe dict access)
+        trajectory = result_converted.get("trajectory", {}) if isinstance(result_converted, dict) else {}
+        
         self.test_file_id = await write_test(
             {
-                "timeStamp": result["time_from_start"],
-                "distance": result["dist_m"],
-                "displacement": result["disp_m"],
-                "velocity": result["velocity"],
-                "heading": result["heading_deg"],
-                "trajectory_x": result["trajectory"]["x"],
-                "trajectory_y": result["trajectory"]["y"],
-                "gyro_left": [x.tolist() if isinstance(x, np.ndarray) else x for x in self.gyro_left],
-                "gyro_right": [x.tolist() if isinstance(x, np.ndarray) else x for x in self.gyro_right],
-                'gyro_left_smoothed': result["gyro_left_smoothed"],
-                'gyro_right_smoothed': result["gyro_right_smoothed"],
-                "accel_right": [x.tolist() if isinstance(x, np.ndarray) else x for x in self.accel_right],
-                "accel_left": [x.tolist() if isinstance(x, np.ndarray) else x for x in self.accel_left]
+                "timeStamp": result_converted.get("time_from_start", self.time_stamps) if isinstance(result_converted, dict) else self.time_stamps,
+                "distance": result_converted.get("dist_m", []) if isinstance(result_converted, dict) else [],
+                "displacement": result_converted.get("disp_m", []) if isinstance(result_converted, dict) else [],
+                "velocity": result_converted.get("velocity", []) if isinstance(result_converted, dict) else [],
+                "heading": result_converted.get("heading_deg", []) if isinstance(result_converted, dict) else [],
+                "trajectory_x": trajectory.get("x", []) if isinstance(trajectory, dict) else [],
+                "trajectory_y": trajectory.get("y", []) if isinstance(trajectory, dict) else [],
+                "gyro_left": gyro_left_list,
+                "gyro_right": gyro_right_list,
+                'gyro_left_smoothed': result_converted.get("gyro_left_smoothed", []) if isinstance(result_converted, dict) else [],
+                'gyro_right_smoothed': result_converted.get("gyro_right_smoothed", []) if isinstance(result_converted, dict) else [],
+                "accel_right": accel_right_list,
+                "accel_left": accel_left_list
             }
         )
         # Update global current test ID
