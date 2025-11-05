@@ -138,7 +138,7 @@ async def get_tests(page: int = 1, limit: int = 25):
 def format_for_review(response):
     test_data = response.data[0]
     test_files = test_data["test_files"]
-    
+
     # Convert arrays to lists for JSON serialization
     time_stamps = list(test_files["timeStamp"])
 
@@ -148,10 +148,10 @@ def format_for_review(response):
         data_list = list(data_array)
         return [
             {
-                "time": round(float(time) / 1000, 2),
+                "time": time_stamps[index],
                 data_type: data_list[index] if index < len(data_list) else None
             }
-            for index, time in enumerate(time_stamps)
+            for index in range(len(time_stamps))
         ]
 
     # Format trajectory data with timestamps
@@ -160,11 +160,11 @@ def format_for_review(response):
         trajectory_y = list(test_files["trajectory_y"])
         return [
             {
-                "time": round(float(time) / 1000, 2),
+                "time": round(float(time_stamps[index]) / 1000, 2),
                 "trajectory_x": trajectory_x[index] if index < len(trajectory_x) else None,
                 "trajectory_y": trajectory_y[index] if index < len(trajectory_y) else None
             }
-            for index, time in enumerate(time_stamps)
+            for index in range(len(time_stamps))
         ]
 
     formatted_response = {

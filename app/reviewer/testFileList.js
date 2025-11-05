@@ -21,7 +21,7 @@ export default function TestFileList({filters, searchTerm}) {
                 }
             });
             const data = await response.json();
-            setTestFiles(data.data || []);
+            setTestFiles(data.tests || []);
             setPagination(data.pagination);
         } catch (error) {
             console.error('Error fetching test files:', error);
