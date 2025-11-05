@@ -94,10 +94,10 @@ async def get_tests(page: int = 1, limit: int = 25):
     # Calculate offset for pagination
     offset = (page - 1) * limit
     
-    # Get paginated results
+    # Get paginated results (test_info only, no join)
     response = (
         supabase.table("test_info")
-        .select("*, test_files(*)")
+        .select("*")
         .range(offset, offset + limit - 1)
         .order("created_at", desc=True)
         .execute()
@@ -107,21 +107,10 @@ async def get_tests(page: int = 1, limit: int = 25):
     total_response = supabase.table("test_info").select("id").execute()
     total_count = len(total_response.data) if total_response.data else 0
     
-    # Process the results
-    tests = []
-    for test in response.data:
-        if test.get("test_files"):
-            test_files = test["test_files"]
-            # Convert arrays to lists for JSON serialization
-            for field in ["distance", "timeStamp", "displacement", "velocity", "heading", "trajectory_x", "trajectory_y", "gyro_left", "gyro_right", "gyro_left_smoothed", "gyro_right_smoothed", "accel_right", "accel_left"]:
-                if field in test_files and test_files[field]:
-                    test_files[field] = list(test_files[field])
-        tests.append(test)
-    
     total_pages = (total_count + limit - 1) // limit  # Ceiling division
     
     return {
-        "tests": tests,
+        "tests": response.data,
         "pagination": {
             "page": page,
             "limit": limit,
