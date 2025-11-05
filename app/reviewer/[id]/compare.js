@@ -21,7 +21,7 @@ export default function Compare({ onComparisonSelect, currentTestId }) {
                 });
                 const data = await response.json();
                 // Filter out the current test from the comparison list
-                const filteredTests = (data.data || []).filter(test => test.id !== currentTestId);
+                const filteredTests = (data.tests || []).filter(test => test.id !== currentTestId);
                 setTestFiles(filteredTests);
             } catch (error) {
                 console.error('Error fetching test files:', error);
