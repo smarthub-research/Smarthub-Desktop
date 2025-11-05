@@ -91,86 +91,89 @@ async def write_test(test_data: dict):
 # Fetches all tests with pagination
 @router.get("/tests")
 async def get_tests(page: int = 1, limit: int = 25):
-    try:
-        # Calculate offset for pagination
-        offset = (page - 1) * limit
-        
-        # Get paginated results
-        response = (
-            supabase.table("test_info")
-            .select("*, test_files(*)")
-            .range(offset, offset + limit - 1)
-            .order("created_at", desc=True)
-            .execute()
-        )
-        
-        # Get total count (simplified approach)
-        total_response = supabase.table("test_info").select("id").execute()
-        total_count = len(total_response.data) if total_response.data else 0
-        
-        # Process the results
-        tests = []
-        for test in response.data:
-            if test.get("test_files"):
-                test_files = test["test_files"]
-                # Convert arrays to lists for JSON serialization
-                for field in ["distance", "timeStamp", "displacement", "velocity", "heading", "trajectory_x", "trajectory_y", "gyro_left", "gyro_right", "gyro_left_smoothed", "gyro_right_smoothed", "accel_right", "accel_left"]:
-                    if field in test_files and test_files[field]:
-                        test_files[field] = list(test_files[field])
-            tests.append(test)
-        
-        total_pages = (total_count + limit - 1) // limit  # Ceiling division
-        
-        return {
-            "tests": tests,
-            "pagination": {
-                "page": page,
-                "limit": limit,
-                "total_count": total_count,
-                "total_pages": total_pages
-            }
+    # Calculate offset for pagination
+    offset = (page - 1) * limit
+    
+    # Get paginated results
+    response = (
+        supabase.table("test_info")
+        .select("*, test_files(*)")
+        .range(offset, offset + limit - 1)
+        .order("created_at", desc=True)
+        .execute()
+    )
+    
+    # Get total count (simplified approach)
+    total_response = supabase.table("test_info").select("id").execute()
+    total_count = len(total_response.data) if total_response.data else 0
+    
+    # Process the results
+    tests = []
+    for test in response.data:
+        if test.get("test_files"):
+            test_files = test["test_files"]
+            # Convert arrays to lists for JSON serialization
+            for field in ["distance", "timeStamp", "displacement", "velocity", "heading", "trajectory_x", "trajectory_y", "gyro_left", "gyro_right", "gyro_left_smoothed", "gyro_right_smoothed", "accel_right", "accel_left"]:
+                if field in test_files and test_files[field]:
+                    test_files[field] = list(test_files[field])
+        tests.append(test)
+    
+    total_pages = (total_count + limit - 1) // limit  # Ceiling division
+    
+    return {
+        "tests": tests,
+        "pagination": {
+            "page": page,
+            "limit": limit,
+            "total_count": total_count,
+            "total_pages": total_pages
         }
-    except Exception as e:
-        print("Error fetching test files: ", e)
-        return {
-            "error": e
-        }
+    }
 
 # Converts the response from supabase into the format:
 #   "displacement" : {"displacement": [], "timeStamp": []},
 #   "velocity" : {"velocity": [], "timeStamp": []},
 #   "heading" : {"heading": [], "timeStamp": []},
 #   "trajectory" : {"trajectory_y": [], "trajectory_x": [], "timeStamp": []}
-def format_for_review(response):
+def format_for_review(response, full_data=False):
     test_data = response.data[0]
     test_files = test_data["test_files"]
 
     # Convert arrays to lists for JSON serialization
     time_stamps = list(test_files["timeStamp"])
+    
+    # Downsample data if it's too large (keep max 2000 points for smooth rendering)
+    # Unless full_data is requested
+    MAX_POINTS = 2000
+    downsample_factor = 1 if full_data else max(1, len(time_stamps) // MAX_POINTS)
 
-    # Format individual data types with timestamps
+    # Format individual data types with timestamps, with downsampling
     def format_data_with_time(data_array, data_type):
-        if not data_array: return {}
+        if not data_array: return []
         data_list = list(data_array)
+        
+        # Downsample using stride
         return [
             {
                 "time": time_stamps[index],
                 data_type: data_list[index] if index < len(data_list) else None
             }
-            for index in range(len(time_stamps))
+            for index in range(0, len(time_stamps), downsample_factor)
         ]
 
-    # Format trajectory data with timestamps
+    # Format trajectory data with timestamps, with downsampling
     def format_trajectory_data():
         trajectory_x = list(test_files["trajectory_x"])
         trajectory_y = list(test_files["trajectory_y"])
+        
+        # Downsample using stride
         return [
             {
                 "time": round(float(time_stamps[index]) / 1000, 2),
                 "trajectory_x": trajectory_x[index] if index < len(trajectory_x) else None,
                 "trajectory_y": trajectory_y[index] if index < len(trajectory_y) else None
             }
-            for index in range(len(time_stamps))
+            for index in range(0, len(time_stamps), downsample_factor)
         ]
 
     formatted_response = {
@@ -179,14 +182,21 @@ def format_for_review(response):
         "displacement": format_data_with_time(test_files["displacement"], "displacement"),
         "velocity": format_data_with_time(test_files["velocity"], "velocity"),
         "heading": format_data_with_time(test_files["heading"], "heading"),
-        "trajectory": format_trajectory_data()
+        "trajectory": format_trajectory_data(),
+        # Add metadata about the data
+        "data_info": {
+            "is_downsampled": not full_data and downsample_factor > 1,
+            "original_length": len(time_stamps),
+            "returned_length": len(time_stamps) // downsample_factor,
+            "downsample_factor": downsample_factor
+        }
     }
 
     return formatted_response
 
 # Get a single test
 @router.get("/tests/{test_id}")
-async def get_test(test_id: int, response_format: Optional[str] = None):
+async def get_test(test_id: int, response_format: Optional[str] = None, full_data: bool = False):
     import json
     response = (
         supabase.table("test_info")
@@ -196,21 +206,19 @@ async def get_test(test_id: int, response_format: Optional[str] = None):
     )
 
     if response_format == "review":
-        formatted_response = format_for_review(response)
+        formatted_response = format_for_review(response, full_data)
         return formatted_response
 
     # Parse JSON strings back to arrays for raw response
     if response.data and response.data[0].get("test_files"):
         test_files = response.data[0]["test_files"]
-        # Parse all JSON fields back to arrays (only if they're strings)
+        # Parse all JSON fields back to arrays
         json_fields = ["timeStamp", "distance", "displacement", "velocity", "heading", 
                       "trajectory_x", "trajectory_y", "gyro_left", "gyro_right", 
                       "gyro_left_smoothed", "gyro_right_smoothed", "accel_right", "accel_left"]
         for field in json_fields:
             if field in test_files and test_files[field]:
-                # Only parse if it's a string, otherwise it's already a list
-                if isinstance(test_files[field], str):
-                    test_files[field] = json.loads(test_files[field])
+                test_files[field] = json.loads(test_files[field])
 
     return response
 
