@@ -135,36 +135,45 @@ async def get_tests(page: int = 1, limit: int = 25):
 #   "velocity" : {"velocity": [], "timeStamp": []},
 #   "heading" : {"heading": [], "timeStamp": []},
 #   "trajectory" : {"trajectory_y": [], "trajectory_x": [], "timeStamp": []}
-def format_for_review(response):
+def format_for_review(response, full_data=False):
     test_data = response.data[0]
     test_files = test_data["test_files"]
 
     # Convert arrays to lists for JSON serialization
     time_stamps = list(test_files["timeStamp"])
+    
+    # Downsample data if it's too large (keep max 2000 points for smooth rendering)
+    # Unless full_data is requested
+    MAX_POINTS = 2000
+    downsample_factor = 1 if full_data else max(1, len(time_stamps) // MAX_POINTS)
 
-    # Format individual data types with timestamps
+    # Format individual data types with timestamps, with downsampling
     def format_data_with_time(data_array, data_type):
-        if not data_array: return {}
+        if not data_array: return []
         data_list = list(data_array)
+        
+        # Downsample using stride
         return [
             {
                 "time": time_stamps[index],
                 data_type: data_list[index] if index < len(data_list) else None
             }
-            for index in range(len(time_stamps))
+            for index in range(0, len(time_stamps), downsample_factor)
         ]
 
-    # Format trajectory data with timestamps
+    # Format trajectory data with timestamps, with downsampling
     def format_trajectory_data():
         trajectory_x = list(test_files["trajectory_x"])
         trajectory_y = list(test_files["trajectory_y"])
+        
+        # Downsample using stride
         return [
             {
                 "time": round(float(time_stamps[index]) / 1000, 2),
                 "trajectory_x": trajectory_x[index] if index < len(trajectory_x) else None,
                 "trajectory_y": trajectory_y[index] if index < len(trajectory_y) else None
             }
-            for index in range(len(time_stamps))
+            for index in range(0, len(time_stamps), downsample_factor)
         ]
 
     formatted_response = {
@@ -173,14 +182,21 @@ def format_for_review(response):
         "displacement": format_data_with_time(test_files["displacement"], "displacement"),
         "velocity": format_data_with_time(test_files["velocity"], "velocity"),
         "heading": format_data_with_time(test_files["heading"], "heading"),
-        "trajectory": format_trajectory_data()
+        "trajectory": format_trajectory_data(),
+        # Add metadata about the data
+        "data_info": {
+            "is_downsampled": not full_data and downsample_factor > 1,
+            "original_length": len(time_stamps),
+            "returned_length": len(time_stamps) // downsample_factor,
+            "downsample_factor": downsample_factor
+        }
     }
 
     return formatted_response
 
 # Get a single test
 @router.get("/tests/{test_id}")
-async def get_test(test_id: int, response_format: Optional[str] = None):
+async def get_test(test_id: int, response_format: Optional[str] = None, full_data: bool = False):
     import json
     response = (
         supabase.table("test_info")
@@ -190,7 +206,7 @@ async def get_test(test_id: int, response_format: Optional[str] = None):
     )
 
     if response_format == "review":
-        formatted_response = format_for_review(response)
+        formatted_response = format_for_review(response, full_data)
         return formatted_response
 
     # Parse JSON strings back to arrays for raw response

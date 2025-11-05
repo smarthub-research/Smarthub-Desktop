@@ -82,6 +82,12 @@ class PacketMessageHandler(IMessageHandler):
         self.accel_left: List[float] = []
         self.accel_right: List[float] = []
         self.time_stamps: List[float] = []
+        
+        # Track if we should send messages to Kafka (stops when message gets too large)
+        self.should_send_to_kafka: bool = True
+        # Kafka message size limit (set to 800KB to be safe, actual limit is 1MB)
+        # Conservative limit to account for overhead and prevent pipeline breaks
+        self.max_kafka_message_size: int = 800 * 1024  # 800KB in bytes
     
     async def handle_message(self, message: dict) -> Optional[dict]:
         """
@@ -108,6 +114,7 @@ class PacketMessageHandler(IMessageHandler):
         elif event_type == "restart-recording":
             print(f"Recording restarted - resetting session data", flush=True)
             self.reset_session()
+            print("Kafka transmission re-enabled for new recording session", flush=True)
             # start_time will be set on first packet
             self.paused_time = None
             self.paused = False
@@ -180,6 +187,15 @@ class PacketMessageHandler(IMessageHandler):
             self.accel_left.extend(self.left_data['accel_data'])
             self.accel_right.extend(self.right_data["accel_data"])
             
+            # Clear pending data for next packet pair
+            self.left_data = None
+            self.right_data = None
+            
+            # Check if we should skip Kafka transmission to avoid processing large datasets
+            if not self.should_send_to_kafka:
+                # Still process for database but don't send to Kafka
+                return None
+            
             # Process the ENTIRE accumulated data (not just the new packet)
             result = self._processor.process_data(
                 {
@@ -192,10 +208,6 @@ class PacketMessageHandler(IMessageHandler):
                 self._diameter,
                 self._dist_wheels
             )
-            
-            # Clear pending data for next packet pair
-            self.left_data = None
-            self.right_data = None
 
             # Add metadata if processing was successful
             if result:
@@ -204,6 +216,14 @@ class PacketMessageHandler(IMessageHandler):
                 
                 # Convert numpy arrays to lists for JSON serialization
                 result = self._convert_to_json_serializable(result)
+                
+                # Check message size before sending to Kafka
+                message_size = self._estimate_message_size(result)
+                if message_size > self.max_kafka_message_size:
+                    print(f"Message size ({message_size} bytes) exceeds limit ({self.max_kafka_message_size} bytes). Stopping Kafka transmission.", flush=True)
+                    print("Will continue processing and saving to database.", flush=True)
+                    self.should_send_to_kafka = False
+                    return None  # Don't send to Kafka
                 
                 return result
         
@@ -228,6 +248,7 @@ class PacketMessageHandler(IMessageHandler):
         self.paused = False
         self.total_paused_time = 0.0
         self.test_file_id = None
+        self.should_send_to_kafka = True
         print("Session reset - cleared all accumulated data", flush=True)
     
     def _convert_to_json_serializable(self, data):
@@ -248,6 +269,21 @@ class PacketMessageHandler(IMessageHandler):
             return {key: self._convert_to_json_serializable(value) for key, value in data.items()}
         else:
             return data
+    
+    def _estimate_message_size(self, data: dict) -> int:
+        """
+        Estimate the size of a message when serialized to JSON.
+        
+        :param data: Dictionary to estimate size for
+        :return: Estimated size in bytes
+        """
+        import json
+        try:
+            json_str = json.dumps(data)
+            return len(json_str.encode('utf-8'))
+        except Exception as e:
+            print(f"Error estimating message size: {e}", flush=True)
+            return 0
     
     def _generate_time_stamps(self) -> List[float]:
         """
@@ -373,12 +409,27 @@ class MessageProcessingPipeline:
         
         try:
             async for message in self._consumer.consume_messages():
-                # Process the message
-                result = await self._handler.handle_message(message)
-                
-                # Only send if processing was successful
-                if result:
-                    await self._producer.send_message(self._output_topic, result)
+                try:
+                    # Process the message
+                    result = await self._handler.handle_message(message)
+                    
+                    # Only send if processing was successful
+                    if result:
+                        await self._producer.send_message(self._output_topic, result)
+                except Exception as e:
+                    # Check if this is a Kafka message size error
+                    if "MessageSizeTooLarge" in str(e):
+                        print(f"[WARNING] Kafka message too large, skipping send. Error: {e}", flush=True)
+                        print("Data will still be saved to database at end of test.", flush=True)
+                        # Don't break the pipeline, just continue processing
+                        continue
+                    else:
+                        # For other errors, log but continue processing
+                        print(f"[ERROR] Error processing message: {e}", flush=True)
+                        import traceback
+                        traceback.print_exc()
+                        # Continue processing other messages
+                        continue
         except Exception as e:
-            print(f"Error in processing pipeline: {e}", flush=True)
+            print(f"[FATAL] Error in processing pipeline: {e}", flush=True)
             raise

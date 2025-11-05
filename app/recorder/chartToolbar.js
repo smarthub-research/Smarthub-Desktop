@@ -1,7 +1,7 @@
 
 // Component to create the toolbar for the chart
 export default function ChartToolbar(props) {
-    const { dataPointCount, setDataPointCount, scrollPosition, setScrollPosition, data, graphId } = props;
+    const { dataPointCount, setDataPointCount, scrollPosition, setScrollPosition, data, graphId, loadingFullData, isDownsampled } = props;
 
     // Allows scrolling left through the data points
     const handleScrollLeft = () => {
@@ -41,15 +41,15 @@ export default function ChartToolbar(props) {
                         setDataPointCount(Number(e.target.value));
                         setScrollPosition(0);
                     }}
-                    className="cursor-pointer bg-surface-100 border rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 hover:bg-surface-200"
+                    disabled={loadingFullData}
+                    className="cursor-pointer bg-surface-100 border rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 hover:bg-surface-200 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     {/* Number of data point options */}
-                    <option value="0">All</option>
-                    <option value="10">10</option>
-                    <option value="25">25</option>
-                    <option value="50">50</option>
+                    <option value="0">All{loadingFullData ? ' (Loading...)' : ''}</option>
                     <option value="100">100</option>
-                    <option value="200">200</option>
+                    <option value="500">500</option>
+                    <option value="1000">1000</option>
+                    <option value="2000">2000</option>
                 </select>
             </div>
 

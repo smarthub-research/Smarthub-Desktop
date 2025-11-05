@@ -4,7 +4,7 @@
 import {CartesianGrid, Scatter, ScatterChart, XAxis, YAxis} from "recharts"
 import { Card, CardContent, CardHeader } from "../ui/card"
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "../ui/chart"
-import { memo, useState } from "react";
+import { memo, useState, useMemo, useCallback, useEffect } from "react";
 import ChartToolbar from "../../recorder/chartToolbar";
 import {usePathname} from "next/navigation";
 
@@ -17,7 +17,7 @@ const CHART_COLORS = {
     purple: '#8884d8'
 }
 
-function TrajectoryGraph({data, comparisonData, graphId}) {
+function TrajectoryGraph({data, comparisonData, graphId, isDownsampled, onRequestFullData, loadingFullData}) {
     const chartConfig = {
         trajectory: {
             label: "Trajectory",
@@ -32,30 +32,85 @@ function TrajectoryGraph({data, comparisonData, graphId}) {
     const effectiveGraphId = graphId || `graph-${Math.random().toString(36).substr(2, 9)}`;
     const pathName = usePathname();
     const animate = pathName !== '/recorder';
-
-    // Calculate axis domains for better scaling - include comparison data
-    const xValues = data?.map(d => d.trajectory_x).filter(v => typeof v === "number") || [];
-    const yValues = data?.map(d => d.trajectory_y).filter(v => typeof v === "number") || [];
     
-    const comparisonXValues = comparisonData?.map(d => d.trajectory_x).filter(v => typeof v === "number") || [];
-    const comparisonYValues = comparisonData?.map(d => d.trajectory_y).filter(v => typeof v === "number") || [];
-    
-    const allXValues = [...xValues, ...comparisonXValues];
-    const allYValues = [...yValues, ...comparisonYValues];
-    
-    const xMin = allXValues.length ? Math.min(...allXValues) : 0;
-    const xMax = allXValues.length ? Math.max(...allXValues) : 1;
-    const yMin = allYValues.length ? Math.min(...allYValues) : 0;
-    const yMax = allYValues.length ? Math.max(...allYValues) : 1;
-    
-    const xPadding = (xMax - xMin) * 0.1 || 1;
-    const yPadding = (yMax - yMin) * 0.1 || 1;
-    
-    const xDomain = [xMin - xPadding, xMax + xPadding];
-    const yDomain = [yMin - yPadding, Math.max(-2.5, yMax + yPadding)];
-
-    const [dataPointCount, setDataPointCount] = useState(0); // 0 means show all data
+    // Start with 2000 points if data is downsampled, otherwise show all
+    const [dataPointCount, setDataPointCount] = useState(isDownsampled ? 2000 : 0);
     const [scrollPosition, setScrollPosition] = useState(0);
+    const [hasRequestedFullData, setHasRequestedFullData] = useState(false);
+    
+    // Handle when user selects "All" data points
+    const handleDataPointChange = useCallback((newCount) => {
+        setDataPointCount(newCount);
+        setScrollPosition(0);
+        
+        // If user selects "All" (0) and data is downsampled and we haven't requested full data yet
+        if (newCount === 0 && isDownsampled && !hasRequestedFullData && onRequestFullData) {
+            setHasRequestedFullData(true);
+            onRequestFullData();
+        }
+    }, [isDownsampled, hasRequestedFullData, onRequestFullData]);
+    
+    // Reset hasRequestedFullData when isDownsampled changes (data loaded)
+    useEffect(() => {
+        if (!isDownsampled) {
+            setHasRequestedFullData(false);
+        }
+    }, [isDownsampled]);
+
+    // Calculate axis domains for better scaling - optimized single-pass calculation
+    const { xDomain, yDomain } = useMemo(() => {
+        if (!data || data.length === 0) {
+            return { xDomain: [0, 1], yDomain: [0, 1] };
+        }
+        
+        let xMin = Infinity, xMax = -Infinity;
+        let yMin = Infinity, yMax = -Infinity;
+        
+        // Single pass through main data
+        for (const point of data) {
+            const x = point.trajectory_x;
+            const y = point.trajectory_y;
+            if (typeof x === "number") {
+                if (x < xMin) xMin = x;
+                if (x > xMax) xMax = x;
+            }
+            if (typeof y === "number") {
+                if (y < yMin) yMin = y;
+                if (y > yMax) yMax = y;
+            }
+        }
+        
+        // Include comparison data if present
+        if (comparisonData) {
+            for (const point of comparisonData) {
+                const x = point.trajectory_x;
+                const y = point.trajectory_y;
+                if (typeof x === "number") {
+                    if (x < xMin) xMin = x;
+                    if (x > xMax) xMax = x;
+                }
+                if (typeof y === "number") {
+                    if (y < yMin) yMin = y;
+                    if (y > yMax) yMax = y;
+                }
+            }
+        }
+        
+        if (xMin === Infinity || xMax === -Infinity) {
+            xMin = 0; xMax = 1;
+        }
+        if (yMin === Infinity || yMax === -Infinity) {
+            yMin = 0; yMax = 1;
+        }
+        
+        const xPadding = (xMax - xMin) * 0.1 || 1;
+        const yPadding = (yMax - yMin) * 0.1 || 1;
+        
+        return {
+            xDomain: [xMin - xPadding, xMax + xPadding],
+            yDomain: [yMin - yPadding, Math.max(-2.5, yMax + yPadding)]
+        };
+    }, [data, comparisonData]);
 
     return (
         <Card className="h-full flex flex-col gap-2 py-4">
@@ -64,11 +119,13 @@ function TrajectoryGraph({data, comparisonData, graphId}) {
                         <div className="font-medium text-sm">Trajectory</div>
                         <ChartToolbar
                             dataPointCount={dataPointCount}
-                            setDataPointCount={setDataPointCount}
+                            setDataPointCount={handleDataPointChange}
                             scrollPosition={scrollPosition}
                             setScrollPosition={setScrollPosition}
                             data={data}
                             graphId={effectiveGraphId}
+                            loadingFullData={loadingFullData}
+                            isDownsampled={isDownsampled}
                         />
                     </div>
             </CardHeader>

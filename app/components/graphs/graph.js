@@ -3,7 +3,7 @@
 import {CartesianGrid, Label, Line, LineChart, XAxis, YAxis} from "recharts"
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card"
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "../ui/chart"
-import { memo, useEffect, useRef, useState, useMemo } from "react";
+import { memo, useEffect, useRef, useState, useMemo, useCallback } from "react";
 import ChartToolbar from "../../recorder/chartToolbar";
 import {usePathname} from "next/navigation";
 
@@ -59,7 +59,7 @@ const CHART_COLORS = {
     purple: '#8884d8'
 }
 
-function Graph({data, comparisonData, graphId}) {
+function Graph({data, comparisonData, graphId, isDownsampled, onRequestFullData, loadingFullData}) {
     // Only animate if not on recorder page
     const pathName = usePathname();
     const animate = pathName !== '/recorder';
@@ -67,11 +67,32 @@ function Graph({data, comparisonData, graphId}) {
     const [containerRef, containerSize] = useDebouncedResize(100);
     
     // State for ChartToolbar integration
-    const [dataPointCount, setDataPointCount] = useState(0); // 0 means show all data
+    // Start with 2000 points if data is downsampled, otherwise show all
+    const [dataPointCount, setDataPointCount] = useState(isDownsampled ? 2000 : 0);
     const [scrollPosition, setScrollPosition] = useState(0);
+    const [hasRequestedFullData, setHasRequestedFullData] = useState(false);
 
     // Generate a fallback graphId if none provided
     const effectiveGraphId = graphId || `graph-${Math.random().toString(36).substr(2, 9)}`;
+    
+    // Handle when user selects "All" data points
+    const handleDataPointChange = useCallback((newCount) => {
+        setDataPointCount(newCount);
+        setScrollPosition(0);
+        
+        // If user selects "All" (0) and data is downsampled and we haven't requested full data yet
+        if (newCount === 0 && isDownsampled && !hasRequestedFullData && onRequestFullData) {
+            setHasRequestedFullData(true);
+            onRequestFullData();
+        }
+    }, [isDownsampled, hasRequestedFullData, onRequestFullData]);
+    
+    // Reset hasRequestedFullData when isDownsampled changes (data loaded)
+    useEffect(() => {
+        if (!isDownsampled) {
+            setHasRequestedFullData(false);
+        }
+    }, [isDownsampled]);
 
     // Calculate the data slice to display based on toolbar controls
     const displayData = useMemo(() => {
@@ -92,7 +113,7 @@ function Graph({data, comparisonData, graphId}) {
 
     // Calculate comparison data slice with the same logic
     const displayComparisonData = useMemo(() => {
-        if (!comparisonData || comparisonData.length === 0) return [];
+        if (!comparisonData || comparisonData.length === 0) return null;
         
         if (dataPointCount === 0) {
             return comparisonData;
@@ -106,50 +127,44 @@ function Graph({data, comparisonData, graphId}) {
     }, [comparisonData, dataPointCount, scrollPosition]);
 
     // Merge datasets to display both full datasets without trimming
+    // Only merge if comparison data exists to avoid unnecessary computation
     const mergedData = useMemo(() => {
         if (!displayData || displayData.length === 0) return [];
-        if (!displayComparisonData || displayComparisonData.length === 0) return displayData;
+        
+        // Fast path: no comparison data, return original data
+        if (!displayComparisonData) return displayData;
 
         const maxLength = Math.max(displayData.length, displayComparisonData.length);
-        const merged = [];
+        const merged = new Array(maxLength);
 
         for (let i = 0; i < maxLength; i++) {
             const currentPoint = displayData[i];
             const comparisonPoint = displayComparisonData[i];
             
-            const mergedPoint = {};
-            
-            // Add current test data if it exists
+            // Start with current point data if it exists
             if (currentPoint) {
-                Object.keys(currentPoint).forEach(key => {
-                    mergedPoint[key] = currentPoint[key];
-                });
-            }
-            
-            // Add comparison values with a different key if comparison point exists
-            if (comparisonPoint) {
-                Object.keys(comparisonPoint).forEach(key => {
-                    if (key !== 'time') {
-                        mergedPoint[`${key}_comparison`] = comparisonPoint[key];
-                    }
-                });
+                merged[i] = { ...currentPoint };
                 
-                // If current data doesn't exist at this index, use comparison data's time/x-axis value
-                if (!currentPoint) {
-                    mergedPoint.time = comparisonPoint.time;
-                    // Copy any axis data (like trajectory Y) but NOT the main data values
-                    Object.keys(comparisonPoint).forEach(key => {
-                        // Only copy non-primary data keys (time and potential secondary axis like trajectory)
-                        if (key === 'time' || (!key.includes('distance') && !key.includes('velocity') && !key.includes('heading'))) {
-                            if (!mergedPoint[key]) {
-                                mergedPoint[key] = comparisonPoint[key];
-                            }
+                // Add comparison values if comparison point exists
+                if (comparisonPoint) {
+                    for (const key in comparisonPoint) {
+                        if (key !== 'time') {
+                            merged[i][`${key}_comparison`] = comparisonPoint[key];
                         }
-                    });
+                    }
+                }
+            } else if (comparisonPoint) {
+                // Only comparison data exists at this index
+                merged[i] = { time: comparisonPoint.time };
+                
+                for (const key in comparisonPoint) {
+                    if (key !== 'time') {
+                        merged[i][`${key}_comparison`] = comparisonPoint[key];
+                    } else if (key === 'time' || (!key.includes('distance') && !key.includes('velocity') && !key.includes('heading'))) {
+                        merged[i][key] = comparisonPoint[key];
+                    }
                 }
             }
-            
-            merged.push(mergedPoint);
         }
 
         return merged;
@@ -189,15 +204,33 @@ function Graph({data, comparisonData, graphId}) {
         },
     };
 
-    // Y Axis domain calculation - include comparison data if present
-    const yValues = mergedData?.map(d => d[dataKey]).filter(v => typeof v === "number") || [];
-    const comparisonYValues = mergedData?.map(d => d[comparisonKey]).filter(v => typeof v === "number") || [];
-    const allYValues = [...yValues, ...comparisonYValues];
-    
-    const yMin = allYValues.length ? Math.min(...allYValues) : 0;
-    const yMax = allYValues.length ? Math.max(...allYValues) : 1;
-    const yPadding = (yMax - yMin) * 0.3 || 1;
-    const domain = [yMin - yPadding, yMax + yPadding];
+    // Y Axis domain calculation - optimized to avoid creating multiple arrays
+    const domain = useMemo(() => {
+        if (!mergedData || mergedData.length === 0) return [0, 1];
+        
+        let yMin = Infinity;
+        let yMax = -Infinity;
+        
+        // Single pass through the data
+        for (const point of mergedData) {
+            const val = point[dataKey];
+            const compVal = point[comparisonKey];
+            
+            if (typeof val === "number") {
+                if (val < yMin) yMin = val;
+                if (val > yMax) yMax = val;
+            }
+            if (typeof compVal === "number") {
+                if (compVal < yMin) yMin = compVal;
+                if (compVal > yMax) yMax = compVal;
+            }
+        }
+        
+        if (yMin === Infinity || yMax === -Infinity) return [0, 1];
+        
+        const yPadding = (yMax - yMin) * 0.3 || 1;
+        return [yMin - yPadding, yMax + yPadding];
+    }, [mergedData, dataKey, comparisonKey]);
 
     return (
         <Card ref={containerRef} className="h-full flex flex-col gap-2 py-4">
@@ -207,11 +240,13 @@ function Graph({data, comparisonData, graphId}) {
                         <div className="font-medium text-sm">{title}</div>
                         <ChartToolbar
                             dataPointCount={dataPointCount}
-                            setDataPointCount={setDataPointCount}
+                            setDataPointCount={handleDataPointChange}
                             scrollPosition={scrollPosition}
                             setScrollPosition={setScrollPosition}
                             data={data}
                             graphId={effectiveGraphId}
+                            loadingFullData={loadingFullData}
+                            isDownsampled={isDownsampled}
                         />
                     </div>
                 </CardHeader>

@@ -17,25 +17,70 @@ export default function TestView({ params }) {
     const [testData, setTestData] = useState(null);
     const [comparisonData, setComparisonData] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [loadingFullData, setLoadingFullData] = useState(false);
 
-    // Fetch the main test data
+    // Fetch the main test data (initially downsampled)
     useEffect(() => {
-        const fetchTestData = async () => {
-            setLoading(true);
+        const fetchTestData = async (fullData = false) => {
+            if (!fullData) {
+                setLoading(true);
+            } else {
+                setLoadingFullData(true);
+            }
+            
             try {
-                const response = await fetch(`http://localhost:8000/db/tests/${id}?response_format=review`, {
+                const url = `http://localhost:8000/db/tests/${id}?response_format=review${fullData ? '&full_data=true' : ''}`;
+                const response = await fetch(url, {
                     method: "GET",
+                    // Add cache header to help with repeated loads
+                    headers: {
+                        'Cache-Control': 'max-age=300',
+                    },
                 });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
                 const data = await response.json();
                 setTestData(data);
             } catch (error) {
                 console.error('Error fetching test data:', error);
             } finally {
-                setLoading(false);
+                if (!fullData) {
+                    setLoading(false);
+                } else {
+                    setLoadingFullData(false);
+                }
             }
         };
 
-        fetchTestData();
+        fetchTestData(false);
+    }, [id]);
+    
+    // Callback to fetch full data when user requests it
+    const fetchFullData = useCallback(() => {
+        const loadFullData = async () => {
+            setLoadingFullData(true);
+            try {
+                const response = await fetch(`http://localhost:8000/db/tests/${id}?response_format=review&full_data=true`, {
+                    method: "GET",
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                setTestData(data);
+            } catch (error) {
+                console.error('Error fetching full test data:', error);
+            } finally {
+                setLoadingFullData(false);
+            }
+        };
+
+        loadFullData();
     }, [id]);
 
     const handleComparisonSelect = useCallback((data) => {
@@ -60,7 +105,12 @@ export default function TestView({ params }) {
                 <Compare onComparisonSelect={handleComparisonSelect} currentTestId={id} />
 
                 <DataDivider testData={testData} comparisonData={comparisonData} />
-                <GraphSection testData={testData} comparisonData={comparisonData} />
+                <GraphSection 
+                    testData={testData} 
+                    comparisonData={comparisonData} 
+                    onRequestFullData={fetchFullData}
+                    loadingFullData={loadingFullData}
+                />
                 <Metrics testData={testData} comparisonData={comparisonData} />
             </div>
         </div>
