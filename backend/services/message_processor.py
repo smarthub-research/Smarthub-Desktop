@@ -77,6 +77,10 @@ class DataProcessor:
             'gyro_left': copy.deepcopy(raw_data['gyro_left']),
             'gyro_right': copy.deepcopy(raw_data['gyro_right'])
         }
+
+        data['gyro_left'] = np.deg2rad(data['gyro_left'])
+        data['gyro_right'] = np.deg2rad(data['gyro_right'])
+        print(data['gyro_left'])
         
         # Validate data lengths
         if not self._validator.validate(data):

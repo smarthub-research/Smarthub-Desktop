@@ -9,6 +9,7 @@ import Compare from "./compare";
 import Loading from "./loading";
 import Metrics from "./metrics";
 import ScreenshotButton from "./screenshotButton";
+import RecalculateButton from "./recalculateButton";
 
 export default function TestView({ params }) {
     const unwrappedParams = use(params);
@@ -55,7 +56,10 @@ export default function TestView({ params }) {
                         <TestName testData={testData} id={id} />
                         <p>Recorded on: {testData.created_at.slice(0, testData.created_at.indexOf('T'))}</p>
                     </div>
-                    <ScreenshotButton testData={testData} />
+                    <div className="flex flex-row gap-2">
+                        <ScreenshotButton testData={testData} />
+                        <RecalculateButton testId={id} setTestData={setTestData} setLoading={setLoading}/>
+                    </div>
                 </div>
                 
                 <Compare onComparisonSelect={handleComparisonSelect} currentTestId={id} />

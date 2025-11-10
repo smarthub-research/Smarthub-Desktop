@@ -3,6 +3,10 @@ from constants import supabase
 from .auth import get_user_id
 from typing import Optional
 import services.message_handler as message_handler_module
+from services.message_processor import DataProcessor, DataLengthValidator
+from utils.filtering import FFTLowPassFilter
+
+import constants
 
 router = APIRouter(
     prefix="/db",
@@ -94,10 +98,10 @@ async def get_tests(page: int = 1, limit: int = 25):
     # Calculate offset for pagination
     offset = (page - 1) * limit
     
-    # Get paginated results
+    # Get paginated results (test_info only, no join)
     response = (
         supabase.table("test_info")
-        .select("*, test_files(*)")
+        .select("*")
         .range(offset, offset + limit - 1)
         .order("created_at", desc=True)
         .execute()
@@ -107,21 +111,10 @@ async def get_tests(page: int = 1, limit: int = 25):
     total_response = supabase.table("test_info").select("id").execute()
     total_count = len(total_response.data) if total_response.data else 0
     
-    # Process the results
-    tests = []
-    for test in response.data:
-        if test.get("test_files"):
-            test_files = test["test_files"]
-            # Convert arrays to lists for JSON serialization
-            for field in ["distance", "timeStamp", "displacement", "velocity", "heading", "trajectory_x", "trajectory_y", "gyro_left", "gyro_right", "gyro_left_smoothed", "gyro_right_smoothed", "accel_right", "accel_left"]:
-                if field in test_files and test_files[field]:
-                    test_files[field] = list(test_files[field])
-        tests.append(test)
-    
     total_pages = (total_count + limit - 1) // limit  # Ceiling division
     
     return {
-        "tests": tests,
+        "tests": response.data,
         "pagination": {
             "page": page,
             "limit": limit,
@@ -222,16 +215,6 @@ async def get_test(test_id: int, response_format: Optional[str] = None, full_dat
 
     return response
 
-# Get all announcements
-@router.get("/announcements")
-async def get_announcements():
-    response = (
-        supabase.table("announcements")
-        .select("*")
-        .execute()
-    )
-    return response
-
 # Changes the test at the given id based on the new test data
 # EX. in testName.js the user can change the test name
 @router.put("/update_test/{test_id}")
@@ -243,3 +226,150 @@ async def update_test(test_id: int, new_data: dict):
         .execute()
     )
     return response
+
+@router.post("/recalculate/{test_id}")
+async def recalculate_test(test_id: int):
+    """
+    Recalculate all derived values for a test using the stored raw gyro data.
+    This allows users to reprocess tests with updated calibration values.
+    """
+    try:
+        # Fetch the test with full raw data (no downsampling)
+        import json
+        response = (
+            supabase.table("test_info")
+            .select("*, test_files(*)")
+            .eq("id", test_id)
+            .execute()
+        )
+        
+        if not response.data or len(response.data) == 0:
+            raise HTTPException(status_code=404, detail="Test not found")
+        
+        test_data = response.data[0]
+        test_files = test_data["test_files"]
+        
+        # Parse the stored gyro data and timestamps
+        time_stamps = json.loads(test_files["timeStamp"]) if isinstance(test_files["timeStamp"], str) else test_files["timeStamp"]
+        gyro_left = json.loads(test_files["gyro_left"]) if isinstance(test_files["gyro_left"], str) else test_files["gyro_left"]
+        gyro_right = json.loads(test_files["gyro_right"]) if isinstance(test_files["gyro_right"], str) else test_files["gyro_right"]
+        
+        # Prepare data for processing
+        raw_data = {
+            'time_from_start': time_stamps,
+            'gyro_left': gyro_left,
+            'gyro_right': gyro_right
+        }
+        
+        # Create processor instance with validator and filter
+        validator = DataLengthValidator()
+        signal_filter = FFTLowPassFilter(cutoff_freq=5.0)
+        processor = DataProcessor(validator, signal_filter)
+        
+        # Process the data
+        processed_result = processor.process_data(
+            raw_data,
+            constants.left_gain,
+            constants.right_gain,
+            constants.WHEEL_DIAM_IN,
+            constants.DIST_WHEELS_IN
+        )
+        
+        if not processed_result:
+            raise HTTPException(status_code=500, detail="Failed to process data")
+        
+        # # Update the test_files with new calculated values
+        # update_data = {
+        #     "distance": processed_result['dist_m'],
+        #     "displacement": processed_result['disp_m'],
+        #     "velocity": processed_result['velocity'],
+        #     "heading": processed_result['heading_deg'],
+        #     "trajectory_x": processed_result['trajectory']['x'],
+        #     "trajectory_y": processed_result['trajectory']['y'],
+        #     "gyro_left_smoothed": processed_result['gyro_left_smoothed'],
+        #     "gyro_right_smoothed": processed_result['gyro_right_smoothed'],
+        # }
+        # 
+        # # Update the database
+        # update_response = (
+        #     supabase.table("test_files")
+        #     .update(update_data)
+        #     .eq("id", test_files["id"])
+        #     .execute()
+        # )
+        
+        # Create a new test_files entry with the recalculated data
+        # Convert numpy arrays to lists for JSON serialization
+        import numpy as np
+        
+        def to_list(data):
+            """Convert numpy arrays or other array-like objects to lists"""
+            if isinstance(data, np.ndarray):
+                return data.tolist()
+            elif isinstance(data, list):
+                return data
+            else:
+                return list(data) if hasattr(data, '__iter__') and not isinstance(data, str) else data
+        
+        new_test_data = {
+            "distance": to_list(processed_result['dist_m']),
+            "displacement": to_list(processed_result['disp_m']),
+            "velocity": to_list(processed_result['velocity']),
+            "heading": to_list(processed_result['heading_deg']),
+            "trajectory_x": to_list(processed_result['trajectory']['x']),
+            "trajectory_y": to_list(processed_result['trajectory']['y']),
+            "timeStamp": time_stamps,
+            "gyro_left": gyro_left,
+            "gyro_right": gyro_right,
+            "gyro_left_smoothed": to_list(processed_result['gyro_left_smoothed']),
+            "gyro_right_smoothed": to_list(processed_result['gyro_right_smoothed']),
+            # Include accel data from original if available
+            "accel_left": json.loads(test_files["accel_left"]) if test_files.get("accel_left") and isinstance(test_files["accel_left"], str) else test_files.get("accel_left"),
+            "accel_right": json.loads(test_files["accel_right"]) if test_files.get("accel_right") and isinstance(test_files["accel_right"], str) else test_files.get("accel_right"),
+        }
+        
+        # Insert new test_files entry
+        new_test_files_response = (
+            supabase.table("test_files")
+            .insert(new_test_data)
+            .execute()
+        )
+        
+        new_test_file_id = new_test_files_response.data[0]["id"]
+        
+        # Get user ID for the new test_info entry
+        user_id = await get_user_id()
+        
+        # Create a new test_info entry referencing the new test_files
+        new_test_info = {
+            "test_file_id": new_test_file_id,
+            "test_name": f"{test_data['test_name']} (Recalculated)",
+            "comments": f"Recalculated from test ID {test_id}. {test_data.get('comments', '')}",
+            "recorded_by_user_id": user_id,
+        }
+        
+        new_test_info_response = (
+            supabase.table("test_info")
+            .insert(new_test_info)
+            .execute()
+        )
+        
+        new_test_id = new_test_info_response.data[0]["id"]
+        
+        # Fetch the new test and return it in review format
+        new_test_response = (
+            supabase.table("test_info")
+            .select("*, test_files(*)")
+            .eq("id", new_test_id)
+            .execute()
+        )
+        
+        formatted_response = format_for_review(new_test_response, full_data=False)
+        formatted_response["new_test_id"] = new_test_id  # Include the new test ID
+        return formatted_response
+        
+    except Exception as e:
+        print(f"Error recalculating test: {e}", flush=True)
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))

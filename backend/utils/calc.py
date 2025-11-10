@@ -33,7 +33,7 @@ def get_distance_m(time_from_start, rot_l, rot_r, diameter=WHEEL_DIAM_IN):
     dist_m = [0]
     for i in range(len(rot_r) - 1):
         # Wheel rotation in time step:
-        dx_r = (rot_l[i]+rot_r[i])/2 * (np.pi / 180) * (time_from_start[i + 1] - time_from_start[i])
+        dx_r = (rot_l[i]+rot_r[i])/2 * (time_from_start[i + 1] - time_from_start[i])
         # Change in distance over time step:
         dx_m = dx_r * (diameter * IN_TO_M / 2)
         # Append last change to overall distance travelled:
@@ -71,7 +71,6 @@ def get_heading_deg(time_from_start, rot_l, rot_r, diameter=WHEEL_DIAM_IN, dist_
         # Change in heading angle over time step:
         dh = w * (time_from_start[i + 1] - time_from_start[i])
         # convert to degrees:
-        # May not need this due to new device conversion
         # dh = dh*180/np.pi
         # Append last change to overall heading angle:
         heading_deg.append(dh + heading_deg[-1])
@@ -89,8 +88,8 @@ def get_top_traj(disp_m, vel_ms, heading_deg, time_from_start):
         dx += dr * np.cos(dh)
         dy += dr * np.sin(dh)
         '''
-        dx += vel_ms[i]*np.cos(heading_deg[i]*np.pi/180) * (time_from_start[i + 1] - time_from_start[i])
-        dy += vel_ms[i]*np.sin(heading_deg[i]*np.pi/180) * (time_from_start[i + 1] - time_from_start[i])
+        dx += vel_ms[i]*np.cos(heading_deg[i]) * (time_from_start[i + 1] - time_from_start[i])
+        dy += vel_ms[i]*np.sin(heading_deg[i]) * (time_from_start[i + 1] - time_from_start[i])
         x.append(dx)
         y.append(dy)
     return {
