@@ -1,14 +1,9 @@
 import copy
-import numpy as np
 from abc import ABC, abstractmethod
-from scipy.fftpack import fftfreq, irfft, rfft
-from typing import Dict, List
+from typing import Dict
 
-from utils.calc import (
-    get_displacement_m, get_distance_m, get_velocity_m_s, 
-    get_heading_deg, get_top_traj
-)
-from utils.filtering import FFTLowPassFilter, ISignalFilter
+from utils.calc import CalcUtils
+from utils.filtering import ISignalFilter
 
 class IDataValidator(ABC):
     """Interface for data validation (Interface Segregation Principle)"""
@@ -58,6 +53,14 @@ class DataProcessor:
         """
         self._validator = validator
         self._filter = signal_filter
+        self._calc_utils = CalcUtils()  # Initialize CalcUtils to maintain state across packets
+    
+    def reset_calculations(self):
+        """
+        Reset the calculation state for a new test.
+        This clears all accumulated values from previous packets.
+        """
+        self._calc_utils = CalcUtils()
     
     def process_data(self, raw_data: Dict, left_gain: float, right_gain: float, 
                      diameter: float, dist_wheels: float) -> Dict:
@@ -77,10 +80,6 @@ class DataProcessor:
             'gyro_left': copy.deepcopy(raw_data['gyro_left']),
             'gyro_right': copy.deepcopy(raw_data['gyro_right'])
         }
-
-        data['gyro_left'] = np.deg2rad(data['gyro_left'])
-        data['gyro_right'] = np.deg2rad(data['gyro_right'])
-        print(data['gyro_left'])
         
         # Validate data lengths
         if not self._validator.validate(data):
@@ -105,22 +104,22 @@ class DataProcessor:
             gyro_left_smoothed = gyro_left_smoothed * left_gain
 
             
-            # Calculate all derived values
-            dist_m = get_distance_m(
+            # Calculate all derived values using the instance calc_utils
+            dist_m = self._calc_utils.get_distance_m(
                 data['time_from_start'], 
                 gyro_left_smoothed,
                 gyro_right_smoothed, 
                 diameter=diameter
             )
             
-            disp_m = get_displacement_m(
+            disp_m = self._calc_utils.get_displacement_m(
                 data['time_from_start'], 
                 gyro_left_smoothed,
                 gyro_right_smoothed, 
                 diameter=diameter
             )
             
-            heading_deg = get_heading_deg(
+            heading_deg = self._calc_utils.get_heading_deg(
                 data['time_from_start'], 
                 gyro_left_smoothed,
                 gyro_right_smoothed, 
@@ -128,14 +127,14 @@ class DataProcessor:
                 dist_wheels=dist_wheels
             )
             
-            velocity = get_velocity_m_s(
+            velocity = self._calc_utils.get_velocity_m_s(
                 data['time_from_start'], 
                 gyro_left_smoothed,
                 gyro_right_smoothed, 
                 diameter=diameter
             )
             
-            trajectory = get_top_traj(
+            trajectory = self._calc_utils.get_top_traj(
                 disp_m, 
                 velocity, 
                 heading_deg,
