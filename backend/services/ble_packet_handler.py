@@ -20,7 +20,6 @@ class BLEPacketHandler:
             "right": {"gx": 0.0, "gy": 0.0, "gz": 0.0}
         }
 
-
     def unpack_packet(self, data):
         """
         data: 50-byte BLE packet with direct int16 encoding

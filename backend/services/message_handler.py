@@ -5,14 +5,16 @@ Separates concerns of consuming, processing, and producing messages.
 from abc import ABC, abstractmethod
 from typing import List, Optional
 import numpy as np
-from utils.save_to_json import save_data
 
-from services.kafka_service import IMessageConsumer, IMessageProducer
+from services.kafka_consumer import IMessageConsumer
+from services.kafka_producer import IMessageProducer
 from services.message_processor import DataProcessor
 from services.ble_packet_handler import BLEPacketHandler
 from services.calibration_service import calibration_service
 import time
 from utils.gyro_offsets import process_gyro_axis
+from packet_constants import KALMAN_BIAS_PROCESS_NOISE, KALMAN_PROCESS_NOISE, KALMAN_LEFT_R, KALMAN_RIGHT_R
+from utils.filtering import BiasEstimatingKalmanFilter, process_gyro_kalman
 
 # Global variable to store the current test file ID
 current_test_id = None
@@ -93,6 +95,21 @@ class PacketMessageHandler(IMessageHandler):
         # Kafka message size limit (set to 800KB to be safe, actual limit is 1MB)
         # Conservative limit to account for overhead and prevent pipeline breaks
         self.max_kafka_message_size: int = 800 * 1024  # 800KB in bytes
+
+        # Kalman filters - persistent across packets for each wheel and axis
+        # Using bias-estimating filter to separate constant drift from true motion
+        self.gyro_kalman = {
+            "left": {
+                "x": BiasEstimatingKalmanFilter(KALMAN_PROCESS_NOISE, KALMAN_BIAS_PROCESS_NOISE, KALMAN_LEFT_R[0]),
+                "y": BiasEstimatingKalmanFilter(KALMAN_PROCESS_NOISE, KALMAN_BIAS_PROCESS_NOISE, KALMAN_LEFT_R[1]),
+                "z": BiasEstimatingKalmanFilter(KALMAN_PROCESS_NOISE, KALMAN_BIAS_PROCESS_NOISE, KALMAN_LEFT_R[2]),
+            },
+            "right": {
+                "x": BiasEstimatingKalmanFilter(KALMAN_PROCESS_NOISE, KALMAN_BIAS_PROCESS_NOISE, KALMAN_RIGHT_R[0]),
+                "y": BiasEstimatingKalmanFilter(KALMAN_PROCESS_NOISE, KALMAN_BIAS_PROCESS_NOISE, KALMAN_RIGHT_R[1]),
+                "z": BiasEstimatingKalmanFilter(KALMAN_PROCESS_NOISE, KALMAN_BIAS_PROCESS_NOISE, KALMAN_RIGHT_R[2]),
+            }
+        }
     
     async def handle_message(self, message: dict) -> Optional[dict]:
         """
@@ -132,128 +149,103 @@ class PacketMessageHandler(IMessageHandler):
             calibration_service.start_calibration()
         elif event_type == "end-static-calibration":
             print("Ending calibration manually...", flush=True)
-            results = calibration_service.stop_calibration()
-            # Apply calibration results to packet handler
-            if results and 'offsets' in results and 'std_devs' in results:
-                offsets = results['offsets']
-                std_devs = results['std_devs']
-                for side in ["left", "right"]:
-                    for axis in ["gx", "gy", "gz"]:
-                        self.packet_handler.gyro_offsets[side][axis] = offsets[side][axis]
-                        self.packet_handler.gyro_std_devs[side][axis] = std_devs[side][axis]
+            self._apply_calibration()
         else:
             print(f"Unknown recording event: {event_type}", flush=True)
         # Recording events don't produce output messages
         return None
     
-    def _apply_offsets(self, samples, side):
-        # If calibration is active, process samples for calibration
-        if calibration_service.is_calibrating:
-            should_continue = calibration_service.process_packet(side, samples)
-            if not should_continue:
-                # Calibration complete, stop it
-                results = calibration_service.stop_calibration()
-                # Apply calibration results
-                if results and 'offsets' in results and 'std_devs' in results:
-                    offsets = results['offsets']
-                    std_devs = results['std_devs']
-                    print(f"\n[APPLYING OFFSETS] Left: {offsets['left']}", flush=True)
-                    print(f"[APPLYING OFFSETS] Right: {offsets['right']}", flush=True)
-                    for wheel_side in ["left", "right"]:
-                        for axis in ["gx", "gy", "gz"]:
-                            self.packet_handler.gyro_offsets[wheel_side][axis] = offsets[wheel_side][axis]
-                            self.packet_handler.gyro_std_devs[wheel_side][axis] = std_devs[wheel_side][axis]
-                    print(f"[APPLIED] packet_handler offsets - Left: {self.packet_handler.gyro_offsets['left']}", flush=True)
-                    print(f"[APPLIED] packet_handler offsets - Right: {self.packet_handler.gyro_offsets['right']}", flush=True)
-                    print("Calibration complete and applied!", flush=True)
-                    # Reset debug flags so we see the new offsets on next packet
-                    if hasattr(self, '_offset_debug_printed'):
-                        self._offset_debug_printed = {}
-                
-                # Send calibration completion event to frontend via result topic
-                # This will notify the frontend to stop reading data
-                return {
-                    "type": "calibration_complete",
-                    "results": results,
-                    "timestamp": time.time()
-                }
-            return None  # Don't process packets during calibration
-        
-    def _calibrate_gyros(self, samples, side):
-        for idx, sample in enumerate(samples):
-            # Store original value for debug
-            original_gy = sample["gy"] if idx == 0 else None
-            
-            # Process all gyro axes with axis-specific offsets
-            gx_results = process_gyro_axis(
-                sample["gx"], 
-                self.packet_handler.gyro_offsets[side]["gx"], 
-                self.packet_handler.gyro_std_devs[side]["gx"]
-            )
-            sample["gx_raw"] = gx_results['raw']
-            sample["gx"] = gx_results['calibrated']  # Update with calibrated value
-            
-            gy_results = process_gyro_axis(
-                sample["gy"], 
-                self.packet_handler.gyro_offsets[side]["gy"], 
-                self.packet_handler.gyro_std_devs[side]["gy"]
-            )
-            sample["gy_raw"] = gy_results['raw']
-            sample["gy"] = gy_results['calibrated']  # Update with calibrated value
-            
-            # Debug first sample
-            if original_gy is not None and idx == 0:
-                print(f"[DEBUG {side}] Sample gy: raw={original_gy:.6f} -> calibrated={sample['gy']:.6f} (offset={self.packet_handler.gyro_offsets[side]['gy']:.6f})", flush=True)
-                self._sample_debug_shown = True
-            
-            gz_results = process_gyro_axis(
-                sample["gz"], 
-                self.packet_handler.gyro_offsets[side]["gz"], 
-                self.packet_handler.gyro_std_devs[side]["gz"]
-            )
-            sample["gz_raw"] = gz_results['raw']
-            sample["gz"] = gz_results['calibrated']  # Update with calibrated value
-        return samples
+    def _apply_calibration(self):
+        results = calibration_service.stop_calibration()
+        self.reset_session()
+        self.paused_time = None
+        self.paused = False
+        # Reset calculation state in the processor
+        self._processor.reset_calculations()
+        # Apply calibration results to packet handler
+        if results and 'offsets' in results and 'std_devs' in results:
+            offsets = results['offsets']
+            std_devs = results['std_devs']
+            for side in ["left", "right"]:
+                for axis in ["gx", "gy", "gz"]:
+                    self.packet_handler.gyro_offsets[side][axis] = offsets[side][axis]
+                    self.packet_handler.gyro_std_devs[side][axis] = std_devs[side][axis]
+        return results
     
     async def _handle_packet(self, message: dict) -> Optional[dict]:
-        # Extract byte array from message
+        """
+        Main packet handling entry point. Delegates to specialized methods.
+        
+        :param message: Message containing packet data
+        :return: Processed result or None
+        """
+        # Decode and validate packet
+        raw_data = self._decode_packet(message)
+        if raw_data is None:
+            return None
+        
+        # Check if this is a calibration completion event
+        if isinstance(raw_data, dict) and raw_data.get("type") == "calibration_complete":
+            # Return calibration event immediately to send to Kafka
+            return raw_data
+        
+        # Skip processing if recording is paused
+        if self.paused:
+            return None
+        
+        # Initialize timing on first packet
+        self._initialize_start_time()
+        
+        # Store data by side
+        self._store_packet_data(message["side"], raw_data)
+        
+        # Process when both sides are available
+        if self._both_sides_ready():
+            return await self._process_paired_packets(message)
+        
+        # Return None if waiting for the other side's data
+        return None
+    
+    def _decode_packet(self, message: dict) -> Optional[dict]:
+        """
+        Decode packet bytes and extract sensor data.
+        
+        :param message: Message containing packet and metadata
+        :return: Decoded raw data or None if decoding fails, 
+                 or calibration event dict if calibration completes
+        """
         packet = message["packet"]
         side = message.get("side", "unknown")
-
-        # Decode the gyro data and accel data from bytearray
-        # Some producers may send the packet as a list of ints (JSON). Convert to bytes-like if necessary.
+        
         try:
-            if isinstance(packet, list):
-                packet_bytes = bytearray(packet)
-            elif isinstance(packet, (bytes, bytearray)):
-                packet_bytes = packet
-            else:
-                # Attempt to coerce other sequence types
-                packet_bytes = bytearray(packet)
-
+            # Convert packet to bytes
+            packet_bytes = self._convert_to_bytes(packet)
+            
+            # Unpack packet data
             counter, samples = self.packet_handler.unpack_packet(packet_bytes)
-            self._apply_offsets(samples=samples, side=side)
             
-            # Skip processing if recording is paused
-            if self.paused:
-                return None
+            # Extract data for processing
+            # Apply bias-estimating Kalman filtering to all gyro axes
+            for sample in samples:
+                # Process X-axis with bias-estimating Kalman
+                gx_results = process_gyro_kalman(sample["gx"], self.gyro_kalman[side]["x"])
+                sample["gx_raw"] = gx_results['raw']
+                sample["gx_calibrated"] = gx_results['filtered']  # Bias-corrected velocity
                 
-            # Initialize start time on first message
-            if self.start_time is None:
-                # Set start_time so that the first packet's newest timestamp is at current time
-                self.start_time = time.time() - 3/68  # 3 intervals back to make oldest at 0
-            
-            # Transform samples into the format expected by the processor
-            # samples is a list of dicts: [{"ax": ..., "ay": ..., "az": ..., "gx": ..., "gy": ..., "gz": ...}, ...]
-            # Apply calibration offsets to all gyro axes
-            
-            samples = self._calibrate_gyros(samples=samples, side=side)
-            
-            # Extract calibrated gyro data (gy axis) for wheel rotation
-            gyro_data = [sample["gy"] for sample in samples]
+                # Process Y-axis with bias-estimating Kalman
+                gy_results = process_gyro_kalman(sample["gy"], self.gyro_kalman[side]["y"])
+                sample["gy_raw"] = gy_results['raw']
+                sample["gy_calibrated"] = gy_results['filtered']  # Bias-corrected velocity
+                
+                # Process Z-axis with bias-estimating Kalman
+                gz_results = process_gyro_kalman(sample["gz"], self.gyro_kalman[side]["z"])
+                sample["gz_raw"] = gz_results['raw']
+                sample["gz_calibrated"] = gz_results['filtered']  # Bias-corrected velocity      
+
+            gyro_data = [sample["gy_calibrated"] for sample in samples]
             accel_data = [[sample["ax"], sample["ay"], sample["az"]] for sample in samples]
             
-            raw_data = {
+            return {
                 "counter": counter,
                 "gyro_data": gyro_data,
                 "accel_data": accel_data
@@ -261,85 +253,181 @@ class PacketMessageHandler(IMessageHandler):
         except Exception as e:
             print(f"Failed to unpack packet (len={len(packet) if packet is not None else 'None'}): {e}", flush=True)
             return None
+    
+    def _convert_to_bytes(self, packet) -> bytearray:
+        """
+        Convert packet data to bytearray format.
         
-        # Store decoded data by side (like dataService.js stores pendingLeftData/pendingRightData)
-        if message["side"] == "left":
+        :param packet: Packet data (list, bytes, or bytearray)
+        :return: Packet as bytearray
+        """
+        if isinstance(packet, list):
+            return bytearray(packet)
+        elif isinstance(packet, bytearray):
+            return packet
+        elif isinstance(packet, bytes):
+            return bytearray(packet)
+        else:
+            # Attempt to coerce other sequence types
+            return bytearray(packet)
+    
+    def _initialize_start_time(self) -> None:
+        """
+        Initialize start time on first packet.
+        Set start_time so that the first packet's newest timestamp is at current time.
+        """
+        if self.start_time is None:
+            self.start_time = time.time() - 3/68  # 3 intervals back to make oldest at 0
+    
+    def _store_packet_data(self, side: str, raw_data: dict) -> None:
+        """
+        Store decoded packet data by side.
+        
+        :param side: "left" or "right"
+        :param raw_data: Decoded packet data
+        """
+        if side == "left":
             self.left_data = raw_data
         else:
             self.right_data = raw_data
+    
+    def _both_sides_ready(self) -> bool:
+        """
+        Check if data from both sides is available for processing.
         
-        # If we have stored data for both sides, then we can perform calculations
-        if self.left_data is not None and self.right_data is not None:
-            # Generate timestamps (like dataService.js does in processPackets)
-            new_timestamps = self._generate_time_stamps()
-            
-            # Fill gaps with zero data if resuming after a long pause
-            if self.time_stamps:
-                last_time = self.time_stamps[-1]
-                first_new = new_timestamps[0]
-                gap = first_new - last_time
-                if gap > 0.1:  # Gap larger than 100ms (long pause)
-                    # Calculate how many points to fill (at 68Hz)
-                    num_fill_points = int(gap * 68) - 1  # -1 to avoid overlap
-                    if num_fill_points > 0:
-                        fill_timestamps = []
-                        fill_gyro_left = []
-                        fill_gyro_right = []
-                        for i in range(num_fill_points):
-                            fill_timestamps.append(last_time + (i+1) * (1/68))
-                            fill_gyro_left.append(0.0)
-                            fill_gyro_right.append(0.0)
-                        self.time_stamps.extend(fill_timestamps)
-                        self.gyro_left.extend(fill_gyro_left)
-                        self.gyro_right.extend(fill_gyro_right)
-                        # print(f"Filled gap with {num_fill_points} zero points", flush=True)
-            
-            self.time_stamps.extend(new_timestamps)
-            
-            # Accumulate gyro data from both sides
-            self.gyro_left.extend(self.left_data["gyro_data"])
-            self.gyro_right.extend(self.right_data["gyro_data"])
-            self.accel_left.extend(self.left_data['accel_data'])
-            self.accel_right.extend(self.right_data["accel_data"])
-
-            # Send only one packets worth of data
-            gyro_left = self.left_data["gyro_data"]
-            gyro_right = self.right_data["gyro_data"]
-            time_stamps = new_timestamps
-            
-            # Clear pending data for next packet pair
-            self.left_data = None
-            self.right_data = None
-            
-            # Check if we should skip Kafka transmission to avoid processing large datasets
-            if not self.should_send_to_kafka:
-                # Still process for database but don't send to Kafka
-                return None
-            
-            # Process a single packet
-            result = self._processor.process_data(
-                {
-                    "gyro_left": gyro_left,
-                    "gyro_right": gyro_right,
-                    "time_from_start": time_stamps
-                },
-                self._left_gain,
-                self._right_gain,
-                self._diameter,
-                self._dist_wheels
-            )
-
-            # Add metadata if processing was successful
-            if result:
-                result['device_id'] = message.get('device_id')
-                result['timestamp'] = message.get('ts')
-                
-                # Convert numpy arrays to lists for JSON serialization
-                result = self._convert_to_json_serializable(result)
-                
-                return result
+        :return: True if both left and right data are ready
+        """
+        return self.left_data is not None and self.right_data is not None
+    
+    async def _process_paired_packets(self, message: dict) -> Optional[dict]:
+        """
+        Process data when packets from both sides are available.
         
-        # Return None if waiting for the other side's data
+        :param message: Original message for metadata
+        :return: Processed result or None
+        """
+        # Safety check - should not happen due to _both_sides_ready() check
+        if self.left_data is None or self.right_data is None:
+            return None
+        
+        # Generate timestamps
+        new_timestamps = self._generate_time_stamps()
+        
+        # Fill any gaps in the data
+        self._fill_data_gaps(new_timestamps)
+        
+        # Accumulate all data
+        self._accumulate_data(new_timestamps)
+        
+        # Extract current packet data before clearing
+        gyro_left = self.left_data["gyro_data"]
+        gyro_right = self.right_data["gyro_data"]
+        
+        # Clear pending data for next packet pair
+        self.left_data = None
+        self.right_data = None
+        
+        # Check if we should skip Kafka transmission
+        if not self.should_send_to_kafka:
+            return None
+        
+        # Process and return result
+        return self._process_and_enrich_result(
+            gyro_left, gyro_right, new_timestamps, message
+        )
+    
+    def _fill_data_gaps(self, new_timestamps: List[float]) -> None:
+        """
+        Fill gaps with zero data if resuming after a long pause.
+        
+        :param new_timestamps: New timestamps to check for gaps
+        """
+        if not self.time_stamps:
+            return
+        
+        last_time = self.time_stamps[-1]
+        first_new = new_timestamps[0]
+        gap = first_new - last_time
+        
+        # Gap larger than 100ms indicates a long pause
+        if gap > 0.1:
+            num_fill_points = int(gap * 68) - 1  # -1 to avoid overlap
+            if num_fill_points > 0:
+                self._add_gap_fill_data(last_time, num_fill_points)
+    
+    def _add_gap_fill_data(self, last_time: float, num_points: int) -> None:
+        """
+        Add zero-filled data points to fill gaps.
+        
+        :param last_time: Last recorded timestamp
+        :param num_points: Number of points to fill
+        """
+        fill_timestamps = []
+        fill_gyro_left = []
+        fill_gyro_right = []
+        
+        for i in range(num_points):
+            fill_timestamps.append(last_time + (i+1) * (1/68))
+            fill_gyro_left.append(0.0)
+            fill_gyro_right.append(0.0)
+        
+        self.time_stamps.extend(fill_timestamps)
+        self.gyro_left.extend(fill_gyro_left)
+        self.gyro_right.extend(fill_gyro_right)
+    
+    def _accumulate_data(self, new_timestamps: List[float]) -> None:
+        """
+        Accumulate gyro and accel data from both sides.
+        
+        :param new_timestamps: Timestamps for new data
+        """
+        # Safety check - should not happen due to earlier checks
+        if self.left_data is None or self.right_data is None:
+            return
+        
+        self.time_stamps.extend(new_timestamps)
+        self.gyro_left.extend(self.left_data["gyro_data"])
+        self.gyro_right.extend(self.right_data["gyro_data"])
+        self.accel_left.extend(self.left_data['accel_data'])
+        self.accel_right.extend(self.right_data["accel_data"])
+    
+    def _process_and_enrich_result(
+        self,
+        gyro_left: List[float],
+        gyro_right: List[float],
+        time_stamps: List[float],
+        message: dict
+    ) -> Optional[dict]:
+        """
+        Process data and add metadata to result.
+        
+        :param gyro_left: Left gyro data
+        :param gyro_right: Right gyro data
+        :param time_stamps: Timestamps
+        :param message: Original message for metadata
+        :return: Enriched result or None
+        """
+        result = self._processor.process_data(
+            {
+                "gyro_left": gyro_left,
+                "gyro_right": gyro_right,
+                "time_from_start": time_stamps
+            },
+            self._left_gain,
+            self._right_gain,
+            self._diameter,
+            self._dist_wheels
+        )
+        
+        # Only process if result is a dict
+        if result and isinstance(result, dict):
+            result['device_id'] = message.get('device_id')
+            result['timestamp'] = message.get('ts')
+            # Convert and ensure we still have a dict
+            converted = self._convert_to_json_serializable(result)
+            if isinstance(converted, dict):
+                return converted
+        
         return None
     
     def reset_session(self):

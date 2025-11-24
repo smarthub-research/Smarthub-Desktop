@@ -2,10 +2,12 @@
 Dependency injection factory for creating service instances.
 Centralizes configuration and dependency wiring.
 """
-from services.kafka_service import KafkaMessageProducer, KafkaMessageConsumer
-from services.message_processor import DataProcessor, DataLengthValidator
+from services.kafka_producer import KafkaMessageProducer
+from services.kafka_consumer import KafkaMessageConsumer
+from services.message_processor import DataProcessor
+from services.data_length_validator import DataLengthValidator
 from services.message_handler import PacketMessageHandler, MessageProcessingPipeline
-from utils.filtering import FFTLowPassFilter
+from utils.filtering import BiasEstimatingKalmanFilter
 
 class ServiceFactory:
     """
@@ -62,8 +64,7 @@ class ServiceFactory:
     def create_data_processor(self) -> DataProcessor:
         """Create a configured data processor with all dependencies"""
         validator = DataLengthValidator()
-        signal_filter = FFTLowPassFilter(cutoff_freq=self._cutoff_freq)
-        return DataProcessor(validator, signal_filter)
+        return DataProcessor(validator)
     
     def create_message_handler(self) -> PacketMessageHandler:
         """Create a configured message handler"""

@@ -34,7 +34,7 @@ right_gain = 1.12
 right_offset = -0.0357
 
 D_EULER_THRESH = 25
-WHEEL_DIAM_IN = 24
+WHEEL_DIAM_IN = 23.5
 IN_TO_M = 0.0254
 DIST_WHEELS_IN = 26
 

@@ -246,22 +246,14 @@ class KafkaService {
         // Convert backend format to frontend graph format
         const timeStamps = processedData.time_from_start || [];
         const formattedData = {
-            displacement: [],
             distance: [],
             heading: [],
             velocity: [],
             trajectory: [],
-            gyroLeft: [processedData.gyro_left_smoothed || []],
-            gyroRight: [processedData.gyro_right_smoothed || []],
-            timeStamp: [timeStamps]
         };
 
         // Convert arrays to time-series objects for graphs
         for (let i = 0; i < timeStamps.length; i++) {
-            formattedData.displacement.push({
-                time: timeStamps[i],
-                displacement: processedData.disp_m?.[i] || 0
-            });
             formattedData.distance.push({
                 time: timeStamps[i],
                 distance: processedData.dist_m?.[i] || 0

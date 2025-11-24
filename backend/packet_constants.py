@@ -37,3 +37,17 @@ CALIBRATION_CHECK_INTERVAL = 2       # Check accuracy every N seconds
 # Processing Configuration
 NOISE_THRESHOLD_SIGMAS = 2  # Number of std devs to consider as noise (2 sigma zeroing)
 SAMPLE_RATE = 104.0           # Sample rate in Hz (26Hz packets × 4 samples = 104Hz effective)
+
+# Deadzone Filtering Configuration
+GYRO_DEAD_ZONE = 3.0          # Dead zone threshold in deg/s for low-speed noise
+GYRO_HYSTERESIS = 0.5         # Hysteresis to prevent oscillation around dead zone
+
+# Kalman Filter Configuration
+# Process noise (Q) - how much the true rate can change between samples
+KALMAN_PROCESS_NOISE = 0.0001  # For velocity state
+KALMAN_BIAS_PROCESS_NOISE = 1e-6  # For bias state (very small - bias changes slowly)
+
+# Measurement noise variances (R) from 15-second stationary run
+# Format: (X, Y, Z) axis variances
+KALMAN_LEFT_R = (8.1171e-04, 0.0011, 9.3547e-04)
+KALMAN_RIGHT_R = (0.0018, 0.0035, 0.0012)

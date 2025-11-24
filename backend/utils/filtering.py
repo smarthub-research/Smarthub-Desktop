@@ -2,6 +2,7 @@ import numpy as np
 from abc import ABC, abstractmethod
 from scipy.fftpack import fftfreq, irfft, rfft
 from typing import Dict, List
+from packet_constants import GYRO_DEAD_ZONE, GYRO_HYSTERESIS
 
 class ISignalFilter(ABC):
     """Interface for signal filtering (Interface Segregation Principle)"""
@@ -10,6 +11,153 @@ class ISignalFilter(ABC):
     def filter(self, signal: List[float], time_data: List[float]) -> np.ndarray:
         """Apply filtering to signal"""
         pass
+
+
+class DeadZoneFilter:
+    """Dead zone with hysteresis to prevent noise-induced drift at low speeds"""
+    def __init__(self, dead_zone=GYRO_DEAD_ZONE, hysteresis=GYRO_HYSTERESIS):
+        self.dead_zone = dead_zone  # deg/s
+        self.hysteresis = hysteresis
+        self.in_motion = False
+    
+    def filter(self, value):
+        """Apply dead zone with hysteresis"""
+        if self.in_motion:
+            # Once moving, need to drop below lower threshold to stop
+            if abs(value) < self.dead_zone - self.hysteresis:
+                self.in_motion = False
+                return 0.0
+        else:
+            # While stopped, need to exceed higher threshold to start
+            if abs(value) > self.dead_zone + self.hysteresis:
+                self.in_motion = True
+            else:
+                return 0.0
+        
+        return value
+    
+    def reset(self):
+        """Reset motion state"""
+        self.in_motion = False
+
+
+class BiasEstimatingKalmanFilter:
+    """
+    2-state Kalman filter that estimates both angular velocity AND constant bias
+    
+    State vector: [angular_velocity, bias]
+    
+    Process model:
+    - angular_velocity evolves as random walk
+    - bias is constant (very slow random walk)
+    
+    Measurement model:
+    - z = angular_velocity + bias + measurement_noise
+    
+    This filter automatically separates true motion from constant drift.
+    When stationary, bias state absorbs the constant offset.
+    When moving, velocity state tracks real rotation.
+    """
+    
+    def __init__(self, process_noise_velocity, process_noise_bias, measurement_noise):
+        """
+        Initialize 2-state Kalman filter
+        
+        Args:
+            process_noise_velocity: Q_v - how much true angular velocity can change
+            process_noise_bias: Q_b - how much bias can drift (usually very small)
+            measurement_noise: R - sensor noise variance
+        """
+        # State: [angular_velocity, bias]
+        self.x = np.array([0.0, 0.0])
+        
+        # State covariance matrix
+        self.P = np.array([[1.0, 0.0],
+                          [0.0, 1.0]])
+        
+        # Process noise covariance
+        self.Q = np.array([[process_noise_velocity, 0.0],
+                          [0.0, process_noise_bias]])
+        
+        # Measurement noise
+        self.R = measurement_noise
+        
+        # State transition matrix (both states persist)
+        self.F = np.array([[1.0, 0.0],
+                          [0.0, 1.0]])
+        
+        # Measurement matrix (measurement = velocity + bias)
+        self.H = np.array([1.0, 1.0])
+    
+    def predict(self):
+        """Prediction step"""
+        # State prediction: x = F * x (both states persist)
+        
+        # Covariance prediction: P = F @ P @ F' + Q
+        self.P = self.F @ self.P @ self.F.T + self.Q
+    
+    def update(self, measurement):
+        """
+        Update step with gyro measurement
+        
+        Args:
+            measurement: Gyro reading (deg/s)
+        """
+        # Innovation: y = z - H @ x
+        y = measurement - self.H @ self.x
+        
+        # Innovation covariance: S = H @ P @ H' + R
+        S = self.H @ self.P @ self.H.T + self.R
+        
+        # Kalman gain: K = P * H' * inv(S)
+        K = self.P @ self.H / S
+        
+        # State update: x = x + K * y
+        self.x = self.x + K * y
+        
+        # Covariance update: P = (I - K * H) @ P where * is outer product
+        self.P = (np.eye(2) - np.outer(K, self.H)) @ self.P
+    
+    def get_velocity(self):
+        """Get estimated angular velocity (deg/s) - WITHOUT bias"""
+        return self.x[0]
+    
+    def get_bias(self):
+        """Get estimated constant bias (deg/s)"""
+        return self.x[1]
+    
+    def reset(self):
+        """Reset filter state and covariance"""
+        self.x = np.array([0.0, 0.0])
+        self.P = np.array([[1.0, 0.0],
+                          [0.0, 1.0]])
+
+def process_gyro_kalman(raw_value, kf):
+    """
+    Process single gyro sample with bias-estimating Kalman filter (for live streaming)
+    
+    Args:
+        raw_value: Raw gyro measurement (deg/s)
+        kf: BiasEstimatingKalmanFilter instance (persistent)
+    
+    Returns:
+        dict: {'raw': raw_value, 'filtered': filtered_velocity, 'bias': estimated_bias}
+    """
+    # Predict
+    kf.predict()
+    
+    # Update with measurement
+    kf.update(raw_value)
+    
+    # Get bias-corrected velocity and bias estimate
+    filtered_velocity = kf.get_velocity()
+    estimated_bias = kf.get_bias()
+
+    return {
+        'raw': raw_value,
+        'filtered': filtered_velocity,
+        'bias': estimated_bias
+    }
 
 
 class FFTLowPassFilter(ISignalFilter):

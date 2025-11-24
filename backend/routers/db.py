@@ -3,7 +3,8 @@ from constants import supabase
 from .auth import get_user_id
 from typing import Optional
 import services.message_handler as message_handler_module
-from services.message_processor import DataProcessor, DataLengthValidator
+from services.message_processor import DataProcessor
+from services.data_length_validator import DataLengthValidator
 from utils.filtering import FFTLowPassFilter
 
 import constants
