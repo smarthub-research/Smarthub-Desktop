@@ -100,6 +100,7 @@ class DataService {
     }
 
     async findCharacteristics(shouldRecord, peripheral) {
+        if (!peripheral) return;
         peripheral.discoverServices([], (error, services) => {
             if (error) {
                 console.error(error);
@@ -111,13 +112,20 @@ class DataService {
                         console.error(error);
                         return;
                     }
-                    // Find characteristic and subscribe or unsubscribe
-                    const targetCharacteristic = characteristics.find(characteristic => characteristic.uuid === "2a56");
+                    // Prefer the explicit 2a56 notify characteristic, otherwise pick a notify-capable char
+                    const targetCharacteristic = characteristics.find(c => c.uuid === "2a56") || characteristics.find(c => c.properties && c.properties.includes('notify'));
+
+                    // Find a writable/control characteristic (used to send activation flag)
+                    const writableCharacteristic = characteristics.find(c => c.properties && (c.properties.includes('write') || c.properties.includes('writeWithoutResponse')));
+
                     if (targetCharacteristic) {
                         if (shouldRecord) {
-                            this.subscribeToCharacteristics(targetCharacteristic, peripheral);
+                            // Await the async subscription (includes activation write)
+                            this.subscribeToCharacteristics(targetCharacteristic, peripheral, writableCharacteristic).catch(err => {
+                                console.error('Error during subscribe:', err);
+                            });
                         } else {
-                            this.unsubscribeToCharacteristics(targetCharacteristic);
+                            this.unsubscribeToCharacteristics(targetCharacteristic, writableCharacteristic);
                         }
                     }
                 });
@@ -125,8 +133,7 @@ class DataService {
         })
     }
 
-    unsubscribeToCharacteristics(characteristic) {
-        console.log("unsubscribing")
+    unsubscribeToCharacteristics(characteristic, controlCharacteristic) {
         characteristic.unsubscribe((error) => {
             if (error) {
                 console.error('Unsubscribe error:', error);
@@ -137,20 +144,28 @@ class DataService {
             characteristic.off('data', characteristic._dataCallback);
             delete characteristic._dataCallback;
         }
+
+        // If the device expects an explicit deactivation flag, try to write it
+        try {
+            if (controlCharacteristic) {
+                const withoutResponse = controlCharacteristic.properties && controlCharacteristic.properties.includes('writeWithoutResponse');
+                const buf = Buffer.from([0x00]);
+                controlCharacteristic.write(buf, withoutResponse, (err) => {
+                    if (err) console.error('Control write (deactivate) error:', err);
+                });
+            }
+        } catch (e) {
+            // Non-fatal
+        }
     }
 
-    subscribeToCharacteristics(characteristic, peripheral) {
-        characteristic.subscribe((error) => {
-            if (error) {
-                console.error('Subscribe error:', error);
-            }
-        });
-
+    async subscribeToCharacteristics(characteristic, peripheral, controlCharacteristic) {
         // Determine which side this device is (left or right)
         const conn1 = connectionStore.getConnectionOne();
         const side = (peripheral === conn1) ? 'left' : 'right';
         const deviceId = peripheral.id || peripheral.address || 'unknown';
 
+        // Set up data callback FIRST (before subscribing or activating)
         characteristic._dataCallback = async (data) => {
             // Send raw packet to Kafka for backend processing
             if (this.kafkaInitialized) {
@@ -164,6 +179,33 @@ class DataService {
         }
 
         characteristic.on('data', characteristic._dataCallback);
+
+        // Subscribe to notifications
+        characteristic.subscribe((error) => {
+            if (error) {
+                console.error('Subscribe error:', error);
+            }
+        });
+
+        // If the device requires an activation write, send it AFTER we're ready to receive
+        try {
+            if (controlCharacteristic) {
+                console.log(`Sending activation byte to ${side} device...`);
+                const withoutResponse = controlCharacteristic.properties && controlCharacteristic.properties.includes('writeWithoutResponse');
+                const buf = Buffer.from([0x01]);
+                controlCharacteristic.write(buf, withoutResponse, (err) => {
+                    if (err) {
+                        console.error(`Control write (activate) error for ${side}:`, err);
+                    } else {
+                        console.log(`✓ Activation sent to ${side} device`);
+                    }
+                });
+                // small delay to allow device to process activation
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+        } catch (e) {
+            console.warn(`Activation write failed for ${side}, falling back to no activation:`, e);
+        }
     }
 
     async shutdown() {

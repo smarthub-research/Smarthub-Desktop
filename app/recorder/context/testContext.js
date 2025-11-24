@@ -20,8 +20,14 @@ export function TestProvider({ children }) {
         trajectory: []
     });
 
+    // Updates the previous data with the new processed packet
     const addProcessedData = (data) => {
-        setProcessedPackets(data);
+        setProcessedPackets((prevData) => ({
+            distance: [...prevData.distance, ...data.distance],
+            velocity: [...prevData.velocity, ...data.velocity],
+            heading: [...prevData.heading, ...data.heading],
+            trajectory: [...prevData.trajectory, ...data.trajectory]
+        }));
     };
 
     const clearProcessedData = () => {

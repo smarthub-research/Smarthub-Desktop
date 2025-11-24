@@ -1,110 +1,10 @@
 import copy
+from typing import Dict
 import numpy as np
-from abc import ABC, abstractmethod
-from scipy.fftpack import fftfreq, irfft, rfft
-from typing import Dict, List
 
-from utils.calc import (
-    get_displacement_m, get_distance_m, get_velocity_m_s, 
-    get_heading_deg, get_top_traj
-)
-
-class IDataValidator(ABC):
-    """Interface for data validation (Interface Segregation Principle)"""
-    
-    @abstractmethod
-    def validate(self, data: Dict) -> bool:
-        """Validate input data"""
-        pass
-
-
-class ISignalFilter(ABC):
-    """Interface for signal filtering (Interface Segregation Principle)"""
-    
-    @abstractmethod
-    def filter(self, signal: List[float], time_data: List[float]) -> np.ndarray:
-        """Apply filtering to signal"""
-        pass
-
-
-class DataLengthValidator(IDataValidator):
-    """
-    Validates that all data arrays have matching lengths.
-    Single Responsibility: Only validates data lengths.
-    """
-    
-    def validate(self, data: Dict) -> bool:
-        """
-        Check if all data arrays have matching lengths.
-        
-        :param data: dictionary containing time_from_start, gyro_left, gyro_right
-        :returns True if all lengths match, False otherwise
-        """
-        if len(data['time_from_start']) != len(data['gyro_left']):
-            print('Data length mismatch: time vs gyro_left')
-            return False
-        if len(data['time_from_start']) != len(data['gyro_right']):
-            print('Data length mismatch: time vs gyro_right')
-            return False
-        if len(data['gyro_left']) != len(data['gyro_right']):
-            print('Data length mismatch: gyro_left vs gyro_right')
-            return False
-        return True
-
-
-class FFTLowPassFilter(ISignalFilter):
-    """
-    FFT-based low-pass filter implementation.
-    Single Responsibility: Only handles FFT filtering.
-    """
-    
-    def __init__(self, cutoff_freq: float = 6.0):
-        """
-        Initialize filter with cutoff frequency.
-        
-        :param cutoff_freq: Cutoff frequency in Hz
-        """
-        self._cutoff_freq = cutoff_freq
-    
-    def filter(self, signal: List[float], time_data: List[float]) -> np.ndarray:
-        """
-        Apply FFT-based low-pass filter to signal data.
-        
-        :param signal: list of signal values
-        :param time_data: list of time values
-        :returns filtered signal as numpy array
-        """
-        # Calculate frequency domain
-        W = fftfreq(len(signal), d=time_data[1] - time_data[0])
-        f_signal = rfft(signal)
-        
-        # Filter out signal above cutoff frequency
-        f_filtered = f_signal.copy()
-        f_filtered[np.abs(W) > self._cutoff_freq] = 0
-        
-        # Convert back to time domain
-        signal_smoothed = irfft(f_filtered)
-        
-        return signal_smoothed
-    
-
-class KalmanFilter(ISignalFilter):
-    """
-    Extended Kalman Filter implementation
-    Single Responsibility: Only handles EK filtering.
-    """
-    
-    def __init__(self, cutoff_freq: float = 6.0):
-        """
-        Initialize filter with cutoff frequency.
-        
-        :param cutoff_freq: Cutoff frequency in Hz
-        """
-        self._cutoff_freq = cutoff_freq
-    
-    def filter(self, signal: List[float], time_data: List[float]) -> np.ndarray:
-        return np.ndarray([])
-    
+from utils.calc import CalcUtils
+from utils.filtering import DeadZoneFilter
+from services.data_length_validator import IDataValidator
 
 class DataProcessor:
     """
@@ -113,7 +13,7 @@ class DataProcessor:
     Dependency Inversion: Depends on abstractions (validator, filter) not concrete implementations.
     """
     
-    def __init__(self, validator: IDataValidator, signal_filter: ISignalFilter):
+    def __init__(self, validator: IDataValidator):
         """
         Initialize processor with dependencies.
         
@@ -121,7 +21,33 @@ class DataProcessor:
         :param signal_filter: Signal filter implementation
         """
         self._validator = validator
-        self._filter = signal_filter
+        self._calc_utils = CalcUtils()
+        self.prev_timestamp = None
+
+        self.total_distance = 0
+        self.total_displacement = 0
+        
+        self.last_heading = 0
+        self.last_traj_x = 0
+        self.last_traj_y = 0
+
+        # DeadZone filter for motion detection (applied to average of both wheels)
+        self.gyro_deadzone = DeadZoneFilter()
+
+
+    
+    def reset_calculations(self):
+        """
+        Reset the calculation state for a new test.
+        This clears all accumulated values from previous packets.
+        """
+        self._calc_utils = CalcUtils()
+        self.prev_timestamp = None
+        self.total_distance = 0
+        self.total_displacement = 0
+        self.last_heading = 0
+        self.last_traj_x = 0
+        self.last_traj_y = 0
     
     def process_data(self, raw_data: Dict, left_gain: float, right_gain: float, 
                      diameter: float, dist_wheels: float) -> Dict:
@@ -150,66 +76,86 @@ class DataProcessor:
             return {}
         
         try:
-            # Apply low-pass filtering using injected filter
-            gyro_left_smoothed = self._filter.filter(
-                data['gyro_left'], 
-                data['time_from_start']
-            )
-            gyro_right_smoothed = self._filter.filter(
-                data['gyro_right'], 
-                data['time_from_start']
-            )
-            
-            # Apply gain calibration
-            gyro_left_smoothed = gyro_left_smoothed * left_gain
-            gyro_right_smoothed = gyro_right_smoothed * right_gain
-            
-            # Calculate all derived values
-            dist_m = get_distance_m(
-                data['time_from_start'], 
-                gyro_left_smoothed,
-                gyro_right_smoothed, 
-                diameter=diameter
-            )
-            
-            disp_m = get_displacement_m(
-                data['time_from_start'], 
-                gyro_left_smoothed,
-                gyro_right_smoothed, 
-                diameter=diameter
-            )
-            
-            heading_deg = get_heading_deg(
-                data['time_from_start'], 
-                gyro_left_smoothed,
-                gyro_right_smoothed, 
-                diameter=diameter, 
-                dist_wheels=dist_wheels
-            )
-            
-            velocity = get_velocity_m_s(
-                data['time_from_start'], 
-                gyro_left_smoothed,
-                gyro_right_smoothed, 
-                diameter=diameter
-            )
-            
-            trajectory = get_top_traj(
-                disp_m, 
-                velocity, 
-                heading_deg,
-                data['time_from_start'], 
-            )
+            right_gy_calibrated = data['gyro_right']
+            left_gy_calibrated = data['gyro_left']
+
+
+            distance = []
+            displacement = []
+            packet_velocity = []
+            trajectory_x = []
+            trajectory_y = []
+            heading = []
+            for i in range(len(left_gy_calibrated)):
+                self.gyro_deadzone.filter(np.mean([left_gy_calibrated, right_gy_calibrated]))
+                in_motion = self.gyro_deadzone.in_motion
+                # Calculate all derived values using the instance calc_utils
+                if self.prev_timestamp is not None:
+                    if in_motion:
+                        self.total_distance += self._calc_utils.get_distance_m(
+                            [self.prev_timestamp, data['time_from_start'][i]], 
+                            left_gy_calibrated[i],
+                            right_gy_calibrated[i], 
+                            diameter=diameter
+                        )
+                        
+                        self.total_displacement += self._calc_utils.get_displacement_m(
+                            [self.prev_timestamp, data['time_from_start'][i]], 
+                            left_gy_calibrated[i],
+                            right_gy_calibrated[i], 
+                            diameter=diameter
+                        )
+                        
+                        heading_deg = self._calc_utils.get_heading_deg(
+                            [self.prev_timestamp, data['time_from_start'][i]], 
+                            left_gy_calibrated[i],
+                            right_gy_calibrated[i], 
+                            diameter=diameter, 
+                            dist_wheels=dist_wheels
+                        )
+                        
+                        velocity = self._calc_utils.get_velocity_m_s(
+                            left_gy_calibrated[i],
+                            right_gy_calibrated[i], 
+                            diameter=diameter
+                        )
+                        
+                        trajectory = self._calc_utils.get_top_traj(
+                            velocity, 
+                            heading_deg,
+                            [self.prev_timestamp, data['time_from_start'][i]], 
+                        )
+                        
+                        self.last_heading = heading_deg
+                        self.last_traj_x = trajectory['x']
+                        self.last_traj_y = trajectory['y']
+                        
+                        packet_velocity.append(velocity)
+                        trajectory_x.append(trajectory['x'])
+                        trajectory_y.append(trajectory['y'])
+                        distance.append(self.total_distance)
+                        displacement.append(self.total_displacement)
+                        heading.append(heading_deg)
+                    else:
+                        packet_velocity.append(0)
+                        trajectory_x.append(self.last_traj_x)
+                        trajectory_y.append(self.last_traj_y)
+                        distance.append(self.total_distance)
+                        displacement.append(self.total_displacement)
+                        heading.append(self.last_heading)
+
+                self.prev_timestamp = data['time_from_start'][i]
             
             return {
                 'time_from_start': data['time_from_start'],
-                'gyro_left_smoothed': gyro_left_smoothed,
-                'gyro_right_smoothed': gyro_right_smoothed,
-                'dist_m': dist_m,
-                'disp_m': disp_m,
-                'heading_deg': heading_deg,
-                'velocity': velocity,
-                'trajectory': trajectory
+                'dist_m': distance,
+                'disp_m': displacement,
+                'heading_deg': heading,
+                'velocity': packet_velocity,
+                'trajectory': {
+                    'x': trajectory_x,
+                    'y': trajectory_y
+                }
             }
             
         except ValueError as e:

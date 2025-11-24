@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { domToPng } from 'modern-screenshot';
-import { Camera, Printer } from 'lucide-react';
+import { Camera } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 
 /**
@@ -82,11 +82,6 @@ export default function ScreenshotButton({ testData }) {
         }
     };
 
-    const handlePrint = () => {
-        // Use browser's native print dialog
-        window.print();
-    };
-
     return (
         <div className="flex items-center gap-2">
             <Button
@@ -106,16 +101,6 @@ export default function ScreenshotButton({ testData }) {
                         <span>Save Screenshot</span>
                     </>
                 )}
-            </Button>
-            
-            <Button
-                onClick={handlePrint}
-                variant="outline"
-                className="flex items-center gap-2"
-                title="Print or save as PDF using browser"
-            >
-                <Printer className="w-4 h-4" />
-                <span>Print</span>
             </Button>
         </div>
     );

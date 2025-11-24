@@ -37,8 +37,8 @@ export default function VideoMask() {
     }, []);
 
     return (
-        <div className="absolute -z-10 hidden md:flex items-center justify-center h-full w-full p-2">
-            <span className={'h-full w-full moving-gradient rounded-md'}/>
+        <div className="absolute -z-10 hidden md:flex items-center justify-center h-full w-full">
+            <span className={'h-full w-full moving-gradient'}/>
         </div>
     );
 }

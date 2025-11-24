@@ -9,7 +9,7 @@ from constants import (
     RAW_TOPIC, RESULT_TOPIC, left_gain, right_gain,
     WHEEL_DIAM_IN, DIST_WHEELS_IN
 )
-from services.kafka_service import KafkaMessageProducer
+from services.kafka_producer import KafkaMessageProducer
 from services.message_handler import MessageProcessingPipeline
 from services.service_factory import ServiceFactory
 
