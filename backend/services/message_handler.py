@@ -12,7 +12,6 @@ from services.message_processor import DataProcessor
 from services.ble_packet_handler import BLEPacketHandler
 from services.calibration_service import calibration_service
 import time
-from utils.gyro_offsets import process_gyro_axis
 from packet_constants import KALMAN_BIAS_PROCESS_NOISE, KALMAN_PROCESS_NOISE, KALMAN_LEFT_R, KALMAN_RIGHT_R
 from utils.filtering import BiasEstimatingKalmanFilter, process_gyro_kalman
 

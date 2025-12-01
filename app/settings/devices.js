@@ -7,8 +7,8 @@ export default function Devices() {
     return (
         <div className="flex flex-col gap-8">
             <DeviceConnection/>
-            <Calibration/>
-            <StaticCalibration/>
+            {/* <Calibration/>
+            <StaticCalibration/> */}
         </div>
     )
 }

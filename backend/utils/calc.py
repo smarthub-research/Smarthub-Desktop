@@ -51,11 +51,25 @@ class CalcUtils:
         return v_curr
 
     def get_heading_deg(self, time_from_start, rot_l, rot_r, diameter=WHEEL_DIAM_IN, dist_wheels=DIST_WHEELS_IN):
-        # Angular Velocity in time step (rotating left is positive):
-        w = ((rot_r - rot_l) * diameter*IN_TO_M/2 * (np.pi / 180)) / (dist_wheels*IN_TO_M)
-        # Change in heading angle over time step:
-        dh = w * (time_from_start[1] - time_from_start[0])
-
+        dt = time_from_start[1] - time_from_start[0]
+        
+        # Difference in wheel rotation rates (deg/s)
+        # Positive when right wheel faster (turning left)
+        delta_gyro = rot_r - rot_l
+        
+        # Convert to rotational difference over time step
+        delta_rotation_deg = delta_gyro * dt
+        
+        # Convert wheel rotation difference to linear distance difference
+        # Each wheel travels: (rotation in degrees / 360) * circumference
+        delta_arc_length = (delta_rotation_deg / 360) * np.pi * diameter * IN_TO_M
+        
+        # Calculate heading change from arc length difference and wheelbase
+        # Angular displacement = arc length difference / wheelbase radius
+        delta_heading_rad = delta_arc_length / (dist_wheels * IN_TO_M)
+        
+        # Convert to degrees
+        dh = delta_heading_rad * 180 / np.pi
         return dh
 
     def get_top_traj(self, vel_ms, heading_deg, time_from_start):
