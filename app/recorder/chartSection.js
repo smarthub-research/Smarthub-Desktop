@@ -4,7 +4,7 @@ import TrajectoryGraph from "../components/graphs/trajectoryGraph";
 import {useTest} from "./context/testContext";
 
 export default function ChartSection({boxView}) {
-    const { processedPackets, addProcessedData, clearProcessedData, handleRestartRecording, fetchFullData, isStopped } = useTest();
+    const { processedPackets, addProcessedData, clearProcessedData, handleRestartRecording, fetchFullData } = useTest();
 
     function handleData(data) {
         console.log(data)
