@@ -244,7 +244,6 @@ class KafkaService {
         }
         
         // Append to full data store
-        const beforeLength = this.fullTestData.distance.length;
         this.fullTestData.distance.push(...formattedData.distance);
         this.fullTestData.heading.push(...formattedData.heading);
         this.fullTestData.velocity.push(...formattedData.velocity);
