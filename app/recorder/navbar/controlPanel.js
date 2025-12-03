@@ -44,7 +44,9 @@ export default function ControlPanel() {
                 if (restartCleanup) restartCleanup();
             }
         };
-    }, [handleStartRecording, handleStopRecording, handleRestartRecording]);
+    // Assumption: handler functions from context are stable references (memoized in context).
+    // If this is not the case, memoize them with useCallback in the context provider.
+    }, []);
 
     useEffect(() => {
         async function fetchDevices() {
