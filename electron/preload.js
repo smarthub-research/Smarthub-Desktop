@@ -46,6 +46,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
         ipcRenderer.on('new-ble-data', listener);
         return () => ipcRenderer.removeListener('new-ble-data', listener);
     },
+    
+    // Get full test data (when recording is stopped)
+    getFullTestData: () => ipcRenderer.invoke('get-full-test-data'),
 
     // Recording functions
     restartRecording: () => ipcRenderer.invoke('restart-recording'),

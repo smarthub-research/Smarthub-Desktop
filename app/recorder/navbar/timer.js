@@ -1,7 +1,7 @@
 
 export default function Timer({recordingState, recordingTime}) {
     return (
-        <div className="flex  items-center justify-center h-full rounded-lg px-6 py-2 ">
+        <div className="flex items-center justify-center h-full rounded-lg px-6 py-2 ">
             {recordingState.isRecording ? (
                 <div className="flex items-center">
                     <span className="h-2 w-2 rounded-full bg-red-500 animate-pulse mr-2"></span>

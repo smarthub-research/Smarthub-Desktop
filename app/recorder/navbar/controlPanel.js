@@ -2,11 +2,13 @@ import { useState, useEffect } from "react";
 import StopButton from "./stopButton";
 import RestartButton from "./restartButton";
 import StartButton from "./startButton";
+import { useTest } from "../context/testContext";
 
 // Component for the control panel with buttons to start, stop, and restart recording,
 export default function ControlPanel() {
     const [recording, setRecording] = useState(false);
     const [enabled, setEnabled] = useState(false);
+    const { handleStartRecording, handleStopRecording, handleRestartRecording } = useTest();
 
     // Set up and clean up IPC listeners
     useEffect(() => {
@@ -15,25 +17,34 @@ export default function ControlPanel() {
         // Define event handlers
         const handleBeginReading = () => {
             setRecording(true);
+            handleStartRecording();
         };
 
         // Stop reading data
         const handleStopReading = () => {
             setRecording(false);
+            handleStopRecording();
+        };
+        
+        // Handle restart recording
+        const handleRestart = () => {
+            handleRestartRecording();
         };
 
         // Register event listeners
         window.electronAPI.onBeginReading(handleBeginReading);
         window.electronAPI.onStopReading(handleStopReading);
+        const restartCleanup = window.electronAPI.onRestartRecording(handleRestart);
 
         // Clean up function to remove listeners when component unmounts
         return () => {
             if (window.electronAPI) {
                 window.electronAPI.removeListener('begin-reading', handleBeginReading);
                 window.electronAPI.removeListener('stop-reading', handleStopReading);
+                if (restartCleanup) restartCleanup();
             }
         };
-    }, []);
+    }, [handleStartRecording, handleStopRecording, handleRestartRecording]);
 
     useEffect(() => {
         async function fetchDevices() {

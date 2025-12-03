@@ -8,6 +8,8 @@ class RecordingService {
         // Reset recording state without starting
         timeManager.reset();
         dataBuffer.clearAllBuffers();
+        // NOTE: Do NOT clear backend's fullTestData - it should preserve all data
+        // Only the frontend ring buffer should be trimmed on restart
         KafkaService.sendEvent('restart-recording')
 
         this.notifyAllWindows('restart-recording', { startTime: null }); // No start time since not starting

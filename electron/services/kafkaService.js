@@ -22,6 +22,9 @@ class KafkaService {
         this.RAW_PACKET_TOPIC = 'raw-packets';
         this.PROCESSED_RESULTS_TOPIC = 'processed-results';
         this.RECORDING_EVENTS_TOPIC = 'recording-events';
+        
+        // Store full test data when recording stops
+        this.fullTestData = null;
     }
 
     async checkKafkaReachable() {
@@ -225,14 +228,33 @@ class KafkaService {
     }
 
     sendToFrontend(processedData) {
-        // Check if this is calibration data (shouldn't be sent to graphs)
-        if (processedData.type === 'calibration_complete') {
-            return; // Don't send calibration events to graph
-        }
-
         // Format data for frontend graphs (matching original dataService format)
         const formattedData = this.formatForFrontend(processedData);
-
+        
+        // Accumulate ALL test data in backend - never cleared during session
+        // Frontend ring buffer handles display limits
+        if (!this.fullTestData) {
+            this.fullTestData = {
+                distance: [],
+                heading: [],
+                velocity: [],
+                trajectory: []
+            };
+            console.log('📝 Initialized full test data accumulator (backend preserves all data)');
+        }
+        
+        // Append to full data store
+        const beforeLength = this.fullTestData.distance.length;
+        this.fullTestData.distance.push(...formattedData.distance);
+        this.fullTestData.heading.push(...formattedData.heading);
+        this.fullTestData.velocity.push(...formattedData.velocity);
+        this.fullTestData.trajectory.push(...formattedData.trajectory);
+        const afterLength = this.fullTestData.distance.length;
+        
+        if (afterLength % 100 === 0) {
+            console.log(`📈 Backend accumulated ${afterLength} total data points (preserved)`);
+        }
+        
         if (BrowserWindow) {
             BrowserWindow.getAllWindows().forEach((win) => {
                 if (win && !win.isDestroyed()) {
@@ -274,6 +296,24 @@ class KafkaService {
         }
 
         return formattedData;
+    }
+    
+    // Get full accumulated test data
+    async requestFullTestData() {
+        console.log('📊 Full test data requested from backend. Current data:', {
+            hasData: !!this.fullTestData,
+            distance: this.fullTestData?.distance?.length || 0,
+            heading: this.fullTestData?.heading?.length || 0,
+            velocity: this.fullTestData?.velocity?.length || 0,
+            trajectory: this.fullTestData?.trajectory?.length || 0
+        });
+        
+        return this.fullTestData || {
+            distance: [],
+            heading: [],
+            velocity: [],
+            trajectory: []
+        };
     }
 
     async shutdown() {

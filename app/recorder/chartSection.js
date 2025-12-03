@@ -4,12 +4,12 @@ import TrajectoryGraph from "../components/graphs/trajectoryGraph";
 import {useTest} from "./context/testContext";
 
 export default function ChartSection({boxView}) {
-    const { processedPackets, addProcessedData, clearProcessedData } = useTest();
+    const { processedPackets, addProcessedData, clearProcessedData, handleRestartRecording, fetchFullData, isStopped } = useTest();
 
     function handleData(data) {
         console.log(data)
         data = data.data
-        // Add the new formatted data to the context
+        // Add the new formatted data to the ring buffer - O(1) operation
         addProcessedData(data);
     }
 
@@ -18,7 +18,9 @@ export default function ChartSection({boxView}) {
     }
 
     const restartHandler = () => {
+        // Clear data and restore ring buffer
         clearData();
+        handleRestartRecording();
     };
 
     useEffect(() => {
@@ -38,10 +40,26 @@ export default function ChartSection({boxView}) {
     return (
         processedPackets.distance.length> 0 ? (
                 <div className={`ml-16 ${boxView ? 'grid grid-cols-2 gap-8 grow h-[80dvh]' : 'flex flex-col gap-8'}`}>
-                    <Graph data={processedPackets.distance}/>
-                    <Graph data={processedPackets.heading}/>
-                    <Graph data={processedPackets.velocity}/>
-                    <TrajectoryGraph data={processedPackets.trajectory}/>
+                    <Graph 
+                        data={processedPackets.distance}
+                        onRequestFullData={fetchFullData}
+                        isDownsampled={false}
+                    />
+                    <Graph 
+                        data={processedPackets.heading}
+                        onRequestFullData={fetchFullData}
+                        isDownsampled={false}
+                    />
+                    <Graph 
+                        data={processedPackets.velocity}
+                        onRequestFullData={fetchFullData}
+                        isDownsampled={false}
+                    />
+                    <TrajectoryGraph 
+                        data={processedPackets.trajectory}
+                        onRequestFullData={fetchFullData}
+                        isDownsampled={false}
+                    />
                 </div>
             ) : (
             //     No data fallback
