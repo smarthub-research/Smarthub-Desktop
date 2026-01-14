@@ -8,6 +8,7 @@ import {useTest} from "./context/testContext";
 // - `boxView`: boolean to toggle between grid and column layout
 export default function ChartSection({boxView}) {
     // Access test context for processed data and handlers
+
     const { processedPackets, addProcessedData, clearProcessedData, handleRestartRecording, fetchFullData } = useTest();
 
     // Handler for incoming BLE data packets

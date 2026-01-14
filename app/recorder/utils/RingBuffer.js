@@ -186,7 +186,6 @@ export class RingBuffer {
 
         // Calculate new head position
         // We want to keep the most recent 'targetSize' elements
-        const pointsToRemove = this.size - targetSize;
         
         // Simply adjust size and move the conceptual "start"
         // In a ring buffer, we can just change size since head already points to next write

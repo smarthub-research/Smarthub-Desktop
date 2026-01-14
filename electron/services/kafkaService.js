@@ -132,7 +132,20 @@ class KafkaService {
     // Accumulate processed data and relay to renderer windows
     sendToFrontend(processedData) {
         const formattedData = this.formatForFrontend(processedData);
-        if (!this.fullTestData) { this.fullTestData = { distance: [], heading: [], velocity: [], trajectory: [] }; }
+        // Accumulate ALL test data in backend - never cleared during session
+        // Frontend ring buffer handles display limits
+        if (!this.fullTestData) {
+            this.fullTestData = {
+                distance: [],
+                heading: [],
+                velocity: [],
+                trajectory: []
+            };
+            console.log('📝 Initialized full test data accumulator (backend preserves all data)');
+        }
+        
+        // Append to full data store
+
         this.fullTestData.distance.push(...formattedData.distance);
         this.fullTestData.heading.push(...formattedData.heading);
         this.fullTestData.velocity.push(...formattedData.velocity);
