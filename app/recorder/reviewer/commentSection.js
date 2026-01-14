@@ -1,6 +1,8 @@
 import {useTest} from "../context/testContext";
 
-// Component to leave comments on the test
+// Component for entering additional comments about the test.
+// Purpose: Allows users to add textual notes and observations to the test data.
+// Uses TestContext to manage comment state that will be saved with the test.
 export default function CommentSection() {
     const {comments, setComments } = useTest()
     return (

@@ -2,9 +2,13 @@ import { CheckCircle, Play, Settings, Target, Wifi } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 
-// Step by step instructions for calibrating devices
+// Visual, step-by-step component that shows the calibration workflow.
+// Props:
+// - `currentStep` (number): zero-based index of the current step used
+//    to render active/completed/pending styles.
 export default function CalibrationSteps({currentStep = 0}) {
-    
+    // Static list of steps describing the calibration flow. Each item
+    // includes an icon, description, and a short requirement badge.
     const calibrationSteps = [
         {
             title: "Connect Devices",
@@ -32,7 +36,8 @@ export default function CalibrationSteps({currentStep = 0}) {
         }
     ];
 
-    // Method to get the status of the calibration
+    // Helper to map a step index to a simple status string used for
+    // conditional styling in the UI.
     const getStepStatus = (stepIndex) => {
         if (stepIndex < currentStep) return 'completed';
         if (stepIndex === currentStep) return 'active';
@@ -44,11 +49,12 @@ export default function CalibrationSteps({currentStep = 0}) {
             {calibrationSteps.map((step, index) => {
                 const status = getStepStatus(index);
                 const Icon = step.icon;
-                
+
+                // Each step displays an icon which changes appearance
+                // depending on whether the step is completed, active, or pending.
                 return (
-                    <Card key={index} className={`${
-                        status === 'active' ? 'ring-2 ring-blue-500' : ''
-                    } ${status === 'completed' ? 'bg-green-50 dark:bg-green-900/20' : ''}`}>
+                    <Card key={index} className={`$
+{status === 'active' ? 'ring-2 ring-blue-500' : ''} ${status === 'completed' ? 'bg-green-50 dark:bg-green-900/20' : ''}`}>
                         <CardHeader className="pb-3">
                             <div className="flex items-center space-x-2">
                                 <div className={`w-8 h-8 rounded-full flex items-center justify-center ${

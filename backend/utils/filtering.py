@@ -1,155 +1,127 @@
+"""Signal filtering utilities for gyro and time-series data.
+
+Provides a small set of filters used by the processing pipeline:
+- `DeadZoneFilter` — hysteresis-based dead-zone to suppress low-level noise
+- `BiasEstimatingKalmanFilter` — 2-state filter estimating velocity and bias
+- `FFTLowPassFilter` — convenience FFT-based low-pass smoothing
+
+Helpers are intentionally lightweight and expect callers to manage
+persistence of filter instances where required (e.g. Kalman filters).
+"""
+
 import numpy as np
 from abc import ABC, abstractmethod
 from scipy.fftpack import fftfreq, irfft, rfft
 from typing import Dict, List
 from packet_constants import GYRO_DEAD_ZONE, GYRO_HYSTERESIS
 
+
 class ISignalFilter(ABC):
-    """Interface for signal filtering (Interface Segregation Principle)"""
-    
+    """Interface for signal filtering implementations."""
+
     @abstractmethod
     def filter(self, signal: List[float], time_data: List[float]) -> np.ndarray:
-        """Apply filtering to signal"""
+        """Apply filtering to `signal` using `time_data` spacing."""
         pass
 
 
 class DeadZoneFilter:
-    """Dead zone with hysteresis to prevent noise-induced drift at low speeds"""
+    """Dead zone with hysteresis to prevent noise-induced drift at low speeds.
+
+    Use by passing scalar gyro values into `filter(value)`; the filter keeps
+    internal `in_motion` state and returns 0 while below the thresholds.
+    """
+
     def __init__(self, dead_zone=GYRO_DEAD_ZONE, hysteresis=GYRO_HYSTERESIS):
         self.dead_zone = dead_zone  # deg/s
         self.hysteresis = hysteresis
         self.in_motion = False
-    
+
     def filter(self, value):
-        """Apply dead zone with hysteresis"""
+        """Apply dead zone with simple hysteresis logic."""
         if self.in_motion:
-            # Once moving, need to drop below lower threshold to stop
+            # Once moving, require value to drop below lower threshold to stop
             if abs(value) < self.dead_zone - self.hysteresis:
                 self.in_motion = False
                 return 0.0
         else:
-            # While stopped, need to exceed higher threshold to start
+            # While stopped, require value to exceed upper threshold to start
             if abs(value) > self.dead_zone + self.hysteresis:
                 self.in_motion = True
             else:
                 return 0.0
-        
+
         return value
-    
+
     def reset(self):
-        """Reset motion state"""
+        """Reset the motion state to 'stopped'."""
         self.in_motion = False
 
 
 class BiasEstimatingKalmanFilter:
-    """
-    2-state Kalman filter that estimates both angular velocity AND constant bias
-    
+    """Two-state Kalman filter estimating angular velocity and a constant bias.
+
     State vector: [angular_velocity, bias]
-    
-    Process model:
-    - angular_velocity evolves as random walk
-    - bias is constant (very slow random walk)
-    
-    Measurement model:
-    - z = angular_velocity + bias + measurement_noise
-    
-    This filter automatically separates true motion from constant drift.
-    When stationary, bias state absorbs the constant offset.
-    When moving, velocity state tracks real rotation.
+    Measurement: z = angular_velocity + bias + noise
     """
-    
+
     def __init__(self, process_noise_velocity, process_noise_bias, measurement_noise):
-        """
-        Initialize 2-state Kalman filter
-        
-        Args:
-            process_noise_velocity: Q_v - how much true angular velocity can change
-            process_noise_bias: Q_b - how much bias can drift (usually very small)
-            measurement_noise: R - sensor noise variance
-        """
+        """Initialize filter matrices and state."""
         # State: [angular_velocity, bias]
         self.x = np.array([0.0, 0.0])
-        
+
         # State covariance matrix
         self.P = np.array([[1.0, 0.0],
                           [0.0, 1.0]])
-        
+
         # Process noise covariance
         self.Q = np.array([[process_noise_velocity, 0.0],
                           [0.0, process_noise_bias]])
-        
-        # Measurement noise
+
+        # Measurement noise variance
         self.R = measurement_noise
-        
-        # State transition matrix (both states persist)
+
+        # Identity-like state transition (random walk model)
         self.F = np.array([[1.0, 0.0],
                           [0.0, 1.0]])
-        
-        # Measurement matrix (measurement = velocity + bias)
+
+        # Measurement matrix: z = [1, 1] @ [vel, bias]
         self.H = np.array([1.0, 1.0])
-    
+
     def predict(self):
-        """Prediction step"""
-        # State prediction: x = F * x (both states persist)
-        
-        # Covariance prediction: P = F @ P @ F' + Q
+        """Prediction step: propagate covariance with process noise."""
         self.P = self.F @ self.P @ self.F.T + self.Q
-    
+
     def update(self, measurement):
-        """
-        Update step with gyro measurement
-        
-        Args:
-            measurement: Gyro reading (deg/s)
-        """
-        # Innovation: y = z - H @ x
+        """Update step with a scalar gyro measurement (deg/s)."""
         y = measurement - self.H @ self.x
-        
-        # Innovation covariance: S = H @ P @ H' + R
         S = self.H @ self.P @ self.H.T + self.R
-        
-        # Kalman gain: K = P * H' * inv(S)
         K = self.P @ self.H / S
-        
-        # State update: x = x + K * y
         self.x = self.x + K * y
-        
-        # Covariance update: P = (I - K * H) @ P where * is outer product
         self.P = (np.eye(2) - np.outer(K, self.H)) @ self.P
-    
+
     def get_velocity(self):
-        """Get estimated angular velocity (deg/s) - WITHOUT bias"""
+        """Return estimated angular velocity (deg/s), bias removed."""
         return self.x[0]
-    
+
     def get_bias(self):
-        """Get estimated constant bias (deg/s)"""
+        """Return estimated bias (deg/s)."""
         return self.x[1]
-    
+
     def reset(self):
-        """Reset filter state and covariance"""
+        """Reset state and covariance to defaults."""
         self.x = np.array([0.0, 0.0])
         self.P = np.array([[1.0, 0.0],
                           [0.0, 1.0]])
 
+
 def process_gyro_kalman(raw_value, kf):
+    """Process a single gyro sample with a persistent Kalman filter.
+
+    Returns a dict with raw, filtered (velocity), and bias estimates.
     """
-    Process single gyro sample with bias-estimating Kalman filter (for live streaming)
-    
-    Args:
-        raw_value: Raw gyro measurement (deg/s)
-        kf: BiasEstimatingKalmanFilter instance (persistent)
-    
-    Returns:
-        dict: {'raw': raw_value, 'filtered': filtered_velocity, 'bias': estimated_bias}
-    """
-    # Predict
     kf.predict()
-    
-    # Update with measurement
     kf.update(raw_value)
-    
-    # Get bias-corrected velocity and bias estimate
     filtered_velocity = kf.get_velocity()
     estimated_bias = kf.get_bias()
 
@@ -161,50 +133,28 @@ def process_gyro_kalman(raw_value, kf):
 
 
 class FFTLowPassFilter(ISignalFilter):
-    """
-    FFT-based low-pass filter implementation.
-    Single Responsibility: Only handles FFT filtering.
-    """
-    
+    """FFT-based low-pass filter implementation for evenly sampled signals."""
+
     def __init__(self, cutoff_freq: float = 6.0):
-        """
-        Initialize filter with cutoff frequency.
-        
-        :param cutoff_freq: Cutoff frequency in Hz
-        """
         self._cutoff_freq = cutoff_freq
-    
+
     def filter(self, signal: List[float], time_data: List[float]) -> np.ndarray:
-        """
-        Apply FFT-based low-pass filter to signal data.
-        
-        :param signal: list of signal values
-        :param time_data: list of time values
-        :returns filtered signal as numpy array
-        """
-        # Calculate frequency domain
+        """Apply FFT low-pass smoothing and return numpy array result."""
         W = fftfreq(len(signal), d=time_data[1] - time_data[0])
         f_signal = rfft(signal)
-        
-        # Filter out signal above cutoff frequency
         f_filtered = f_signal.copy()
         f_filtered[np.abs(W) > self._cutoff_freq] = 0
-        
-        # Convert back to time domain
         signal_smoothed = irfft(f_filtered)
-        
         return signal_smoothed
 
 
 def smooth_data(data: dict, cutoff_freq: float = 6.0) -> dict:
-    """
-    Convenience helper to smooth left/right gyro arrays found in various
-    input formats used across the codebase. Returns a dict with keys
-    'gyro_right_smoothed' and 'gyro_left_smoothed' (numpy arrays).
+    """Helper that smooths left/right gyro arrays in a tolerant way.
 
-    This helper is tolerant to different naming conventions used in
-    different modules (e.g. 'time_from_start' vs 'timeStamps',
-    'gyro_right' vs 'gyroRight').
+    The function accepts multiple naming conventions for time and gyro keys
+    and returns numpy arrays under the keys 'gyro_right_smoothed' and
+    'gyro_left_smoothed'. If input arrays are too short for FFT, the
+    originals are returned as numpy arrays.
     """
     # find time array
     time_keys = ["time_from_start", "timeFromStart", "timeStamps", "time_stamps", "timestamps", "timeStamps"]
@@ -229,21 +179,17 @@ def smooth_data(data: dict, cutoff_freq: float = 6.0) -> dict:
             gyro_left = data[k]
             break
 
-    # Fallbacks - if nothing found, try common uppercase/lowercase combos
     if time_data is None:
         raise KeyError("No time array found in data for smoothing")
 
-    # Ensure arrays are numpy arrays
     import numpy as _np
 
-    # If either gyro missing, return empty arrays to avoid crashes
     if gyro_right is None or gyro_left is None:
         return {
             "gyro_right_smoothed": _np.array([]),
             "gyro_left_smoothed": _np.array([]),
         }
 
-    # short-circuit: if not enough samples, return copies
     if len(time_data) < 2 or len(gyro_right) < 2 or len(gyro_left) < 2:
         return {
             "gyro_right_smoothed": _np.array(gyro_right),
@@ -255,7 +201,6 @@ def smooth_data(data: dict, cutoff_freq: float = 6.0) -> dict:
     try:
         right_sm = filt.filter(list(gyro_right), list(time_data))
     except Exception:
-        # Safety: if FFT fails, fallback to returning original
         right_sm = _np.array(gyro_right)
 
     try:

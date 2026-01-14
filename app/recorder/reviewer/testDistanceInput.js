@@ -1,6 +1,8 @@
 import {useTest} from "../context/testContext";
 
-// Component for labeling the test distance
+// Component for inputting and displaying the test distance with unit selection.
+// Purpose: Allows users to specify the distance covered during the test.
+// Supports multiple units (meters, feet, kilometers, miles) for flexibility.
 export default function TestDistanceInput() {
     const { testDistance, setTestDistance, unitType, setUnitType } = useTest()
 
@@ -10,7 +12,7 @@ export default function TestDistanceInput() {
                 Test Distance
             </label>
             <div className="flex">
-                {/* Set distance value */}
+                {/* Input field for distance value */}
                 <input
                     type="number"
                     value={testDistance}
@@ -18,7 +20,7 @@ export default function TestDistanceInput() {
                     placeholder="Distance"
                     className="flex-1 border bg-white border-gray-500 rounded-l-lg p-3 text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
-                {/* Set unit type */}
+                {/* Dropdown for selecting unit type */}
                 <select
                     value={unitType}
                     onChange={(e) => setUnitType(e.target.value)}

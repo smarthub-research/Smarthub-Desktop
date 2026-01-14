@@ -1,5 +1,9 @@
 
-// Set the tab so the correct chart is displayed
+// Component for displaying tab buttons to switch between different chart types.
+// Props:
+// - `setActiveChartTab`: Function to update the active tab state.
+// - `activeChartTab`: String representing the currently active tab ('distance', 'heading', 'velocity', 'trajectory').
+// Purpose: Provides navigation between different data visualizations in the chart review interface.
 export default function ChartTabs({setActiveChartTab, activeChartTab}) {
     return (
         <div>

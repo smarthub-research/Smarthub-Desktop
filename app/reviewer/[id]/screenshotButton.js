@@ -5,22 +5,11 @@ import { domToPng } from 'modern-screenshot';
 import { Camera } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 
-/**
- * ScreenshotButton - Exports the entire rendered test view as an image
- * 
- * This component uses modern-screenshot to convert the entire .screenshot-container
- * element to a high-quality PNG image. Modern-screenshot handles modern CSS features
- * like oklch colors properly by using the browser's native rendering capabilities.
- * The image is saved to the user's downloads folder with a filename based on
- * the test name and current date.
- * 
- * Alternative: Also provides a print button for browser's native print dialog.
- * 
- * @param {Object} testData - Test data object containing test_name for filename generation
- */
 export default function ScreenshotButton({ testData }) {
     const [isExporting, setIsExporting] = useState(false);
 
+    // Convert the `.screenshot-container` element to a PNG using modern-screenshot.
+    // This preserves modern CSS and aims for a high-quality download.
     const exportToImage = async () => {
         setIsExporting(true);
         
@@ -35,7 +24,7 @@ export default function ScreenshotButton({ testData }) {
                 return;
             }
 
-            // Scroll to top before capturing
+            // Scroll to top before capturing to ensure the full layout is rendered
             const scrollY = window.scrollY;
             window.scrollTo(0, 0);
             

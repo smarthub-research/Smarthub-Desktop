@@ -2,14 +2,20 @@
 import {useEffect, useState} from 'react';
 import {BsCheckCircleFill, BsExclamationTriangleFill} from 'react-icons/bs';
 
+// Component that displays the connection status of two BLE devices.
+// Polls for updates and listens for disconnection events.
 export default function ConnectionStatus() {
+    // State for connection status (boolean for each device)
     const [connectionStatus, setConnectionStatus] = useState({
         deviceOne: false,
         deviceTwo: false
     });
+    // Array of device objects from Electron API
     const [devices, setDevices] = useState([null, null]);
+    // Loading state while waiting for initial device detection
     const [loading, setLoading] = useState(true);
 
+    // Effect to fetch and poll device list
     useEffect(() => {
         async function fetchDevices() {
             try {
@@ -31,6 +37,7 @@ export default function ConnectionStatus() {
         return () => clearInterval(intervalId);
     }, []);
 
+    // Effect to check connection status and set up disconnection listeners
     useEffect(() => {
         // Check connection status and update state
         async function checkStatus() {

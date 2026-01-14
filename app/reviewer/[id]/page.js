@@ -20,7 +20,11 @@ export default function TestView({ params }) {
     const [loading, setLoading] = useState(true);
     const [loadingFullData, setLoadingFullData] = useState(false);
 
-    // Fetch the main test data (initially downsampled)
+    /**
+     * Fetch the main test data for this view. Uses the `id` from params and
+     * requests the backend in `review` response format. The `loading` state
+     * is used to show a placeholder until the payload is available.
+     */
     useEffect(() => {
         const fetchTestData = async (fullData = false) => {
             if (!fullData) {

@@ -1,7 +1,13 @@
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 
+// Displays quick live statistics while recording. Shows latest gyro
+// readings, an approximate recording timer and a count of data points.
+// Props:
+// - `calibrationStep` (string): drives conditional rendering (recording/processing/idle/error)
+// - `calibrationData` (object): expected shape includes `gyroLeft`, `gyroRight`, and timestamps.
 export default function LiveData({calibrationStep, calibrationData}) {
+    // Local UI timer for displaying recording duration.
     const [recordingTime, setRecordingTime] = useState(0)
     return (
         <Card>

@@ -1,3 +1,12 @@
+/**
+ * Button Component
+ * A customizable button component with multiple variants and sizes.
+ * Built using class-variance-authority for styling variants.
+ * Props:
+ * - variant: Style variant ('default', 'destructive', 'outline', 'secondary', 'ghost', 'link')
+ * - size: Size variant ('default', 'sm', 'lg', 'icon')
+ * - className: Additional CSS classes
+ */
 import * as React from "react"
 import { cva } from "class-variance-authority"
 import { cn } from "../../lib/utils"

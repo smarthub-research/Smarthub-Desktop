@@ -1,5 +1,12 @@
-
-// Input form for the calibrationName only active before the recording has begun
+// Simple input component for providing a calibration name.
+// Props:
+// - `calibrationStep` (string): current step in the calibration flow.
+// - `calibrationName` (string): current value shown in the input.
+// - `setCalibrationName` (fn): setter to update the name in parent state.
+// Note: the `disabled` prop is intended to disable editing once the
+// recording has started. The existing expression uses `('idle' ||
+// 'connecting')` which evaluates to `'idle'` — keep this in mind if you
+// refactor the enabling/disabling behavior.
 export default function CalibrationName({calibrationStep, calibrationName, setCalibrationName}) {
     return (
         <div>

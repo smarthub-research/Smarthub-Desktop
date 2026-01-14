@@ -1,24 +1,30 @@
+/**
+ * Recording control IPC handlers.
+ *
+ * Exposes controls to restart/pause/end recordings and to query the
+ * current recording state. The actions delegate to `recordingService`.
+ */
+
 const { ipcMain } = require('electron');
 const recordingService = require('../services/recordingService');
 
 function recordingHandlers() {
-    // Clear kafka buffers and restart the timer
+    // Restart recording: clear buffers and restart timers
     ipcMain.handle('restart-recording', async () => {
         return await recordingService.restartRecording();
     });
 
-    // not sure what this does
+    // Return a small object representing the current recording state
     ipcMain.handle('get-recording-state', () => {
         return recordingService.getRecordingState();
     });
 
-    // Pause the recording
+    // Pause the recording (stops accumulation but preserves state)
     ipcMain.handle('pause-recording', () => {
         recordingService.pauseRecording();
     });
 
-    // needs to tell kafka to stop all recording and send back the current buffer for analyzing.
-    // Keep the buffer in the cloud tho because we can write it to the db a little quicker since its already there
+    // End the current test: finalize buffers and trigger any upload/save
     ipcMain.handle('end-test', () => {
         recordingService.endTest();
     });

@@ -1,4 +1,9 @@
 
+// Component for displaying the recording timer and status indicator.
+// Props:
+// - `recordingState`: Object with `isRecording` boolean and `startTime` timestamp.
+// - `recordingTime`: Number representing elapsed recording time in seconds.
+// Purpose: Shows real-time recording duration with visual indicators for recording state.
 export default function Timer({recordingState, recordingTime}) {
     return (
         <div className="flex items-center justify-center h-full rounded-lg px-6 py-2 ">

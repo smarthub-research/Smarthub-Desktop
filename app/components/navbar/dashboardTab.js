@@ -1,3 +1,9 @@
+/**
+ * DashboardTab Component
+ * Renders the dashboard/home navigation tab with an icon and expandable text on hover.
+ * Props:
+ * - getItemClasses: Function to get CSS classes based on the current page
+ */
 import DashboardSVG from "../svg/dashboardSVG";
 
 export default function DashboardTab({getItemClasses}) {

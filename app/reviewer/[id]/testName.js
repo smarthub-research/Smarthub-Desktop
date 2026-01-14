@@ -4,10 +4,18 @@ import React, {useState} from "react";
 import {FiArrowLeft} from "react-icons/fi";
 import Link from "next/link";
 
+/**
+ * TestName
+ * Displays the test title and allows inline renaming. Double-clicking the
+ * title enables an input; submitting (Enter or blur) sends a PUT request to
+ * update the server-side test name. The UI is optimistic and updates
+ * `testData.test_name` locally after the request.
+ */
 export default function TestName({ testData, id }) {
     const [changingTestName, setChangingTestName] = useState(false);
     const [updatedTestName, setUpdatedTestName] = useState("");
 
+    // Persist the new test name to the backend and update local state.
     const handleUpdateTestName = async () => {
         try {
             const response = await fetch("http://localhost:8000/db/update_test/" + id, {
@@ -19,6 +27,7 @@ export default function TestName({ testData, id }) {
                     test_name: updatedTestName
                 })
             })
+            // Update local object optimistically
             testData.test_name = updatedTestName;
             console.log(response)
             setChangingTestName(false);

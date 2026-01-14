@@ -1,3 +1,10 @@
+/**
+ * ProfileTab Component
+ * Renders the profile navigation tab with user info and logout functionality on hover.
+ * Shows user name and role, and switches to logout icon on hover.
+ * Props:
+ * - getItemClasses: Function to get CSS classes based on the current page
+ */
 import ProfileSVG from "../svg/profileSVG";
 import LogoutSVG from "../svg/logoutSVG"; // Make sure this exists
 import {useAuth} from "../../auth/authContext";

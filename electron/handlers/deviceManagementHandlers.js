@@ -1,34 +1,35 @@
-/*
-
-Establishes entry points for handling anything regarding BLE devices
-
-*/
+/**
+ * Device management IPC handlers.
+ *
+ * Exposes BLE device actions to the renderer: searching, connecting,
+ * disconnecting and querying connected devices. Calls are delegated to
+ * `deviceManagementService` which contains the BLE/Noble logic.
+ */
 
 const { ipcMain } = require('electron');
 const deviceManagementService = require('../services/deviceManagementService');
 
 function deviceManagementHandlers() {
-    // Returns any connected devices
+    // Return list of currently connected devices
     ipcMain.handle('get-connected-devices', async () => {
         return deviceManagementService.getConnectedDevices()
     });
 
-    // Activate noble to scan for nearby BLE devices
+    // Start BLE scanning (Noble)
     ipcMain.handle('search-for-devices', async () => {
         await deviceManagementService.searchForDevices();
     });
 
-    // Connects to a selected BLE device
+    // Connect to a specific device (expects { device })
     ipcMain.handle('connect-ble', async (_, data) => {
         if (data.device) {
             return await deviceManagementService.handleConnection(data.device);
-        } 
-        else {
-            return {error: "Invalid Device"};
+        } else {
+            return { error: "Invalid Device" };
         }
     });
 
-    // Disconnects from a selected BLE device
+    // Disconnect a provided device; validates payload and returns status
     ipcMain.handle('disconnect-ble', async (_, data) => {
         const device = data.device;
         if (!device || !device.name || !device.UUID) {
@@ -42,8 +43,8 @@ function deviceManagementHandlers() {
             return { success: false, message: 'Failed to disconnect device' };
         }
     });
-    
-    // Disconnects from any connected devices
+
+    // Force disconnect any connected devices (uses service to fetch connections)
     ipcMain.handle('reset-devices', async () => {
         const devices = deviceManagementService.getConnectedDevices();
         if (devices[0] !== null) {
@@ -55,12 +56,12 @@ function deviceManagementHandlers() {
         console.log('All devices disconnected');
     });
 
-    // Checks connection status of connected devices
+    // Return connection status for connected devices
     ipcMain.handle('check-connection-status', async () => {
         return deviceManagementService.checkConnectionStatus();
     })
 
-    // Creates listeners to watch for dropped connections
+    // Setup background listeners for dropped connections
     ipcMain.handle('setup-disconnection-listeners', () => {
         deviceManagementService.setupDisconnectionListeners();
     })

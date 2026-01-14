@@ -2,11 +2,14 @@ import {FiSave} from "react-icons/fi";
 import {useRouter} from "next/navigation";
 import {useTest} from "../context/testContext";
 
-// Component to save test to database
+// Component for saving the completed test to the database.
+// Purpose: Handles the test saving process, including waiting for backend data readiness and API calls.
+// Polls the backend to ensure test file ID is available before saving metadata.
 export default function SaveTest() {
     const router = useRouter();
     const { testName, comments } = useTest();
 
+    // Handles the complete test saving workflow
     const handleSaveTest = async () => {
         if (!window.electronAPI) return;
 
@@ -53,6 +56,7 @@ export default function SaveTest() {
             
             console.log('Proceeding to save test info...');
             
+            // Save test metadata to database
             const response = await fetch("http://localhost:8000/db/write_test", {
                 method: "POST",
                 headers: {

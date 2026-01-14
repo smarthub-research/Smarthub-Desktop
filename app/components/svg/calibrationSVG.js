@@ -1,4 +1,11 @@
 
+/**
+ * CalibrationSVG Component
+ * Renders the calibration/star icon SVG.
+ * Props:
+ * - margin: Optional margin class (default 1)
+ */
+
 export default function CalibrationSVG({margin=1}) {
     return (
         <svg

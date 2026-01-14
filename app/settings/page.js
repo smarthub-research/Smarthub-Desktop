@@ -7,6 +7,11 @@ import Account from "./account";
 import Appearance from "./appearance";
 import Help from "./help";
 
+/**
+ * Settings
+ * Top-level settings page that switches between sections using `Tabs`.
+ * The component keeps local `page` state to control which section is visible.
+ */
 export default function Settings() {
     const [page, setPage] = useState('devices');
 

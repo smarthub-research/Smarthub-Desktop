@@ -4,13 +4,18 @@ import RestartButton from "./restartButton";
 import StartButton from "./startButton";
 import { useTest } from "../context/testContext";
 
-// Component for the control panel with buttons to start, stop, and restart recording,
+// Component for the control panel containing start, stop, and restart recording buttons.
+// Purpose: Provides the main recording controls in the navbar, enabled only when devices are connected.
+// Integrates with TestContext for state management and Electron API for IPC communication.
 export default function ControlPanel() {
+    // Local state for recording status (mirrors context but used for UI logic)
     const [recording, setRecording] = useState(false);
+    // State to enable/disable controls based on device connection
     const [enabled, setEnabled] = useState(false);
+    // Get recording handlers from TestContext
     const { handleStartRecording, handleStopRecording, handleRestartRecording } = useTest();
 
-    // Set up and clean up IPC listeners
+    // Set up and clean up IPC listeners for recording events
     useEffect(() => {
         if (!window.electronAPI) return;
 
@@ -48,6 +53,7 @@ export default function ControlPanel() {
     // If this is not the case, memoize them with useCallback in the context provider.
     }, []);
 
+    // Effect to check device connection and enable controls
     useEffect(() => {
         async function fetchDevices() {
             try {

@@ -1,7 +1,10 @@
 import {FiDownload} from "react-icons/fi";
 
+// Button to download a test file as CSV using Electron bridge.
+// Props:
+// - testFile: object with test_name and data to download.
 export default function DownloadButton({testFile}) {
-
+    // Triggers Electron's download logic for the given test file.
     const handleDownload = async (testFile) => {
         try {
             await window.electronAPI.setTestData(testFile)

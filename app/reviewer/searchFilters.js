@@ -4,6 +4,9 @@ import { FiFilter } from "react-icons/fi";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useEffect } from "react";
 
+// Sidebar component for searching and filtering test files.
+// Props:
+// - filters: object with boolean flags for each filter (testName, date, comments)
 export default function SearchFilters({ filters }) {
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -15,30 +18,26 @@ export default function SearchFilters({ filters }) {
         setSearchTerm(currentSearch);
     }, [searchParams]);
 
+    // Toggle a filter and update the URL
     const handleFilterChange = (filter) => {
-        // Create new URLSearchParams with current params
         const params = new URLSearchParams(searchParams.toString());
-
-        // Toggle the filter value
         const newValue = filters[filter] ? 'false' : 'true';
         params.set(filter, newValue);
-
-        // Update the URL with the new params
         router.push(`?${params.toString()}`);
     };
 
+    // Update search term in URL
     const handleSearch = (e) => {
         const params = new URLSearchParams(searchParams.toString());
-
         if (searchTerm.trim()) {
             params.set("search", searchTerm);
         } else {
             params.delete("search");
         }
-
         router.push(`?${params.toString()}`);
     };
 
+    // Submit search on Enter key
     const handleKeyDown = (e) => {
         if (e.key === "Enter") {
             handleSearch();
@@ -69,6 +68,7 @@ export default function SearchFilters({ filters }) {
                 <h2 className="text-xl font-semibold">Filters</h2>
             </div>
 
+            {/* Filter checkboxes */}
             <div className="space-y-3">
                 <div className="flex items-center">
                     <input

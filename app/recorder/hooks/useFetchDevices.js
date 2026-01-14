@@ -2,12 +2,14 @@
 import { useEffect, useState } from "react";
 
 // Module-level shared store so multiple components using the hook share the same state
+// This ensures that device state is synchronized across all components using this hook
 let devicesState = [];
 let deviceOneState = null;
 let deviceTwoState = null;
 const listeners = new Set();
 let initialized = false;
 
+// Notify all listeners of state changes
 function notifyListeners() {
     const snapshot = { devices: devicesState, deviceOne: deviceOneState, deviceTwo: deviceTwoState };
     listeners.forEach((l) => {
@@ -15,7 +17,10 @@ function notifyListeners() {
     });
 }
 
-// Custom hook to fetch devices (shared store)
+// Custom hook to manage BLE device discovery and connection state.
+// Uses a shared module-level store to synchronize device state across components.
+// Purpose: Provides centralized device management for the connector interface.
+// Returns: Object with devices array, deviceOne/deviceTwo objects, and setter functions.
 export default function useFetchDevices() {
     const [state, setState] = useState({ devices: devicesState, deviceOne: deviceOneState, deviceTwo: deviceTwoState });
 
@@ -28,7 +33,7 @@ export default function useFetchDevices() {
         return () => listeners.delete(listener);
     }, []);
 
-    // Initialize electronAPI listeners only once
+    // Initialize electronAPI listeners only once per module load
     useEffect(() => {
         if (initialized) return;
         initialized = true;

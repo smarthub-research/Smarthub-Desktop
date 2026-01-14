@@ -1,7 +1,10 @@
+/**
+ * Services Component
+ * Displays a grid of service cards linking to the main application features: Recorder, Reviewer, and Calibration.
+ * Each card is wrapped in a Link component for navigation.
+ */
 import Recorder from "./recorder";
 import Reviewer from "./reviewer";
-import Calendar from "./calendar";
-import BugReporter from "./bugReporter";
 import Link from "next/link";
 import Calibration from "./calibration";
 

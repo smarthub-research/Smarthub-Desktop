@@ -1,3 +1,9 @@
+/**
+ * Tabs
+ * Lightweight tab control used by the settings page. Calls `setPage` with
+ * the selected section key and highlights the active tab using the `page`
+ * prop.
+ */
 export default function Tabs({setPage, page}) {
     return (
         <div>

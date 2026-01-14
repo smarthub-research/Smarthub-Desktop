@@ -1,3 +1,12 @@
+/**
+ * Badge Component
+ * A small label component with various variants for displaying status, tags, or counts.
+ * Built using class-variance-authority for variant management.
+ * Props:
+ * - variant: Style variant ('default', 'secondary', 'destructive', 'outline')
+ * - asChild: Renders as a Slot component if true
+ * - className: Additional CSS classes
+ */
 import * as React from "react"
 import { Slot } from "@radix-ui/react-slot"
 import { cva } from "class-variance-authority"

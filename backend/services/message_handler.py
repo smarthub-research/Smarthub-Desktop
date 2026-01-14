@@ -582,6 +582,8 @@ class PacketMessageHandler(IMessageHandler):
         self.accel_left = {"ax": [], "ay": [], "az": []}
         self.accel_right = {"ax": [], "ay": [], "az": []}
         self.time_stamps = []
+        
+        # Clear result buffer to prevent old data from appearing in new tests
         self.result_buffer = {
             "time_from_start": [],
             "dist_m": [],
@@ -590,6 +592,7 @@ class PacketMessageHandler(IMessageHandler):
             "trajectory_x": [],
             "trajectory_y": []
         }
+        
         self.left_data = None
         self.right_data = None
         self.start_time = None
@@ -741,6 +744,17 @@ class PacketMessageHandler(IMessageHandler):
         global current_test_id
         current_test_id = self.test_file_id
         print(f"Test written with file_id: {self.test_file_id}", flush=True)
+        
+        # Clear result buffer after saving to prevent data from appearing in next test
+        self.result_buffer = {
+            "time_from_start": [],
+            "dist_m": [],
+            "velocity": [],
+            "heading_deg": [],
+            "trajectory_x": [],
+            "trajectory_y": []
+        }
+        
         return None
 
     def get_test_file_id(self) -> Optional[int]:

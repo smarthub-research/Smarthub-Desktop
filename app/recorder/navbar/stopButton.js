@@ -1,5 +1,10 @@
 import {BsFillStopFill} from "react-icons/bs";
 
+// Button component for stopping the recording session.
+// Props:
+// - `enabled`: Boolean to enable/disable the button based on device connection.
+// - `recording`: Boolean indicating if recording is currently active.
+// Purpose: Stops BLE data reading and triggers data saving/fetching from backend.
 export default function  StopButton({ enabled, recording}) {
     // Stops the BLE recording and sets the recording state to false
     async function stopRecording() {

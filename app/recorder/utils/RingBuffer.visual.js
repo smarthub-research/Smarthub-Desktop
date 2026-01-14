@@ -1,6 +1,10 @@
 /**
  * VISUAL EXPLANATION OF RING BUFFER
  * 
+ * Purpose: Educational documentation explaining how the circular ring buffer works.
+ * This file contains ASCII diagrams and performance comparisons to illustrate
+ * why ring buffers are more efficient than traditional array operations for streaming data.
+ * 
  * Imagine a circular track with 5000 positions marked around it.
  * The "head" pointer walks around the track, writing data at each position.
  * When it completes a lap, it starts overwriting the oldest data.

@@ -1,3 +1,8 @@
+/**
+ * NavbarHandler Component
+ * Conditionally renders the navbar based on the current pathname.
+ * Hides the navbar on authentication pages (login, register, auth routes).
+ */
 'use client'
 // app/components/NavbarHandler.js
 import { usePathname } from 'next/navigation';

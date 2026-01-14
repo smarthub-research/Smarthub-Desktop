@@ -1,3 +1,8 @@
+/**
+ * Navbar Component
+ * Main navigation sidebar component with expandable tabs on hover.
+ * Includes routing links to different app sections and handles active state styling.
+ */
 'use client';
 
 // Left navbar component for the home page

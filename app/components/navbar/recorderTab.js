@@ -1,3 +1,9 @@
+/**
+ * RecorderTab Component
+ * Renders the recorder navigation tab with an icon and expandable text on hover.
+ * Props:
+ * - getItemClasses: Function to get CSS classes based on the current page
+ */
 import RecorderSVG from "../svg/recorderSVG";
 
 export default function RecorderTab({getItemClasses}) {

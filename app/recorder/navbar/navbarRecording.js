@@ -5,20 +5,24 @@ import React, { useEffect, useState } from "react";
 import ControlPanel from "./controlPanel";
 import Timer from "./timer";
 
-// This component handles the recording navbar for the SmartHub RecorderTab application.
+// Main navbar component for the recording interface.
+// Purpose: Displays connection status, control buttons, and recording timer in a sticky header.
+// Manages recording state and time tracking through IPC event listeners.
 export default function NavbarRecording() {
+    // State for tracking recording status and start time
     const [recordingState, setRecordingState] = useState({
         isRecording: false,
         startTime: null
     });
+    // State for the current recording time in seconds
     const [recordingTime, setRecordingTime] = useState(0);
 
-    // Add timer effect for continuous updates
+    // Add timer effect for continuous updates during recording
     useEffect(() => {
         let timerInterval;
 
         if (recordingState.isRecording && recordingState.startTime) {
-            // Update the time every 100ms
+            // Update the time every 100ms for smooth display
             timerInterval = setInterval(() => {
                 const elapsedTime = (Date.now() - recordingState.startTime) / 1000;
                 setRecordingTime(elapsedTime);
@@ -30,7 +34,7 @@ export default function NavbarRecording() {
         };
     }, [recordingState.isRecording, recordingState.startTime]);
 
-    // Define event handlers
+    // Define event handlers for recording state changes
     const handleRestartRecording = (eventData) => {
         setRecordingTime(0); // Reset time only on restart
 
@@ -62,7 +66,7 @@ export default function NavbarRecording() {
         });
     };
 
-    // Set up and clean up IPC listeners
+    // Set up and clean up IPC listeners for recording events
     useEffect(() => {
         if (!window.electronAPI) return;
 
@@ -71,7 +75,7 @@ export default function NavbarRecording() {
         const beginListener = window.electronAPI.onBeginReading(handleBeginReading);
         const stopListener = window.electronAPI.onStopReading(handleStopReading);
 
-        // Get initial recording state
+        // Get initial recording state from backend
         const initRecordingState = async () => {
             if (window.electronAPI.getRecordingState) {
                 const state = await window.electronAPI.getRecordingState();

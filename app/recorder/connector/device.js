@@ -3,11 +3,17 @@ import { useState } from "react";
 import ConnectionButton from "./connectionButton";
 import { Badge } from "../../components/ui/badge";
 
-// Device component to handle BLE device connections
+// Component for displaying and managing individual BLE device connections.
+// Props:
+// - `device`: Object representing the BLE device with properties like name.
+// - `status`: String indicating the connection status ('connected', 'notConnected', 'cannotConnect').
+// - `onConnect`: Function called when the device is successfully connected.
+// - `onDisconnect`: Function called when the device is disconnected.
+// Purpose: Provides a UI element for each device, showing its name, connection status, and connection/disconnection controls.
 export default function Device({ device, status, onConnect, onDisconnect }) {
     const [connecting, setConnecting] = useState(false);
 
-    // Determine if the device is connectable and call ipc to connect to it
+    // Asynchronous function to connect to the BLE device via Electron API
     const connectToBle = async () => {
         if (status === "cannotConnect" || !onConnect) return;
         setConnecting(true);
@@ -23,7 +29,7 @@ export default function Device({ device, status, onConnect, onDisconnect }) {
         }
     };
 
-    // Disconnect from the BLE device
+    // Asynchronous function to disconnect from the BLE device
     const disconnectBle = async () => {
         if (onDisconnect) {
             await window.electronAPI.disconnectBle(device);

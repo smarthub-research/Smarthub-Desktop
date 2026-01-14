@@ -1,4 +1,13 @@
+/**
+ * DataDivider
+ * Small summary card(s) that show top-level statistics for the current test
+ * and optionally a comparison test. It computes quick aggregates like
+ * elapsed time, distance, and the number of data points and presents them
+ * in a compact grid.
+ */
 export default function DataDivider({testData, comparisonData}) {
+    // Helper that renders a single stats card. `isComparison` adds a visual
+    // distinction for the comparison card.
     const renderStats = (data, label, isComparison = false) => {
         const timeElapsed = (Number(data.test_files.timeStamp.at(-1))).toFixed(2);
         const distance = data.test_files.distance.at(-1).toFixed(2);

@@ -13,7 +13,7 @@ import React, {memo, useMemo, useRef, useState} from "react";
 import useFetchFlags from "./hooks/useFetchFlags";
 import ChartToolbar from "./chartToolbar";
 
-// Register required components and plugins
+// Register Chart.js components required for line charts
 ChartJS.register(
     LineElement,
     CategoryScale,
@@ -24,7 +24,7 @@ ChartJS.register(
     Title,
 );
 
-// Constants for chart configuration
+// Constants defining available chart types for different data visualizations
 const CHART_TYPES = {
     DISPLACEMENT: 'Displacement vs Time',
     HEADING: 'Heading vs Time',
@@ -32,7 +32,7 @@ const CHART_TYPES = {
     TRAJECTORY: 'Trajectory'
 };
 
-// Constants for chart colors
+// Color palette for different chart types
 const CHART_COLORS = {
     red: 'rgb(239, 68, 68)',
     blue: 'rgb(59, 130, 246)',
@@ -40,9 +40,16 @@ const CHART_COLORS = {
     yellow: 'rgb(250, 204, 21)',
 }
 
-// Chart component for displaying various sensor data for different chart types
+// Main chart component for rendering sensor data visualizations.
+// Props:
+// - `timeStamps`: array of timestamps for x-axis (or x-coordinates for trajectory)
+// - `data`: array of data points for y-axis (or y-coordinates for trajectory)
+// - `title`: string indicating chart type (from CHART_TYPES)
+// - `graphId`: unique identifier for the chart, used for fetching flags
 function Chart({ timeStamps, data, title, graphId }) {
+    // Fetch flags associated with this graph for overlay markers
     const [flags] = useFetchFlags({ graphId });
+    // State for controlling visible data range and scrolling
     const [dataPointCount, setDataPointCount] = useState(50);
     const [scrollPosition, setScrollPosition] = useState(0);
     const chartRef = useRef(null);
@@ -419,5 +426,3 @@ function Chart({ timeStamps, data, title, graphId }) {
         </div>
     );
 }
-
-export default memo(Chart);

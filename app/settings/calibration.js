@@ -1,12 +1,21 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
 
-// Can be made into server component
+/**
+ * Calibration
+ * Lists available calibrations retrieved from the backend and allows the
+ * user to select one to apply. The component calls `window.electronAPI.setCalibration`
+ * to persist the chosen calibration in the desktop backend.
+ *
+ * Note: This could be converted into a server component if fetching on the
+ * server is preferred.
+ */
 export default function Calibration() {
     const [calibrations, setCalibrations] = useState([]);
     const [selectedId, setSelectedId] = useState("");
     const [submitted, setSubmitted] = useState(false);
 
+    // Fetch available calibrations once on mount
     useEffect(() => {
         const fetchCalibrations = async () => {
             try {
@@ -31,15 +40,14 @@ export default function Calibration() {
         setSubmitted(false);
     };
 
+    // Apply the currently selected calibration via the electron API
     const handleSubmit = async () => {
         setSubmitted(true);
-        // Find the selected calibration by ID
         const selectedCalibration = calibrations.find(c => String(c.id) === String(selectedId));
         if (!selectedCalibration) {
             console.error("No calibration selected");
             return;
         }
-        // Send the calibration to be saved in backend
         await window.electronAPI.setCalibration(selectedCalibration);
         console.log("Calibration set");
     };
@@ -69,7 +77,7 @@ export default function Calibration() {
                                 </option>
                             ))}
                         </select>
-                        {/* Custom arrow */}
+                        {/* Custom arrow for the select */}
                         <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-400 dark:text-gray-500">
                             <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                                 <path fillRule="evenodd" d="M10 14a1 1 0 01-.707-.293l-4-4a1 1 0 111.414-1.414L10 11.586l3.293-3.293a1 1 0 111.414 1.414l-4 4A1 1 0 0110 14z" clipRule="evenodd" />

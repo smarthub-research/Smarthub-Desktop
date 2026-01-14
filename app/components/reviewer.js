@@ -1,7 +1,11 @@
+/**
+ * Reviewer Component
+ * Renders a card that represents the reviewer feature, providing a visual link to review and analyze test results.
+ */
 import ReviewerSVG from "./svg/reviewerSVG";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "./ui/card";
 
-// Component to display a card for the ReviewerTab feature
+// Component to display a card for the Reviewer feature
 export default function Reviewer() {
     return (
         <Card className="cursor-pointer transition-all hover:shadow-md hover:scale-[1.02]">

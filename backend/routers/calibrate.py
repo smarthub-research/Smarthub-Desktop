@@ -1,3 +1,11 @@
+"""
+Calibration endpoints and utilities
+
+Provides an endpoint to perform calibration and helpers used to compute
+optimal wheel gains and wheel distance. The core numeric routines rely on
+SciPy/Numpy and local utilities in `utils.calc` and `utils.filtering`.
+"""
+
 from fastapi import APIRouter
 from scipy.optimize import fsolve
 import numpy as np
@@ -13,23 +21,31 @@ router = APIRouter(
     responses={404: {"description": "Not found"}}
 )
 
-# JSON payload expected:
+
+# JSON payload expected for POST /calibrate/
 # {
-#	"smarthubId": string,
-#	"calibrationName" : string,
+#    "smarthubId": string,
+#    "calibrationName" : string,
 # }
 @router.post("/")
 async def perform_calibration(data: dict):
+    """Entry point for performing a calibration.
+
+    Note: The current `Calibration` class expects its `data` attribute to be
+    populated with the test payload before calling `perform_calibration`.
+    """
     smarthubId = data["smarthubId"]
     calibrationName = data["calibrationName"]
     calibration = Calibration()
+    # calibration.data should be set by caller or before calling perform_calibration
     calibration.perform_calibration()
     response = await save_calibration(smarthubId, calibration.data, calibration.wheel_dist, calibration.leftGain, calibration.rightGain, calibrationName)
     return response.data
 
-# Get all calibrations in the db
+
 @router.get("/all")
 async def get_all_calibrations():
+    """Return all saved calibrations from the database."""
     response = (
         supabase.table("calibrations")
         .select("*")
@@ -37,8 +53,13 @@ async def get_all_calibrations():
     )
     return response.data
 
-# Class that stores all methods needed for calibration
+
 class Calibration:
+    """Holds calibration state and performs optimization.
+
+    The class stores calculated gains and wheel distance after running
+    `perform_calibration`.
+    """
     def __init__(self) -> None:
         self.data = None
         self.calc_utils = CalcUtils()
@@ -47,25 +68,31 @@ class Calibration:
         self.wheel_dist = None
 
     def perform_calibration(self):
-        # Ensure self.data is initialized with actual test data before smoothing
-        # For example, self.data = get_test_data() or passed in constructor
+        # The calibration requires raw test data to be available in self.data
         if self.data is None:
             raise ValueError("Calibration data must be set before performing calibration.")
         response = smooth_data(self.data)
         self.data["gyroRightSmoothed"] = response["gyro_right_smoothed"]
         self.data["gyroLeftSmoothed"] = response["gyro_left_smoothed"]
 
-        # Use fsolve to optimize gains and wheel distance
+        # Use fsolve to optimize leftGain, rightGain, and wheel distance
         optimized_params = fsolve(
             lambda params: minimize_turnaround(params, self.data, self.calc_utils),
             [20, 20, 20]
         )
         self.leftGain, self.rightGain, self.wheel_dist = optimized_params[:3]
 
+
 def minimize_turnaround(params, test, calc_utils):
+    """Objective function used by the optimizer.
+
+    Computes trajectory and various loss terms to produce a single scalar
+    error which is minimized by fsolve.
+    """
     ml, mr, W = params
     timeStamps = np.array(test['timeStamps'])
 
+    # Ensure arrays are aligned
     min_len = min(len(timeStamps), len(test['gyroLeftSmoothed']), len(test['gyroRightSmoothed']))
     timeStamps = timeStamps[:min_len]
     gyroLeft = np.array(test['gyroLeftSmoothed'])[:min_len]
@@ -77,7 +104,7 @@ def minimize_turnaround(params, test, calc_utils):
     traj_dict = calc_utils.get_top_traj(disp_m, velocity, heading, timeStamps)
     traj = np.column_stack((traj_dict['x'], traj_dict['y']))
 
-    # finds the start and end of the turnaround, make it constant between runs
+    # Detect turnaround region by looking at abrupt heading changes
     heading_diff = np.diff(heading)
     turning_points = np.where(np.abs(heading_diff) > 0.1)[0]
     if turning_points.size > 0:
@@ -104,11 +131,15 @@ def minimize_turnaround(params, test, calc_utils):
 
 
 def largest_consecutive_group(nums, min_size=60, threshold=0.5):
-    # handle empty input
+    """Return flattened groups of consecutive indices that meet heuristics.
+
+    This function looks for long runs of consecutive indices (used to detect
+    sustained turning behavior). The thresholds are heuristics and can be
+    tuned for different datasets.
+    """
     if nums is None or len(nums) == 0:
         return []
 
-    # ensure we work with a plain list of ints
     nums = list(nums)
     groups, current = [], [nums[0]]
 
@@ -127,32 +158,25 @@ def largest_consecutive_group(nums, min_size=60, threshold=0.5):
 
 
 def compute_net_loss(points1, points2):
+    """Compute RMS distance from each point in points1 to its nearest point in points2.
+
+    Uses a KD-tree for efficient nearest-neighbor queries.
     """
-    Computes the net loss as the sum of the distances between each point in points1
-    and its closest point in points2.
-    
-    :param points1: List of (x, y) tuples representing the first set of points.
-    :param points2: List of (x, y) tuples representing the second set of points.
-    :return: Net loss (sum of closest point distances).
-    """
-    # Convert lists to numpy arrays for efficient computation
     points1 = np.array(points1)
     points2 = np.array(points2)
 
-    # Build KDTree for efficient nearest-neighbor search
     tree = cKDTree(points2)
-
-    # Find nearest neighbor distances for all points in points1
     distances, _ = tree.query(points1)
-
     rms_distance = np.sqrt(np.mean(distances ** 2))
-
     return rms_distance
 
 
-# Writes to the database the calculated calibration
 async def save_calibration(smarthubId, data, wheel_dist, leftGain, rightGain, calibrationName):
-    # save dictionary to json
+    """Persist the computed calibration to the database (Supabase).
+
+    The raw test data is stored alongside the calibration metadata to allow
+    later inspection or reprocessing.
+    """
     response = (
         supabase.table("calibrations")
         .insert({

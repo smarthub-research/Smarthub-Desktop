@@ -1,3 +1,19 @@
+"""
+Authentication router
+
+Exposes simple auth endpoints backed by Supabase. This module keeps thin
+handler functions that delegate to the `supabase` client defined in
+`constants.py`.
+
+Endpoints:
+ - POST /auth/login     -> sign in with email/password
+ - GET  /auth/me        -> return the current session/user
+ - POST /auth/logout    -> sign out current session
+ - POST /auth/signup    -> create a new user
+ - GET  /auth/forgot_password -> placeholder
+ - GET  /auth/delete_account -> placeholder (should lock/delete account)
+"""
+
 from fastapi import APIRouter, HTTPException
 from constants import supabase
 from pydantic import BaseModel
@@ -8,13 +24,20 @@ router = APIRouter(
     responses={404: {"description": "Not found"}}
 )
 
-# Struct for login data model
+
+# Pydantic model for incoming auth requests
 class AuthRequest(BaseModel):
     email: str
     password: str
     full_name: str = ""
 
+
 async def get_user_id():
+    """Return the currently authenticated user's ID or raise 401.
+
+    This helper reads session information from the Supabase client and
+    raises an HTTPException if there is no active session.
+    """
     try:
         user = supabase.auth.get_user()
         if not user or not user.user:
@@ -26,9 +49,13 @@ async def get_user_id():
         print(f"Error getting user ID: {e}", flush=True)
         raise HTTPException(status_code=401, detail="Failed to get user information")
 
-# Logs a user in and sends the JWT for the session
+
 @router.post("/login")
 async def login(request: AuthRequest):
+    """Authenticate a user and return the Supabase session payload.
+
+    Note: This function delegates to `supabase.auth.sign_in_with_password`.
+    """
     try:
         response = supabase.auth.sign_in_with_password(
             {
@@ -37,23 +64,30 @@ async def login(request: AuthRequest):
             }
         )
     except Exception as e:
+        # Surface provider errors as HTTP 404 for simplicity
         raise HTTPException(status_code=404, detail=str(e))
     return response
 
-# Returns the current auth session
+
 @router.get("/me")
 async def me():
+    """Return the current authenticated session/user information."""
     return supabase.auth.get_user()
 
-# Logs the user out and deletes their current session in supabase
+
 @router.post("/logout")
 async def logout():
+    """Sign out the current session."""
     response = supabase.auth.sign_out()
     return response
 
-# Creates a new user in the db
+
 @router.post("/signup")
 async def signup(request: AuthRequest):
+    """Create a new user in Supabase and set a default role.
+
+    The `options.data` payload stores lightweight profile data.
+    """
     new_user = supabase.auth.sign_up(
         {
             "email": request.email,
@@ -68,15 +102,14 @@ async def signup(request: AuthRequest):
     )
     return new_user
 
-# Resets a users password by sending an email page
-# Reminder: Customize this email page at some point.
+
 @router.get("/forgot_password")
 async def forgot_password():
+    # Placeholder endpoint - integrate an email/template flow as needed
     return "forgot password"
 
-# Let a user delete their account.
-# Don't actually do that though because we need to keep track of their recordings and other data.
-# !Lock their account!
+
 @router.get("/delete_account")
 async def delete_account():
+    # Placeholder - consider implementing account lock instead of delete
     return "deleting account..."

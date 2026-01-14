@@ -19,6 +19,12 @@ function GraphSkeleton() {
     );
 }
 
+/**
+ * GraphSection
+ * Composes multiple small graph components to visualize key signals
+ * from the test payload. Passes through comparison arrays when available
+ * so the individual graph components can render overlays.
+ */
 export default function GraphSection({testData, comparisonData, onRequestFullData, loadingFullData}) {
     const isDownsampled = testData?.data_info?.is_downsampled;
     

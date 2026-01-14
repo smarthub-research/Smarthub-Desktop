@@ -1,9 +1,18 @@
 
-// Component to create the toolbar for the chart
+// Toolbar component for controlling chart display options like data point count and scrolling.
+// Props:
+// - `dataPointCount`: number of data points to show (0 = all)
+// - `setDataPointCount`: setter for data point count
+// - `scrollPosition`: current scroll offset into the data
+// - `setScrollPosition`: setter for scroll position
+// - `data`: the full data array for calculating scroll limits
+// - `graphId`: unique id for the chart (used for select element id)
+// - `loadingFullData`: boolean indicating if full data is loading
+// - `isDownsampled`: (unused in current implementation)
 export default function ChartToolbar(props) {
     const { dataPointCount, setDataPointCount, scrollPosition, setScrollPosition, data, graphId, loadingFullData, isDownsampled } = props;
 
-    // Allows scrolling left through the data points
+    // Scroll left (towards older data) by half the visible data points
     const handleScrollLeft = () => {
         // Calculate how much to scroll left
         const scrollAmount = Math.floor(dataPointCount / 2);
@@ -15,14 +24,14 @@ export default function ChartToolbar(props) {
         setScrollPosition(prev => Math.min(maxScrollPosition, prev + scrollAmount));
     };
 
-    // Allows scrolling right through the data points
+    // Scroll right (towards newer data) by half the visible data points
     const handleScrollRight = () => {
         // Calculate how much to scroll right
         const scrollAmount = Math.floor(dataPointCount / 2);
         setScrollPosition(prev => Math.max(0, prev - scrollAmount));
     };
 
-    // Resets the scroll position to the start
+    // Reset scroll position to show most recent data
     const resetView = () => {
         setScrollPosition(0);
     };

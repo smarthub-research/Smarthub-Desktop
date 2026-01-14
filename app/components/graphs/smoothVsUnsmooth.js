@@ -1,11 +1,14 @@
+/**
+ * SmoothedGraph Component
+ * Displays a comparison between smoothed (result) and unsmoothed (expected) displacement data over time.
+ * Loads test data and results from JSON files and renders them as line charts.
+ */
 'use client';
 
-import {CartesianGrid, Label, Line, LineChart, XAxis, YAxis} from "recharts"
-import { Card, CardContent, CardHeader, CardTitle } from "../ui/card"
+import {CartesianGrid, Line, LineChart, XAxis, YAxis} from "recharts"
+import { Card, CardContent } from "../ui/card"
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "../ui/chart"
-import { memo, useEffect, useRef, useState, useMemo } from "react";
-import ChartToolbar from "../../recorder/chartToolbar";
-import {usePathname} from "next/navigation";
+import { memo, useEffect, useState, useMemo } from "react";
 
 // Constants for chart colors
 const CHART_COLORS = {
@@ -21,8 +24,8 @@ function SmoothedGraph() {
     const [results, setResults] = useState(null);
     const [loading, setLoading] = useState(true);
 
+    // Load JSON data from public folder on component mount
     useEffect(() => {
-        // Load JSON data from public folder
         Promise.all([
             fetch('/testing.json').then(res => res.json()),
             fetch('/exported_test_results.json').then(res => res.json())
@@ -38,6 +41,7 @@ function SmoothedGraph() {
         });
     }, []);
 
+    // Transform the loaded data into chart-friendly format
     const chartData = useMemo(() => {
         if (!testData || !results) return [];
         

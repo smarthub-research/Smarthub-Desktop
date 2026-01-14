@@ -2,14 +2,21 @@
 import {useEffect, useState} from 'react';
 import {BsCheckCircleFill, BsExclamationTriangleFill} from 'react-icons/bs';
 
+// Component for displaying the real-time connection status of two BLE devices.
+// Purpose: Shows visual indicators (icons and text) for device connection states in the navbar.
+// Features: Polls for status updates, listens for disconnection events, and displays loading state.
 export default function ConnectionStatus() {
+    // State for tracking connection status of each device
     const [connectionStatus, setConnectionStatus] = useState({
         deviceOne: false,
         deviceTwo: false
     });
+    // State for storing device information
     const [devices, setDevices] = useState([null, null]);
+    // State for loading indicator while waiting for devices
     const [loading, setLoading] = useState(true);
 
+    // Effect to fetch and poll for connected devices
     useEffect(() => {
         async function fetchDevices() {
             try {
@@ -31,6 +38,7 @@ export default function ConnectionStatus() {
         return () => clearInterval(intervalId);
     }, []);
 
+    // Effect to check connection status and set up disconnection listeners
     useEffect(() => {
         // Check connection status and update state
         async function checkStatus() {

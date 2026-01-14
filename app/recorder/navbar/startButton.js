@@ -1,5 +1,10 @@
 import {BsFillPlayFill} from "react-icons/bs";
 
+// Button component for starting the recording session.
+// Props:
+// - `enabled`: Boolean to enable/disable the button based on device connection.
+// - `recording`: Boolean indicating if recording is currently active.
+// Purpose: Initiates BLE data reading from connected devices when clicked.
 export default function StartButton({ enabled, recording }) {
     // Lets us receive BLE data from the main process
     async function beginBleReading() {

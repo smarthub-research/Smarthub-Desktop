@@ -43,3 +43,4 @@ async def kafka_status():
         "processing_active": processing_task_active,
         "ready": is_ready
     }
+

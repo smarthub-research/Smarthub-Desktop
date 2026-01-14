@@ -2,11 +2,23 @@ import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/ca
 import { Badge } from "../../components/ui/badge";
 import { Activity, TrendingUp, Hash, Zap } from "lucide-react";
 
+/**
+ * Metrics
+ * Visual summary of computed performance metrics. Currently uses a
+ * `dummyData` placeholder until real computed metrics are provided by the
+ * backend. Each metric is displayed with an icon, formatted name, and unit.
+ *
+ * Props:
+ * - testData: the active test payload (not used yet)
+ * - comparisonData: optional comparison payload (not used yet)
+ */
 export default function Metrics({ testData, comparisonData }) {
+    // Temporary placeholder metrics object. Replace with real metrics
+    // derived from `testData` once available.
     const dummyData = {
         "bout": [
-		    82.6336228426765
-	    ],
+            82.6336228426765
+        ],
         "bout_dist": [
             159.46297543984468
         ],
@@ -18,7 +30,7 @@ export default function Metrics({ testData, comparisonData }) {
         ],
     }
 
-    // Format metric names for better display
+    // Map keys to human readable labels
     const formatMetricName = (key) => {
         const nameMap = {
             'bout': 'Bout Duration',
@@ -29,7 +41,7 @@ export default function Metrics({ testData, comparisonData }) {
         return nameMap[key] || key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
     };
 
-    // Get appropriate unit for each metric
+    // Determine display unit for a metric key
     const getUnit = (key) => {
         if (key.includes('dist')) return 'm';
         if (key.includes('freq')) return 'Hz';
@@ -37,7 +49,7 @@ export default function Metrics({ testData, comparisonData }) {
         return '';
     };
 
-    // Get icon for metric type
+    // Pick an icon for the metric card
     const getIcon = (key) => {
         if (key === 'bout') return <Activity className="w-4 h-4" />;
         if (key === 'bout_dist') return <TrendingUp className="w-4 h-4" />;
@@ -46,7 +58,7 @@ export default function Metrics({ testData, comparisonData }) {
         return <Activity className="w-4 h-4" />;
     };
 
-    // Get color scheme for metric type
+    // Background / color choices for metric icon containers
     const getColorClass = (key) => {
         if (key === 'bout') return 'bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300';
         if (key === 'bout_dist') return 'bg-green-100 dark:bg-green-900 text-green-600 dark:text-green-300';

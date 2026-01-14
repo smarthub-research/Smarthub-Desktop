@@ -1,3 +1,8 @@
+/**
+ * Loader Component
+ * Displays a spinning loading animation as a fallback when content is loading.
+ */
+
 // Fallback loading animation
 export default function Loader() {
     return (

@@ -1,6 +1,14 @@
 import { Button } from '../../components/ui/button';
 import { useRouter } from 'next/navigation';
 
+/**
+ * RecalculateButton
+ * Triggers a backend recalculation for the given `testId`. While the
+ * recalculation is running the UI is put into a loading state via
+ * `setLoading`. If the backend returns a `new_test_id` the user is
+ * redirected to the newly created test; otherwise the returned payload
+ * updates the current view.
+ */
 export default function RecalculateButton({testId, setTestData, setLoading}) {
     const router = useRouter();
     
@@ -18,12 +26,11 @@ export default function RecalculateButton({testId, setTestData, setLoading}) {
             const data = await response.json()
             console.log("Recalculated test data:", data)
             
-            // Check if a new test was created
+            // If backend created a new test resource, redirect there
             if (data.new_test_id) {
-                // Redirect to the new test
                 router.push(`/reviewer/${data.new_test_id}`);
             } else {
-                // If for some reason we didn't get a new test ID, just update the current view
+                // Otherwise update the current test view with returned content
                 setTestData(data)
             }
         } catch (error) {

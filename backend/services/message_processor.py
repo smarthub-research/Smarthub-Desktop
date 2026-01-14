@@ -79,7 +79,6 @@ class DataProcessor:
             right_gy_calibrated = data['gyro_right']
             left_gy_calibrated = data['gyro_left']
 
-
             distance = []
             displacement = []
             packet_velocity = []
@@ -114,6 +113,9 @@ class DataProcessor:
                             dist_wheels=dist_wheels
                         )
                         
+                        # Accumulate heading change
+                        self.last_heading += heading_deg
+                        
                         velocity = self._calc_utils.get_velocity_m_s(
                             left_gy_calibrated[i],
                             right_gy_calibrated[i], 
@@ -122,11 +124,9 @@ class DataProcessor:
                         
                         trajectory = self._calc_utils.get_top_traj(
                             velocity, 
-                            heading_deg,
+                            self.last_heading,
                             [self.prev_timestamp, data['time_from_start'][i]], 
                         )
-                        
-                        self.last_heading = heading_deg
                         self.last_traj_x = trajectory['x']
                         self.last_traj_y = trajectory['y']
                         
@@ -135,7 +135,7 @@ class DataProcessor:
                         trajectory_y.append(trajectory['y'])
                         distance.append(self.total_distance)
                         displacement.append(self.total_displacement)
-                        heading.append(heading_deg)
+                        heading.append(self.last_heading)
                     else:
                         packet_velocity.append(0)
                         trajectory_x.append(self.last_traj_x)

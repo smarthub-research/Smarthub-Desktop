@@ -2,17 +2,27 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useRouter, usePathname } from "next/navigation";
 
+// Create a React context to share authentication state and helpers
 const AuthContext = createContext();
 
+/**
+ * AuthProvider wraps application routes that need authentication state.
+ * It exposes `user`, `email`, `userRole`, `loading` and helper methods
+ * like `getUser`, `handleLogin`, `handleLogout`, and `hasRole`.
+ */
 export function AuthProvider({ children }) {
     const router = useRouter();
     const pathname = usePathname();
+
+    // Primary auth state
     const [user, setUser] = useState(null);
     const [email, setEmail] = useState(null);
     const [userRole, setUserRole] = useState(null);
     const [loading, setLoading] = useState(true);
 
-    // Single useEffect for fetching user data on mount and token changes
+    // Fetch current user on mount and whenever storage changes.
+    // This centralizes logic for reading token, validating it with
+    // the backend (`/auth/me`) and populating local state.
     useEffect(() => {
         const fetchUser = async () => {
             const token = localStorage.getItem('access_token');
@@ -26,6 +36,8 @@ export function AuthProvider({ children }) {
                         credentials: "include",
                     });
                     const data = await response.json();
+
+                    // If token is valid, populate state; otherwise clear it
                     if (response.ok && data.user) {
                         setUser(data.user);
                         setUserRole(data.user.user_metadata?.role || null);
@@ -38,9 +50,12 @@ export function AuthProvider({ children }) {
                         setEmail("");
                     }
                 } catch (err) {
+                    // Network or parsing errors should not crash the app; log
+                    // and continue with unauthenticated state.
                     console.error("Error fetching user:", err);
                 }
             } else {
+                // No token -> unauthenticated state
                 setUser(null);
                 setUserRole(null);
                 setEmail("");
@@ -50,7 +65,8 @@ export function AuthProvider({ children }) {
 
         fetchUser();
 
-        // Also set up event listener for storage changes (for multiple tabs)
+        // Listen for `storage` events so auth updates in one tab
+        // are reflected across other open tabs/windows.
         const handleStorageChange = (e) => {
             if (e.key === 'access_token') {
                 fetchUser();
@@ -61,7 +77,8 @@ export function AuthProvider({ children }) {
         return () => window.removeEventListener('storage', handleStorageChange);
     }, []);
 
-    // Navigation/redirect logic
+    // Navigation/redirect logic: keep users away from auth pages when
+    // already logged in, and redirect unauthenticated users to login.
     useEffect(() => {
         if (!loading) {
             const isAuthPage = pathname?.startsWith('/auth');
@@ -75,6 +92,10 @@ export function AuthProvider({ children }) {
         }
     }, [user, loading, pathname, router]);
 
+    /**
+     * getUser - helper that attempts to re-fetch user from backend and
+     * updates context state. Returns the user object on success or null.
+     */
     async function getUser() {
         const token = localStorage.getItem('access_token');
         if (token) {
@@ -100,6 +121,10 @@ export function AuthProvider({ children }) {
         return null;
     }
 
+    /**
+     * handleLogout - call server logout endpoint, clear local storage
+     * and update UI state, then redirect to login page.
+     */
     async function handleLogout() {
         try {
             await fetch("http://localhost:8000/auth/logout", {
@@ -119,7 +144,10 @@ export function AuthProvider({ children }) {
         }
     }
 
-    // Expose this method to the context
+    /**
+     * handleLogin - attempts to authenticate with backend using provided
+     * credentials. On success stores access token and refreshes user state.
+     */
     const handleLogin = async (credentials) => {
         try {
             const response = await fetch('http://localhost:8000/auth/login', {
@@ -130,6 +158,7 @@ export function AuthProvider({ children }) {
             });
             const data = await response.json();
             if (response.ok && data.session?.access_token) {
+                // Persist token in both local and session storage for flexibility
                 localStorage.setItem('access_token', data.session.access_token);
                 sessionStorage.setItem('access_token', data.session.access_token);
                 await getUser();
@@ -142,7 +171,8 @@ export function AuthProvider({ children }) {
         }
     };
 
-    // RBAC helper function
+    // Role-based access helper. Returns true if the current user's role
+    // meets or exceeds the requiredRole in the simple hierarchy.
     const hasRole = (requiredRole) => {
         if (!userRole) return false;
         const roleHierarchy = { admin: 2, clinician: 1 };
@@ -166,4 +196,5 @@ export function AuthProvider({ children }) {
     );
 }
 
+// Convenience hook for consuming auth context in components
 export const useAuth = () => useContext(AuthContext);

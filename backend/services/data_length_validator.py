@@ -1,19 +1,19 @@
+"""Concrete data validator that checks array lengths.
+
+This validator ensures that the time array and sensor arrays have matching
+lengths before the `DataProcessor` performs numeric calculations. Keeping
+this concern isolated makes unit-testing and future validators simple.
+"""
+
 from typing import Dict
 from services.data_validator import IDataValidator
 
+
 class DataLengthValidator(IDataValidator):
-    """
-    Validates that all data arrays have matching lengths.
-    Single Responsibility: Only validates data lengths.
-    """
-    
+    """Validates that all data arrays have matching lengths."""
+
     def validate(self, data: Dict) -> bool:
-        """
-        Check if all data arrays have matching lengths.
-        
-        :param data: dictionary containing time_from_start, gyro_left, gyro_right
-        :returns True if all lengths match, False otherwise
-        """
+        """Return True if all lengths match, otherwise log and return False."""
         if len(data['time_from_start']) != len(data['gyro_left']):
             print('Data length mismatch: time vs gyro_left')
             return False

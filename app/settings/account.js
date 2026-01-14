@@ -1,5 +1,11 @@
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "../components/ui/card";
 
+/**
+ * Account
+ * Simple settings card placeholder for account-related settings. Keep this
+ * component small and focused so it can be expanded later with profile
+ * editing controls, password management, etc.
+ */
 export default function Account() {
     return (
         <Card>
@@ -13,6 +19,7 @@ export default function Account() {
             </CardHeader>
 
             <CardContent>
+                {/* Placeholder content - replace with account UI */}
                 stuff
             </CardContent>
         </Card>

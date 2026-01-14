@@ -6,12 +6,19 @@ import CalibrationSteps from './calibrationSteps';
 import Controls from './controls';
 import LiveDataAndResults from './liveDataAndResults';
 
+// Main page for the calibration workflow. Keeps top-level state and
+// composes the steps, instructions, controls and live data panels.
 export default function Calibration() {
-    const [calibrationStep, setCalibrationStep] = useState("connecting"); // "connecting" "idle", "recording", "processing", "error", "completed"
+    // High level step state used across child components. Valid values:
+    // "connecting", "idle", "recording", "processing", "error", "completed"
+    const [calibrationStep, setCalibrationStep] = useState("connecting");
     const [calibrationName, setCalibrationName] = useState("");
+    // connectedDevices stores the array of detected devices from the
+    // Electron bridge; initial state is a placeholder array.
     const [connectedDevices, setConnectedDevices] = useState([null, null]);
 
-        // Map calibration step strings to numeric indices
+    // Map calibration step strings to numeric indices used by the
+    // `CalibrationSteps` visual component.
     const getStepIndex = (step) => {
         const stepMap = {
             "connecting": 0,
@@ -24,7 +31,8 @@ export default function Calibration() {
         return stepMap[step] || 0;
     };
 
-    // Get the currently connected devices
+    // On mount, query the Electron main process for connected devices
+    // and advance to `idle` when devices are available.
     useEffect(() => {
         async function fetchDevices() {
             try {

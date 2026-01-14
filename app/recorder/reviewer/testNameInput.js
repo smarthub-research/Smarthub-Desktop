@@ -1,6 +1,8 @@
 import {useTest} from "../context/testContext";
 
-// Component to set the test name
+// Component for inputting and validating the test name.
+// Purpose: Allows users to enter a descriptive name for the test.
+// Includes validation to ensure a name is provided and shows error states.
 export default function TestNameInput() {
     const {testName, setTestName, formErrors, setFormErrors} = useTest()
 
@@ -33,7 +35,7 @@ export default function TestNameInput() {
                     formErrors.testName ? 'ring-red-500' : 'ring-blue-500'
                 }`}
             />
-            {/* Form errors when invalid name is entered */}
+            {/* Display validation error message */}
             {formErrors.testName && (
                 <p className="text-red-500 text-sm mt-1">
                     Test name is required.

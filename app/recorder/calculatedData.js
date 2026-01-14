@@ -1,6 +1,11 @@
 
-// Displays more detailed calculated data from the recorder
+// Component for displaying detailed calculated metrics from a recording session.
+// Props:
+// - `data`: (unused in current implementation) expected to be an object with calculated values.
+// Note: Currently uses hardcoded `dataHeaders` and `dataValues` arrays. In a real app,
+// these should be derived from props or state to display actual calculated data.
 export default function CalculatedData({data}) {
+    // Array of metric names for display. These correspond to swimming or rowing metrics.
     const dataHeaders = [
         "SU Average Stroke Length (sec)",
         "SS Average Stroke Length (sec)",
@@ -23,6 +28,8 @@ export default function CalculatedData({data}) {
         "Rolling Resistance (m/s^2)"
     ]
 
+    // Hardcoded sample values corresponding to the headers above. In production,
+    // replace with actual calculated data from the backend or processing logic.
     const dataValues = [
         1.3622446013431900,
         1.7525363489359400,
