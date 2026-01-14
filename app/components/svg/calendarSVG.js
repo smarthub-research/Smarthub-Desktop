@@ -1,4 +1,11 @@
 
+/**
+ * CalendarSVG Component
+ * Renders the calendar icon SVG.
+ * Props:
+ * - margin: Optional margin class (default 1)
+ */
+
 export default function CalendarSVG({margin = 1}) {
     return (
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5"

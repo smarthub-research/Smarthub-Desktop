@@ -2,8 +2,10 @@
  * High-performance circular ring buffer for chart data
  * O(1) append and read operations using typed arrays
  * Automatically overwrites oldest data when capacity is reached
+ * Purpose: Efficiently store and manage streaming sensor data for real-time charting.
  */
 
+// RingBuffer class: Core circular buffer implementation for single metric data
 export class RingBuffer {
     constructor(capacity = 2000) {
         this.capacity = capacity;
@@ -195,6 +197,7 @@ export class RingBuffer {
 /**
  * Ring buffer manager for all chart metrics
  * Manages separate ring buffers for distance, velocity, heading, and trajectory
+ * Purpose: Coordinates data storage across multiple sensor metrics for the recording system.
  */
 export class ChartRingBufferManager {
     constructor(capacity = 5000) {

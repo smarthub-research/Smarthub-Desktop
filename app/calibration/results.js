@@ -2,6 +2,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Badge } from '../components/ui/badge';
 import { TrendingUp } from 'lucide-react';
 
+// Presentation component for calibration results. The component expects
+// a `results` object (e.g. { leftGain, rightGain, wheel_dist }) to be
+// provided by a parent; currently the file references `results` but it
+// is not declared here — pass results via props when integrating.
 export default function Results() {
     return (
         <Card>

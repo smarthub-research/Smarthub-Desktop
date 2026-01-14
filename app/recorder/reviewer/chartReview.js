@@ -4,12 +4,16 @@ import {useTest} from "../context/testContext";
 import Graph from "../../components/graphs/graph";
 import TrajectoryGraph from "../../components/graphs/trajectoryGraph";
 
-
-// Component to display charts based on the active tab
+// Component for displaying and reviewing recorded chart data.
+// Purpose: Shows different types of graphs (distance, heading, velocity, trajectory) based on selected tab.
+// Uses live processedPackets if available, otherwise fetches saved review data from backend.
 export default function ChartReview() {
     const { fetchReviewData, testData: rawTestData, processedPackets } = useTest();
+    // State for the currently active chart tab
     const [activeChartTab, setActiveChartTab] = useState('distance');
+    // State for the formatted test data to display
     const [testData, setTestData] = useState(null);
+    // State for loading indicator
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {

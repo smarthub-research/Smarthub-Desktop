@@ -1,7 +1,11 @@
 'use client'
 import { useEffect, useState } from "react";
 
-// Custom hook to fetch flags
+// Custom hook to fetch and manage flags for graph annotations.
+// Props:
+// - graphId: Optional string to filter flags by specific graph ID.
+// Purpose: Provides real-time flag data for charts, allowing users to mark important points.
+// Returns: Array containing [flags array, setFlags function].
 export default function useFetchFlags({graphId = null} = {}) {
     const [flags, setFlags] = useState([]);
 
@@ -20,7 +24,7 @@ export default function useFetchFlags({graphId = null} = {}) {
 
             fetchFlags();
 
-            // Listen for new flags
+            // Listen for new flags in real-time
             const newFlagHandler = (flag) => {
                 setFlags(prev => {
                     // Check if flag already exists to prevent duplicates

@@ -1,3 +1,11 @@
+/**
+ * RecentTests Component
+ * Displays a list of the most recent test files, showing up to 10 tests with their names and creation dates.
+ * Includes a "View" button for each test and a link to view all tests.
+ * Props:
+ * - testFiles: Array of test objects, each containing id, test_name, created_at, etc.
+ * - loading: Boolean indicating if the test data is currently loading.
+ */
 import ViewButton from "./viewButton";
 import {Card, CardContent, CardHeader, CardTitle} from "./ui/card";
 import {Badge} from "./ui/badge";
@@ -20,7 +28,7 @@ export default function RecentTests({testFiles, loading = false}) {
                 ) : testFiles.length === 0 ? (
                     <div className="p-6 text-center opacity-50">No recent tests found</div>
                 ) : (
-                    testFiles.slice(0, 10).map((test) => (
+                    testFiles.slice(0, 10).map((test) => ( // Limit to 10 most recent tests
                         <div key={test.id} className="flex items-center justify-between">
                             <div >
                                 <p className="text-sm font-medium">{test.test_name}</p>

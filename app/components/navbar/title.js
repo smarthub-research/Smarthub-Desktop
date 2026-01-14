@@ -1,3 +1,8 @@
+/**
+ * Title Component
+ * Displays the application logo and current page title in the navbar.
+ * The title fades based on scroll position and shows the component name based on the current path.
+ */
 'use client'
 import LogoSVG from "../svg/logoSVG";
 import {useEffect, useState} from "react";
@@ -17,6 +22,7 @@ export default function Title() {
         : path.includes("/calibration") ? "Calibrator"
         : "Desktop";
 
+    // Effect to track scroll position and adjust title opacity
     useEffect(() => {
         const handleScroll = () => {
             setIsAtTop(window.scrollY === 0);

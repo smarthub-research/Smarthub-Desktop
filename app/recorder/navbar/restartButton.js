@@ -1,5 +1,9 @@
 import {BsArrowCounterclockwise} from "react-icons/bs";
 
+// Button component for restarting the recording session.
+// Props:
+// - `enabled`: Boolean to enable/disable the button based on device connection.
+// Purpose: Allows users to restart recording, which trims data to recent points while keeping full data in backend.
 export default function RestartButton({ enabled }) {
     // Restarts the recording by stopping and then starting it again
     async function restartRecording() {

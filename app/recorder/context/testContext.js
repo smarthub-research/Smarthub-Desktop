@@ -2,9 +2,17 @@
 import {createContext, useCallback, useContext, useEffect, useState, useRef} from 'react';
 import { ChartRingBufferManager } from '../utils/RingBuffer';
 
+// React Context for managing test recording state, data, and UI form inputs.
+// Provides centralized state management for the recorder interface, including:
+// - Test metadata (name, distance, units, comments)
+// - Recording state (isRecording, isStopped)
+// - Processed packet data via ring buffer for real-time charting
+// - Integration with Electron backend for data persistence and retrieval
+// Purpose: Enables components throughout the recorder to access and modify shared test state.
 const TestContext = createContext();
 
 export function TestProvider({ children }) {
+    // State for test metadata and form inputs
     const [testData, setTestData] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [testName, setTestName] = useState('');
@@ -15,10 +23,10 @@ export function TestProvider({ children }) {
         testName: false
     });
     
-    // Ring buffer manager (persistent across renders)
+    // Ring buffer manager (persistent across renders) for efficient data storage
     const ringBufferManager = useRef(new ChartRingBufferManager(1000));
     
-    // State for chart display (triggers re-renders when updated)
+    // State for chart display (triggers re-renders when updated) containing processed packet arrays
     const [processedPackets, setProcessedPackets] = useState({
         distance: [],
         velocity: [],
@@ -38,6 +46,7 @@ export function TestProvider({ children }) {
         setProcessedPackets(ringBufferManager.current.getData());
     };
 
+    // Clears all processed data and resets recording state
     const clearProcessedData = () => {
         ringBufferManager.current.clear();
         setProcessedPackets({
@@ -50,6 +59,7 @@ export function TestProvider({ children }) {
         setIsStopped(false);
     };
 
+    // Fetches review data from the backend for the reviewer interface
     const fetchReviewData = useCallback(async () => {
         if (window.electronAPI) {
             try {
@@ -65,6 +75,7 @@ export function TestProvider({ children }) {
         }
     }, [testData]);
 
+    // Effect to fetch initial test data on component mount
     useEffect(() => {
         const fetchTestData = async () => {
             if (window.electronAPI) {
@@ -90,6 +101,7 @@ export function TestProvider({ children }) {
         setIsStopped(false);
     }, []);
 
+    // Handles stopping recording and fetching full data from backend
     const handleStopRecording = useCallback(async () => {
         setIsRecording(false);
         setIsStopped(true);
@@ -118,6 +130,7 @@ export function TestProvider({ children }) {
         }
     }, []);
 
+    // Handles restarting recording after a stop, trimming data to recent points
     const handleRestartRecording = useCallback(() => {
         setIsRecording(true);
         setIsStopped(false);
@@ -170,4 +183,5 @@ export function TestProvider({ children }) {
     );
 }
 
+// Custom hook to use the TestContext
 export const useTest = () => useContext(TestContext);

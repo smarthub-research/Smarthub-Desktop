@@ -1,6 +1,8 @@
 import {useTest} from "../context/testContext";
 
-// Displays the flags added during the test
+// Component for displaying flags added during the test recording.
+// Purpose: Shows a list of all flagged points with timestamps, graph types, and comments.
+// Allows users to review important moments marked during data collection.
 export default function FlagSection() {
     const { allFlags } = useTest()
 

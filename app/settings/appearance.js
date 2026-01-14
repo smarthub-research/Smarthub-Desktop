@@ -1,5 +1,11 @@
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "../components/ui/card";
 
+/**
+ * Appearance
+ * Small settings panel for theming and appearance preferences. Currently a
+ * placeholder — intended to hold theme toggles, font size settings, and
+ * other UI personalization controls.
+ */
 export default function Appearance() {
     return (
         <Card>
@@ -13,6 +19,7 @@ export default function Appearance() {
             </CardHeader>
 
             <CardContent>
+                {/* Placeholder content - implement theme controls here */}
                 stuff
             </CardContent>
         </Card>

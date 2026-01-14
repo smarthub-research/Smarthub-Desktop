@@ -2,6 +2,12 @@ import { Card, CardContent } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 import { Wifi } from 'lucide-react';
 
+// Small status bar summarizing current calibration state, recording
+// duration and device connectivity.
+// Props:
+// - `calibrationState` (string): current state (recording/processing/completed/error/idle)
+// - `recordingTime` (number): seconds elapsed while recording
+// - `connectedDevices` (number): count of connected devices
 export default function StatusBar({ calibrationState, recordingTime, connectedDevices }) {
     const getStatusColor = () => {
         switch (calibrationState) {

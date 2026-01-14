@@ -3,6 +3,13 @@ import { Montserrat } from 'next/font/google'
 import NavbarHandler from "./components/navbar/navbarHandler";
 import { AuthProvider } from "./auth/authContext";
 
+/*
+ * RootLayout
+ * Top-level app layout. Imports global styles and provides the
+ * authentication context and navigation handler. Note: reading
+ * `window.location` is only safe on the client — prefer Next's
+ * router hooks inside client components when you need pathname.
+ */
 const montserrat = Montserrat({
     subsets: ['latin'],
     weight: ['400', '500', '700']

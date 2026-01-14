@@ -2,8 +2,12 @@
 import {useRouter} from "next/navigation";
 import { Button } from "../components/ui/button";
 
+// Button to navigate to the detailed view for a test file.
+// Props:
+// - testFile: object with id property.
 export default function ViewButton({testFile}) {
     const router = useRouter();
+    // Navigates to the test file's review page
     const handleView = async (testFile) => {
         try {
             router.push('/reviewer/' + testFile.id);

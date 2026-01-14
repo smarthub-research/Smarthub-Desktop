@@ -1,7 +1,11 @@
+/**
+ * Calibration Component
+ * Renders a card that represents the calibration feature, providing a visual link to start device calibration.
+ */
 import CalibrationSVG from "./svg/calibrationSVG";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "./ui/card";
 
-// Component to display a card for the RecorderTab feature
+// Component to display a card for the Calibration feature
 export default function Calibration() {
     return (
         <Card className="cursor-pointer transition-all hover:shadow-md hover:scale-[1.02]">

@@ -1,8 +1,12 @@
+/**
+ * Recorder Component
+ * Renders a card that represents the recorder feature, providing a visual link to start recording a new test session.
+ */
 import Link from "next/link";
 import RecorderSVG from "./svg/recorderSVG";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "./ui/card";
 
-// Component to display a card for the RecorderTab feature
+// Component to display a card for the Recorder feature
 export default function Recorder() {
     return (
         <Card className="cursor-pointer transition-all hover:shadow-md hover:scale-[1.02]">

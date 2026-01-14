@@ -1,3 +1,9 @@
+/**
+ * SettingsTab Component
+ * Renders the settings navigation tab with an icon and expandable text on hover.
+ * Props:
+ * - getItemClasses: Function to get CSS classes based on the current page
+ */
 import SettingsSVG from "../svg/settingsSVG";
 
 export default function SettingsTab({getItemClasses}) {

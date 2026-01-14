@@ -1,3 +1,9 @@
+/**
+ * Chart Components
+ * Recharts integration components providing responsive charts with theming and tooltip support.
+ * Includes ChartContainer (wrapper), ChartTooltip, ChartTooltipContent, ChartLegend, etc.
+ * Supports light/dark themes and custom configurations.
+ */
 "use client";
 import * as React from "react"
 import * as RechartsPrimitive from "recharts"

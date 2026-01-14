@@ -19,7 +19,11 @@ export default function TestView({ params }) {
     const [comparisonData, setComparisonData] = useState(null);
     const [loading, setLoading] = useState(true);
 
-    // Fetch the main test data
+    /**
+     * Fetch the main test data for this view. Uses the `id` from params and
+     * requests the backend in `review` response format. The `loading` state
+     * is used to show a placeholder until the payload is available.
+     */
     useEffect(() => {
         const fetchTestData = async () => {
             setLoading(true);

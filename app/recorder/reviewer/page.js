@@ -6,7 +6,9 @@ import ChartReview from "./chartReview";
 import SaveTest from "./saveTest";
 import { useEffect } from 'react';
 
-// Main component for the ReviewerTab page
+// Main page component for the test reviewer interface.
+// Purpose: Displays recorded test data with charts, test information, and save functionality.
+// Prevents accidental page refreshes to avoid losing unsaved data.
 function ReviewerContent() {
     const { isLoading } = useTest();
 

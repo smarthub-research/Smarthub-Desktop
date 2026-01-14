@@ -1,41 +1,35 @@
+/**
+ * Test data holder and formatter for the renderer.
+ *
+ * Stores an in-memory snapshot of a test (raw arrays) and provides
+ * utilities to prepare that data for review UIs. Interacts with
+ * `dataBuffer` when asked to snapshot the current buffer.
+ */
+
 const dataBuffer = require('../utils/dataBuffer');
 
 class TestDataService {
+    // Return the currently stored test data (or null)
     getTestData() {
-        if (!this.testData) {
-            return null;
-        }
-        return this.testData
+        return this.testData || null;
     }
 
+    // Helper to normalize values that may be wrapped in single-element arrays
     _spreadData(data) {
-        if (!data || !Array.isArray(data)) {
-            return [];
-        }
-        
-        let fix = [];
+        if (!data || !Array.isArray(data)) return [];
+        const fix = [];
         for (let val of data) {
-            if (Array.isArray(val)) {
-                fix.push(val[0]);
-            } else {
-                fix.push(val);
-            }
+            fix.push(Array.isArray(val) ? val[0] : val);
         }
         return fix;
     }
 
+    // Persist test data object. If `data === true`, snapshot current buffer.
     setTestData(data) {
         console.log("TEST DATA SET: ", dataBuffer.getRawDataBuffer());
         let dataValues;
-        if (data === null) {
-            // Return without changing anything if explicitly set to null
-            return { success: false };
-        } else if (data === true) {
-            // Save current buffer without clearing it
-            dataValues = dataBuffer.getRawDataBuffer();
-        } else {
-            dataValues = data;
-        }
+        if (data === null) return { success: false };
+        if (data === true) dataValues = dataBuffer.getRawDataBuffer(); else dataValues = data;
 
         this.testData = {
             gyroLeft: this._spreadData(dataValues.gyroLeft) || [],
@@ -50,7 +44,7 @@ class TestDataService {
             timeStamp: this._spreadData(dataValues.timeStamp) || [],
         };
 
-        // Clear the data buffers
+        // Optionally clear the live buffer after saving
         if (data && dataBuffer.clearBuffer()) {
             dataBuffer.initializeBuffer();
         }
@@ -58,44 +52,24 @@ class TestDataService {
         return { success: true };
     }
 
-    setReviewData(data) {
-        this.reviewData = data
-    }
+    setReviewData(data) { this.reviewData = data }
 
-    getReviewData() {
-        // Apply any additional processing needed for review
-        return this._prepareForReview(this.reviewData);
-    }
+    getReviewData() { return this._prepareForReview(this.reviewData); }
 
-    clearReviewData() {
-        this.reviewData = null;
-    }
+    clearReviewData() { this.reviewData = null; }
 
     _formatTestData(data, dataType) {
-        return data.timeStamp.map((time, index) => ({
-            time: (Number(time) / 1000).toFixed(2),
-            [dataType]: data[dataType][index]
-        }));
+        return data.timeStamp.map((time, index) => ({ time: (Number(time) / 1000).toFixed(2), [dataType]: data[dataType][index] }));
     }
 
-    // Pairs trajectories with time stamps for trajectory graph
+    // Pair trajectory x/y with timestamps for the UI
     _formatTrajectoryData(data) {
-        return data.timeStamp.map((time, index) => ({
-            time: (Number(time) / 1000).toFixed(2),
-            trajectory_x: data.trajectory_x[index],
-            trajectory_y: data.trajectory_y[index]
-        }))
+        return data.timeStamp.map((time, index) => ({ time: (Number(time) / 1000).toFixed(2), trajectory_x: data.trajectory_x[index], trajectory_y: data.trajectory_y[index] }))
     }
 
     _prepareForReview(data) {
-        let testData = {
-            ...data,
-            displacement: this._formatTestData(data, "displacement"),
-            heading: this._formatTestData(data, "heading"),
-            velocity: this._formatTestData(data, "velocity"),
-            trajectory: this._formatTrajectoryData(data)
-        }
-        return testData
+        if (!data) return null;
+        return { ...data, displacement: this._formatTestData(data, "displacement"), heading: this._formatTestData(data, "heading"), velocity: this._formatTestData(data, "velocity"), trajectory: this._formatTrajectoryData(data) };
     }
 }
 

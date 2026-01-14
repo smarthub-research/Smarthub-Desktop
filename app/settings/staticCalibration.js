@@ -3,20 +3,26 @@ import { Button } from "../components/ui/button";
 import { useState, useEffect } from "react";
 import useFetchDevices from "../recorder/hooks/useFetchDevices";
 
+/**
+ * StaticCalibration
+ * Provides a one-button static calibration flow. Starts calibration via the
+ * `window.electronAPI.beginStaticCalibration` call and listens for a
+ * completion event via `window.electronAPI.onCalibrationComplete` to update
+ * UI state when the process finishes.
+ */
 export default function StaticCalibration() {
     const [isCalibrating, setIsCalibrating] = useState(false)
     const [calibrationStatus, setCalibrationStatus] = useState("")
     const { deviceOne, deviceTwo } = useFetchDevices();
 
+    // Subscribe to calibration-complete events emitted by the backend
     useEffect(() => {
-        // Listen for calibration completion event from backend
         if (window.electronAPI?.onCalibrationComplete) {
             const cleanup = window.electronAPI.onCalibrationComplete((results) => {
                 console.log("Calibration completed automatically!", results);
                 setIsCalibrating(false);
                 setCalibrationStatus("Complete!");
-                
-                // Clear success message after 5 seconds
+                // Clear success message after a short delay
                 setTimeout(() => {
                     setCalibrationStatus("");
                 }, 5000);
@@ -26,6 +32,8 @@ export default function StaticCalibration() {
         }
     }, []);
 
+    // Initiate the static calibration flow. The long-running task is handled
+    // by the native backend; UI state is toggled optimistically here.
     const beginStaticCalibration = async () => {
         console.log("starting static calibration")
         try{

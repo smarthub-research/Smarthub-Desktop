@@ -2,6 +2,13 @@
 
 import { useState, useEffect } from "react"
 
+/**
+ * Compare
+ * Provides a select control to pick another test to compare against the
+ * currently viewed test. Fetches a small list of recent tests and, when a
+ * selection is made, fetches the full "review" payload for that test and
+ * forwards it to the parent via `onComparisonSelect`.
+ */
 export default function Compare({ onComparisonSelect, currentTestId }) {
     const [selected, setSelected] = useState("")
     const [testFiles, setTestFiles] = useState([]);
@@ -9,6 +16,7 @@ export default function Compare({ onComparisonSelect, currentTestId }) {
     const [comparisonData, setComparisonData] = useState(null);
     const limit = 10;
 
+    // Load a paginated list of tests to allow the user to choose a comparison
     useEffect(() => {
         const fetchTestFiles = async () => {
             setLoading(true);
@@ -33,7 +41,7 @@ export default function Compare({ onComparisonSelect, currentTestId }) {
         fetchTestFiles()
     }, [currentTestId])
 
-    // Fetch comparison test data when a test is selected
+    // Fetch the selected comparison test payload and forward to parent
     useEffect(() => {
         const fetchComparisonData = async () => {
             if (!selected) {
@@ -46,6 +54,7 @@ export default function Compare({ onComparisonSelect, currentTestId }) {
                 const response = await fetch(`http://localhost:8000/db/tests/${selected}?response_format=review`, {
                     method: 'GET',
                 });
+                // Set local comparison data and call the parent's handler
                 const data = await response.json();
                 setComparisonData(data);
                 onComparisonSelect(data);

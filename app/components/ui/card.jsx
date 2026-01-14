@@ -1,3 +1,9 @@
+/**
+ * Card Components
+ * A set of composable card UI components for displaying content in a structured layout.
+ * Includes Card (container), CardHeader, CardTitle, CardDescription, CardContent, CardFooter, CardAction.
+ * All components support custom className for styling.
+ */
 import * as React from "react"
 
 import { cn } from "../../lib/utils"

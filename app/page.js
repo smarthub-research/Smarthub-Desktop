@@ -5,6 +5,12 @@ import Services from "./components/services";
 import { useAuth } from "./auth/authContext";
 import SmoothVsUnsmooth from './components/graphs/smoothVsUnsmooth';
 
+/**
+ * DashboardClient
+ * Client-side dashboard entry. Depends on `useAuth()` to obtain the
+ * authenticated user and then fetches recent test entries from the backend.
+ * The fetch includes a bearer token from `localStorage` when available.
+ */
 export default function DashboardClient() {
     const { user, loading } = useAuth();
     const [testFiles, setTestFiles] = useState([]);

@@ -1,4 +1,16 @@
 
+/**
+ * TrajectoryGraph Component
+ * Displays trajectory data as a scatter plot showing x and y positions over time.
+ * Supports comparison data and includes toolbar controls for data point selection.
+ * Props:
+ * - data: Array of trajectory data points with trajectory_x and trajectory_y
+ * - comparisonData: Optional array for comparison trajectory
+ * - graphId: Unique identifier for the graph
+ * - isDownsampled: Boolean indicating if data is downsampled
+ * - onRequestFullData: Callback to request full data
+ * - loadingFullData: Boolean for loading state
+ */
 'use client';
 
 import {CartesianGrid, Scatter, ScatterChart, XAxis, YAxis} from "recharts"

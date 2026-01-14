@@ -1,6 +1,9 @@
-"""
-Downsampling utilities using Largest Triangle Three Buckets (LTTB) algorithm.
-Ported from JavaScript downsamplingUtils.js
+"""Downsampling utilities using Largest Triangle Three Buckets (LTTB).
+
+This module implements a lightweight LTTB downsampling routine originally
+ported from the project's JavaScript utilities. It expects a `buffer` dict
+containing arrays of equal length and returns a list of sampled points with
+the same keys mapped to single values.
 """
 from typing import Dict, List, Any
 import math

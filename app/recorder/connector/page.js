@@ -4,8 +4,11 @@ import ConnectedDevices from "./connectedDevices";
 import NearbyDevices from "./nearbyDevices";
 import useFetchDevices from "../hooks/useFetchDevices";
 
-// This component allows users to connect two devices for recording purposes.
+// Page component for the device connector interface.
+// Purpose: Allows users to discover, connect, and manage up to two BLE devices before proceeding to recording.
+// Uses the useFetchDevices hook to manage device state and scanning.
 export default function Connector() {
+    // Destructure device state and setters from the custom hook
     const { devices, deviceOne, deviceTwo, setDeviceOne, setDeviceTwo } = useFetchDevices()
     return (
         <div className="flex flex-col justify-around w-full h-screen px-4">
@@ -14,14 +17,14 @@ export default function Connector() {
                 Connect Devices
             </h1>
             <div className="flex flex-col w-full max-w-5xl mx-auto gap-6 md:gap-8 lg:gap-10">
-                {/* Connected Devices Section */}
+                {/* Section for displaying and managing connected devices */}
                 <ConnectedDevices
                     deviceOne={deviceOne}
                     deviceTwo={deviceTwo}
                     setDeviceOne={setDeviceOne}
                     setDeviceTwo={setDeviceTwo}
                 />
-                {/* Nearby Devices Section */}
+                {/* Section for displaying nearby devices available for connection */}
                 <NearbyDevices
                     devices={devices}
                     deviceOne={deviceOne}
@@ -30,7 +33,7 @@ export default function Connector() {
                     setDeviceTwo={setDeviceTwo}
                 />
             </div>
-            {/* Continue Button */}
+            {/* Navigation button to proceed to recording, enabled only when both devices are connected */}
             <div className="flex justify-center mt-8 md:mt-10">
                 {/* Next button */}
                 <Link

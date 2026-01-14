@@ -6,10 +6,13 @@ import NavbarRecording from "./navbar/navbarRecording";
 import ChartSection from "./chartSection";
 import ViewSwapper from "./viewSwapper";
 
-// Main RecorderTab component
+// Main page component for the recorder section. Manages the recording UI,
+// including chart display, view toggling, and test completion.
 export default function Recorder() {
+    // State for toggling between grid and column chart layout
     const [boxView, setBoxView] = useState(true);
 
+    // Handler to end the current test and navigate to reviewer
     async function handleEndTest() {
         if (window.electronAPI) {
             await window.electronAPI.endTest();

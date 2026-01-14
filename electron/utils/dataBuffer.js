@@ -1,10 +1,23 @@
 
+/**
+ * In-memory data buffers used by the renderer/main process to accumulate
+ * telemetry from devices during a recording session.
+ *
+ * There are two buffers:
+ * - `dataBuffer`: intended as a processed/consumed view (not currently used)
+ * - `rawBuffer`: the live raw telemetry as it arrives (this is the primary
+ *   buffer used by snapshotting and test exports)
+ *
+ * Each buffer is an object of parallel arrays (timestamps, gyroLeft, etc.).
+ */
+
 class DataBuffer {
     constructor() {
         this.dataBuffer = this.initializeBuffer();
         this.rawBuffer = this.initializeBuffer();
     }
 
+    // Create a fresh buffer structure with empty arrays for each metric
     initializeBuffer() {
         return {
             gyroLeft: [],
@@ -21,39 +34,23 @@ class DataBuffer {
         };
     }
 
+    // Accessor for the (currently unused) processed buffer
     getDataBuffer() {
         return this.dataBuffer;
     }
 
+    // Accessor for the live raw telemetry buffer used for snapshots
     getRawDataBuffer() {
         return this.rawBuffer;
     }
 
     /**
-     * Append data to given buffer that follows the format:
-     * {
-     *     gyroLeft: [],
-     *     gyroRight: [],
-     *     displacement: [],
-     *     velocity: [],
-     *     heading: [],
-     *     trajectory_x: [],
-     *     trajectory_y: [],
-     *     timeStamp: []
-     * }
+     * Append a telemetry sample to the live raw buffer.
+     *
+     * Expected `data` shape: contains scalars / values for each metric.
+     * We push values onto each array so indexes remain aligned across metrics.
      */
     appendToBuffer(data) {
-        // this.dataBuffer.gyroLeft.push(data.gyroLeft);
-        // this.dataBuffer.gyroRight.push(data.gyroRight);
-        // this.dataBuffer.accelLeft.push(data.accelLeft);
-        // this.dataBuffer.accelRight.push(data.accelRight);
-        // this.dataBuffer.displacement.push(data.displacement);
-        // this.dataBuffer.velocity.push(data.velocity);
-        // this.dataBuffer.heading.push(data.heading);
-        // this.dataBuffer.trajectory_x.push(data.trajectory_x);
-        // this.dataBuffer.trajectory_y.push(data.trajectory_y);
-        // this.dataBuffer.timeStamp.push(data.timeStamp);
-
         this.rawBuffer.gyroLeft.push(data.gyroLeft);
         this.rawBuffer.gyroRight.push(data.gyroRight);
         this.rawBuffer.accelLeft.push(data.accelLeft);
@@ -64,15 +61,16 @@ class DataBuffer {
         this.rawBuffer.heading.push(data.heading);
         this.rawBuffer.trajectory_x.push(data.trajectory_x);
         this.rawBuffer.trajectory_y.push(data.trajectory_y);
-
-        // DONT FORGET YOU WROTE THIS SHIT
+        // Keep timestamps aligned with metric arrays
         this.rawBuffer.timeStamp.push(data.timeStamp);
     }
 
+    // Reset only the processed view buffer (used if/when processing is added)
     clearBuffer() {
         this.dataBuffer = this.initializeBuffer();
     }
 
+    // Reset both live and processed buffers (clear recording state)
     clearAllBuffers() {
         this.dataBuffer = this.initializeBuffer();
         this.rawBuffer = this.initializeBuffer();

@@ -1,3 +1,13 @@
+/**
+ * BLE data coordination service.
+ *
+ * Responsible for: initializing Kafka from the renderer flow, managing BLE
+ * subscriptions, and forwarding raw packets to the backend via Kafka.
+ *
+ * The class is intentionally a thin orchestration layer; processing occurs
+ * in the Python backend which receives raw packets from Kafka.
+ */
+
 const noble = require("@abandonware/noble")
 const BrowserWindow = require('electron').BrowserWindow;
 const timeManager = require("../utils/timeManager")
@@ -11,29 +21,23 @@ class DataService {
         this.kafkaInitializing = false;
     }
 
+    // Initialize Kafka producer/consumer if not already ready
     async initializeKafka() {
-        // If already initialized, return immediately
-        if (this.kafkaInitialized) {
-            return true;
-        }
-        
-        // If currently initializing, wait for it to complete
+        if (this.kafkaInitialized) return true;
+
         if (this.kafkaInitializing) {
-            console.log('Kafka initialization already in progress, waiting...');
-            // Poll until initialization completes (with timeout)
+            // Wait until existing initialization attempt completes
             const startTime = Date.now();
-            const timeout = 15000; // 15 second timeout
+            const timeout = 15000; // 15s
             while (this.kafkaInitializing && (Date.now() - startTime) < timeout) {
                 await new Promise(resolve => setTimeout(resolve, 100));
             }
             return this.kafkaInitialized;
         }
-        
-        // Start initialization
+
         this.kafkaInitializing = true;
         console.log('Initializing Kafka connection...');
         try {
-            // Now initialize Electron's Kafka producer/consumer
             this.kafkaInitialized = await kafkaService.initialize();
             if (this.kafkaInitialized) {
                 console.log('✓ Kafka initialized successfully');
@@ -46,7 +50,7 @@ class DataService {
         } finally {
             this.kafkaInitializing = false;
         }
-        
+
         return this.kafkaInitialized;
     }
 
@@ -57,15 +61,15 @@ class DataService {
         }
         return this.kafkaInitialized;
     }
-    
+
+    // Begin BLE data reading and forward packets to backend
     async beginReadingData() {
         noble.stopScanning();
 
-        // Ensure Kafka is ready before starting to read data
         const kafkaReady = await this.ensureKafkaReady();
         if (!kafkaReady) {
             console.error('Cannot begin reading - Kafka is not ready');
-            // Still proceed but warn that data won't be processed
+            // Continue reading locally but packets will be dropped
         }
 
         timeManager.beginRecording();
@@ -82,6 +86,7 @@ class DataService {
         });
     }
 
+    // Stop BLE subscriptions and pause recording
     async stopReadingData() {
         timeManager.stopRecording();
 
@@ -91,7 +96,6 @@ class DataService {
         await this.findCharacteristics(false, conn1);
         await this.findCharacteristics(false, conn2);
 
-        // sends stop recording message to kafka
         recordingService.pauseRecording();
 
         BrowserWindow.getAllWindows().forEach((win) => {
@@ -99,28 +103,23 @@ class DataService {
         });
     }
 
+    // Discover characteristics and subscribe/unsubscribe as requested
     async findCharacteristics(shouldRecord, peripheral) {
         if (!peripheral) return;
         peripheral.discoverServices([], (error, services) => {
-            if (error) {
-                console.error(error);
-                return;
-            }
+            if (error) { console.error(error); return; }
             services.forEach(service => {
                 service.discoverCharacteristics([], (error, characteristics) => {
-                    if (error) {
-                        console.error(error);
-                        return;
-                    }
-                    // Prefer the explicit 2a56 notify characteristic, otherwise pick a notify-capable char
+                    if (error) { console.error(error); return; }
+
+                    // Prefer the known notify characteristic '2a56', otherwise pick any notify-capable char
                     const targetCharacteristic = characteristics.find(c => c.uuid === "2a56") || characteristics.find(c => c.properties && c.properties.includes('notify'));
 
-                    // Find a writable/control characteristic (used to send activation flag)
+                    // Find a writable/control characteristic used to activate/deactivate streaming
                     const writableCharacteristic = characteristics.find(c => c.properties && (c.properties.includes('write') || c.properties.includes('writeWithoutResponse')));
 
                     if (targetCharacteristic) {
                         if (shouldRecord) {
-                            // Await the async subscription (includes activation write)
                             this.subscribeToCharacteristics(targetCharacteristic, peripheral, writableCharacteristic).catch(err => {
                                 console.error('Error during subscribe:', err);
                             });
@@ -135,9 +134,7 @@ class DataService {
 
     unsubscribeToCharacteristics(characteristic, controlCharacteristic) {
         characteristic.unsubscribe((error) => {
-            if (error) {
-                console.error('Unsubscribe error:', error);
-            }
+            if (error) { console.error('Unsubscribe error:', error); }
         });
 
         if (characteristic._dataCallback) {
@@ -145,7 +142,7 @@ class DataService {
             delete characteristic._dataCallback;
         }
 
-        // If the device expects an explicit deactivation flag, try to write it
+        // Try to send a deactivation write if supported
         try {
             if (controlCharacteristic) {
                 const withoutResponse = controlCharacteristic.properties && controlCharacteristic.properties.includes('writeWithoutResponse');
@@ -160,47 +157,37 @@ class DataService {
     }
 
     async subscribeToCharacteristics(characteristic, peripheral, controlCharacteristic) {
-        // Determine which side this device is (left or right)
         const conn1 = connectionStore.getConnectionOne();
         const side = (peripheral === conn1) ? 'left' : 'right';
         const deviceId = peripheral.id || peripheral.address || 'unknown';
 
-        // Set up data callback FIRST (before subscribing or activating)
+        // Data callback must be set before subscribing to avoid race conditions
         characteristic._dataCallback = async (data) => {
-            // Send raw packet to Kafka for backend processing
+            // Forward raw packet to backend only if Kafka is ready
             if (this.kafkaInitialized) {
                 await kafkaService.sendRawPacket(data, side, deviceId);
             } else {
                 console.warn('Kafka not initialized - packet dropped');
             }
-
-            // Note: The processed result will come back via Kafka consumer
-            // and be sent to frontend automatically by kafkaService.sendToFrontend()
         }
 
         characteristic.on('data', characteristic._dataCallback);
 
         // Subscribe to notifications
         characteristic.subscribe((error) => {
-            if (error) {
-                console.error('Subscribe error:', error);
-            }
+            if (error) { console.error('Subscribe error:', error); }
         });
 
-        // If the device requires an activation write, send it AFTER we're ready to receive
+        // If needed, write activation byte after subscription
         try {
             if (controlCharacteristic) {
                 console.log(`Sending activation byte to ${side} device...`);
                 const withoutResponse = controlCharacteristic.properties && controlCharacteristic.properties.includes('writeWithoutResponse');
                 const buf = Buffer.from([0x01]);
                 controlCharacteristic.write(buf, withoutResponse, (err) => {
-                    if (err) {
-                        console.error(`Control write (activate) error for ${side}:`, err);
-                    } else {
-                        console.log(`✓ Activation sent to ${side} device`);
-                    }
+                    if (err) { console.error(`Control write (activate) error for ${side}:`, err); }
+                    else { console.log(`✓ Activation sent to ${side} device`); }
                 });
-                // small delay to allow device to process activation
                 await new Promise(resolve => setTimeout(resolve, 100));
             }
         } catch (e) {

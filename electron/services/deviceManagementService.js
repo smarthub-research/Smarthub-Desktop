@@ -1,15 +1,17 @@
-/*
-
-Performs the business logic of the device management process
-
-*/
+/**
+ * Device management service.
+ *
+ * Handles BLE discovery, connection, and disconnection logic using Noble.
+ * Also notifies renderer windows about discovered devices and disconnection
+ * events. Uses `connectionStore` to track active/nearby peripherals.
+ */
 
 const noble = require("@abandonware/noble")
 const { BrowserWindow } = require('electron');
 const connectionStore = require('../utils/connectionStore');
 const dataService = require('./dataService');
 
-// Ensure only one listener is set for state changes
+// Ensure Noble starts/stops scanning based on adapter state
 noble.on('stateChange', (state) => {
     if (state === 'poweredOn') {
         noble.startScanning([], false);
@@ -18,13 +20,12 @@ noble.on('stateChange', (state) => {
     }
 });
 
-// Global discover event to broadcast discovered devices
+// Broadcast discovered SmartHub devices to renderer windows
 noble.on("discover", (peripheral) => {
     try {
         const name = peripheral.advertisement?.localName;
         const uuid = peripheral.uuid;
 
-        // Only broadcast if it's a SmartHub device
         if (name && name.toLowerCase().includes("smarthub")) {
             connectionStore.addNearbyPeripheral(peripheral);
             const windows = BrowserWindow.getAllWindows();
@@ -40,18 +41,12 @@ noble.on("discover", (peripheral) => {
 });
 
 class DeviceManagementService {
-    // Begins searching for nearby devices and triggers the on discover callback
+    // Start scanning for nearby devices and clear previous nearby cache
     async searchForDevices() {
         try {
-            // Clear old nearby peripherals to prevent memory buildup
             connectionStore.clearNearbyPeripherals();
-            
-            // Stop scanning first to reset
             await noble.stopScanningAsync();
-            
-            // Start scanning for all devices (empty array means scan for all)
             await noble.startScanningAsync([], false);
-            
             return { success: true };
         } catch (error) {
             console.error('Error starting device scan:', error);
@@ -59,33 +54,18 @@ class DeviceManagementService {
         }
     }
 
-    // Returns an array of both connected devices. Used for front end
-    // If looking for connected devices in backend use connectionStore
+    // Return minimal info for connected devices for frontend display
     getConnectedDevices() {
-        // Fetch both connections
         const conn1 = connectionStore.getConnectionOne();
         const conn2 = connectionStore.getConnectionTwo();
 
         const devices = [];
-
-        // Check if devices exist then extract info
-        if (conn1) {
-            const nameOne = conn1.advertisement.localName;
-            const uuidOne = conn1.uuid;
-
-            devices.push({name: nameOne, UUID: uuidOne});
-        }
-        if (conn2) {
-            const nameTwo = conn2.advertisement.localName;
-            const uuidTwo = conn2.uuid;
-
-            devices.push({name: nameTwo, UUID: uuidTwo});
-        }
-
+        if (conn1) devices.push({name: conn1.advertisement.localName, UUID: conn1.uuid});
+        if (conn2) devices.push({name: conn2.advertisement.localName, UUID: conn2.uuid});
         return devices;
     }
 
-    // Given a device, establishes BLE connection
+    // Connect to a previously discovered nearby peripheral
     async handleConnection(device) {
         try {
             const deviceName = device.name;
@@ -93,13 +73,9 @@ class DeviceManagementService {
             let devicePeripheral = null;
 
             const nearbyPeripherals = connectionStore.getNearbyPeripherals();
-            
-            // Find the exact peripheral within nearby
-            // This ensures the device is still within range
             nearbyPeripherals.forEach((peripheral) => {
                 const name = peripheral.advertisement?.localName;
                 const uuid = peripheral.uuid;
-
                 if ((name === deviceName) || (uuid === deviceUUID)) {
                     devicePeripheral = peripheral;
                 }
@@ -110,20 +86,17 @@ class DeviceManagementService {
             }
 
             await devicePeripheral.connectAsync();
-            
-            // Connect devices and assign to connections
+
             if (connectionStore.getConnectionOne() === null) {
                 connectionStore.setConnectionOne(devicePeripheral);
             } else if (connectionStore.getConnectionTwo() === null) {
                 connectionStore.setConnectionTwo(devicePeripheral);
             } else {
-                // Both slots are occupied, disconnect the device
                 await devicePeripheral.disconnectAsync();
                 return { success: false, error: "Maximum number of connections reached" };
             }
 
-            // Initialize Kafka when first device connects (non-blocking)
-            // This ensures Kafka is ready before recording starts
+            // Trigger background Kafka initialization when first device connects
             dataService.initializeKafka().catch(error => {
                 console.error('Background Kafka initialization failed:', error);
             });
@@ -135,13 +108,11 @@ class DeviceManagementService {
         }
     }
 
-    // Given a device, disconnects from the BLE connection
+    // Disconnect a connected peripheral and clear the corresponding slot
     async handleDisconnect(device) {
-        // Get both connections
         const conn1 = connectionStore.getConnectionOne();
         const conn2 = connectionStore.getConnectionTwo();
 
-        // Check which device we are trying to disconnect from
         if (conn1 && (conn1.advertisement.localName === device.name || conn1.uuid === device.UUID)) {
             await conn1.disconnectAsync();
             connectionStore.setConnectionOne(null);
@@ -154,13 +125,12 @@ class DeviceManagementService {
         }
     }
 
-    // Helper to check connection state
     isDeviceConnected(peripheral) {
         if (!peripheral) return false;
         return peripheral.state === 'connected';
     }
 
-    // Gets the connection state and returns to front end
+    // Return boolean connection status for both connection slots
     checkConnectionStatus() {
         const conn1 = connectionStore.getConnectionOne();
         const conn2 = connectionStore.getConnectionTwo();
@@ -174,7 +144,7 @@ class DeviceManagementService {
         };
     }
 
-    // Used for listener to ensure connections aren't dropped
+    // Attach listeners to active connections to notify frontend on disconnect
     setupDisconnectionListeners() {
         const conn1 = connectionStore.getConnectionOne();
         const conn2 = connectionStore.getConnectionTwo();

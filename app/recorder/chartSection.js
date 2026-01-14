@@ -3,9 +3,14 @@ import Graph from "../components/graphs/graph";
 import TrajectoryGraph from "../components/graphs/trajectoryGraph";
 import {useTest} from "./context/testContext";
 
+// Component that renders the main chart grid during recording.
+// Props:
+// - `boxView`: boolean to toggle between grid and column layout
 export default function ChartSection({boxView}) {
-    const { processedPackets, addProcessedData, clearProcessedData, handleRestartRecording, fetchFullData, isStopped } = useTest();
+    // Access test context for processed data and handlers
+    const { processedPackets, addProcessedData, clearProcessedData, handleRestartRecording, fetchFullData } = useTest();
 
+    // Handler for incoming BLE data packets
     function handleData(data) {
         console.log(data)
         data = data.data
@@ -13,16 +18,19 @@ export default function ChartSection({boxView}) {
         addProcessedData(data);
     }
 
+    // Clear processed data from context
     function clearData() {
         clearProcessedData();
     }
 
+    // Handler for restart recording event
     const restartHandler = () => {
         // Clear data and restore ring buffer
         clearData();
         handleRestartRecording();
     };
 
+    // Set up BLE data listeners on mount
     useEffect(() => {
         if (window.electronAPI) {
             // Register listeners and store their cleanup functions

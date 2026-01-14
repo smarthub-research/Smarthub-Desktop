@@ -1,6 +1,8 @@
 import {useTest} from "../context/testContext";
 
-// Component for specific test metrics
+// Component for displaying calculated test metrics in a grid layout.
+// Purpose: Shows key performance indicators from the recorded test data.
+// Displays metrics like duration, max velocity, data points count, and average heading.
 export default function TestMetrics() {
     const { testData } = useTest()
 

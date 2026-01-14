@@ -1,5 +1,7 @@
 
-// Displays the current date and time in a specific format of the test
+// Component for displaying the current date and time when the test was recorded.
+// Purpose: Shows a formatted timestamp of when the test review session began.
+// Note: Uses the current date/time, not necessarily when recording started.
 export default function TestDate() {
     return (
         <div>

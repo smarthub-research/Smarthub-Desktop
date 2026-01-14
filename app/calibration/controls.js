@@ -2,9 +2,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../co
 import { Loader2, AlertCircle, Play, Square, Zap } from 'lucide-react';
 import CalibrationName from './calibrationName';
 
+// Controls panel for driving the calibration lifecycle.
+// Props:
+// - `calibrationStep` (string): current step in the flow.
+// - `setCalibrationStep` (fn): setter to advance or reset the flow.
+// - `calibrationName`, `setCalibrationName`: name for the current calibration.
+// - `connectedDevices` (number): number of detected connected devices.
 export default function Controls({calibrationStep, setCalibrationStep, calibrationName, setCalibrationName, connectedDevices}) {
 
-    // Begin receiving ble data to liveDataAndResults
+    // Start the BLE reading process via Electron bridge, then switch
+    // UI state to `recording`.
     async function startCalibration() {
         try {
             if (window.electronAPI) {
@@ -16,18 +23,21 @@ export default function Controls({calibrationStep, setCalibrationStep, calibrati
         }
     }
 
-    // End the calibration, get test data and format to send to calculate calibration
+    // Stop recording, request buffered test data from the main process,
+    // post it to the backend calibration endpoint, and update the step
+    // based on the response.
     async function stopCalibration() {
         try {
             if (window.electronAPI) {
                 await window.electronAPI.stopRecordingData();
                 setCalibrationStep("processing")
-                
-                // Save the buffer data to testData after calibration
+
+                // Move in-memory buffer to testData and fetch it back
                 await window.electronAPI.setTestData(true);
                 const testData = await window.electronAPI.getTestData();
-                
-                // Prepare calibration data for API
+
+                // Build payload for calibration API. Device id is hard-coded
+                // here and should be replaced with a real identifier.
                 const calibrationData = {
                     // Get the number from the device name. Both numbers should be the same for both devices.
                     smarthubId: "8888",
@@ -39,7 +49,7 @@ export default function Controls({calibrationStep, setCalibrationStep, calibrati
 
                 console.log(calibrationData)
 
-                // Call your calibration API
+                // Post to backend; update UI based on response success.
                 const response = await fetch("http://localhost:8000/calibrate/", {
                     method: "POST",
                     headers: {
@@ -47,7 +57,7 @@ export default function Controls({calibrationStep, setCalibrationStep, calibrati
                     },
                     body: JSON.stringify(calibrationData)
                 });
-                
+
                 if (response.ok) {
                     const result = await response.json();
                     console.log("Calibration completed:", result);
@@ -63,7 +73,8 @@ export default function Controls({calibrationStep, setCalibrationStep, calibrati
         }
     }
 
-    // Clear all data and reset calibration stage to idle
+    // Reset the calibration session (clears device buffers via the
+    // Electron bridge) and return to `idle`.
     async function resetCalibration() {
         await window.electronAPI.restartRecording();
         setCalibrationStep("idle")

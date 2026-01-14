@@ -1,3 +1,12 @@
+/**
+ * Supabase client helper for Electron main process.
+ *
+ * Exposes `getSupabaseWithAuth` which will return a Supabase client
+ * instance configured with the current session's access token when
+ * available. This creates a short-lived client with auth headers set to
+ * avoid global side-effects in the shared `supabase` instance.
+ */
+
 const { createClient } = require('@supabase/supabase-js');
 require('dotenv').config();
 const { getSession } = require('./authManager');
@@ -11,14 +20,14 @@ if (!supabaseKey) {
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-// electron/services/client.js
+// Return a client pre-configured with Authorization header when a session exists
 async function getSupabaseWithAuth() {
     const session = getSession();
 
     if (session && session.access_token) {
         try {
-            // Create a NEW client with the auth headers already set
-            // This is more reliable than setSession
+            // Create a NEW client with the auth headers already set. This avoids
+            // mutating the shared client and ensures requests carry the user's token.
             const authedSupabase = createClient(
                 supabaseUrl,
                 supabaseKey,

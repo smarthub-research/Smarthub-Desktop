@@ -1,3 +1,16 @@
+/**
+ * Graph Component
+ * A versatile line chart component for displaying time-series data with optional comparison data.
+ * Supports data downsampling, scrolling, and toolbar controls for data point selection.
+ * Handles resizing, data slicing, and merging of primary and comparison datasets.
+ * Props:
+ * - data: Array of data points for the primary dataset
+ * - comparisonData: Optional array for comparison dataset
+ * - graphId: Unique identifier for the graph
+ * - isDownsampled: Boolean indicating if data is downsampled
+ * - onRequestFullData: Callback to request full data when needed
+ * - loadingFullData: Boolean for loading state
+ */
 'use client';
 
 import {CartesianGrid, Label, Line, LineChart, XAxis, YAxis} from "recharts"
@@ -7,6 +20,7 @@ import { memo, useEffect, useRef, useState, useMemo, useCallback } from "react";
 import ChartToolbar from "../../recorder/chartToolbar";
 import {usePathname} from "next/navigation";
 
+// Custom hook for debounced resize observation to handle container size changes efficiently
 function useDebouncedResize(delay = 100) {
     const [size, setSize] = useState({ width: 0, height: 0 });
     const ref = useRef();
@@ -170,7 +184,7 @@ function Graph({data, comparisonData, graphId, isDownsampled, onRequestFullData,
         return merged;
     }, [displayData, displayComparisonData]);
 
-    // Find first non-time key
+    // Find first non-time key for primary data
     const dataKey = mergedData && mergedData.length > 0
         ? Object.keys(mergedData[0]).find(key => key !== "time" && !key.endsWith("_comparison"))
         : "data";

@@ -1,5 +1,13 @@
+"""Simple metrics extraction utilities for bout and stroke analysis.
+
+The module provides a `Metrics` container and helper functions to analyze
+velocity/time/distance series and extract bout-level and stroke-level
+statistics used by higher-level analytics.
+"""
+
 import numpy as np
 from scipy.signal import find_peaks
+
 
 class Metrics:
     def __init__(self):

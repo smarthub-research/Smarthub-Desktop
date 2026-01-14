@@ -1,4 +1,9 @@
 
+/**
+ * Splash Component
+ * Displays the application logo in a centered, full-screen layout, typically used as a splash screen.
+ */
+
 export default function Splash() {
     return (
         <div className={'flex flex-col justify-center items-center grow h-full w-full'}>

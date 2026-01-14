@@ -4,6 +4,10 @@ import { useState, useEffect } from 'react';
 import TestFileCard from "./testFileCard";
 import Link from "next/link";
 
+// Displays a paginated list of test files, with loading and empty states.
+// Props:
+// - filters: object with filter flags (not currently used in fetch)
+// - searchTerm: string (not currently used in fetch)
 export default function TestFileList({filters, searchTerm}) {
     const [testFiles, setTestFiles] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -11,6 +15,7 @@ export default function TestFileList({filters, searchTerm}) {
     const [pagination, setPagination] = useState(null);
     const limit = 10;
 
+    // Fetch test files from backend API
     const fetchTestFiles = async (page = 1) => {
         setLoading(true);
         try {
@@ -35,14 +40,15 @@ export default function TestFileList({filters, searchTerm}) {
         fetchTestFiles(currentPage);
     }, [currentPage]);
 
+    // Change page and scroll to top
     const handlePageChange = (newPage) => {
         setCurrentPage(newPage);
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
+    // Pagination controls for navigating test file pages
     const PaginationControls = () => {
         if (!pagination) return null;
-
         return (
             <div className="flex justify-center items-center gap-4 mt-6 p-4">
                 <button
@@ -52,7 +58,6 @@ export default function TestFileList({filters, searchTerm}) {
                 >
                     Previous
                 </button>
-                
                 <div className="flex items-center gap-2">
                     <span className="text-gray-600">
                         Page {pagination.current_page} of {pagination.total_pages}
@@ -61,7 +66,6 @@ export default function TestFileList({filters, searchTerm}) {
                         ({pagination.total_count} total tests)
                     </span>
                 </div>
-                
                 <button
                     onClick={() => handlePageChange(currentPage + 1)}
                     disabled={!pagination.has_next}
